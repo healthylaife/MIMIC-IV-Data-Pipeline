@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './..')
 TESTING = False # Variable for testing functions
 OUTPUT_DIR = './data/day_intervals/cohort'
 
-def get_adm_pts(mimic4_path:str):
+def get_adm_pts(mimic4_path:str, use_ICD:False):
     adm = pd.read_csv(mimic4_path + "core/admissions.csv.gz", compression='gzip', header=0, index_col=None, parse_dates=['admittime'])
     adm = adm.loc[adm.hospital_expire_flag == 0]    # remove hospitalizations with a death; impossible for readmission for such visits
 
@@ -114,6 +114,26 @@ def test_case_ctrls(test_case=True, df=None, df_new=None, invalid=None):
 
     print("All tests passed!")
 
+def extract(cohort_output:str, summary_output:str, use_ICU:bool, interval:int, label:str):
+    """
+    Extracts cohort data and summary from MIMIC-IV data based on provided parameters.
+
+    Parameters:
+    cohort_output: name of labelled cohort output file
+    summary_output: name of summary output file
+    use_ICU: state whether to use ICU patient data or not
+    interval: define what interval of days to check for readmission. Ignore if use_mortality=True
+    label: Can either be 'readmission' or 'mortality', decides what binary data label signifies
+    """
+    cohort, invalid = None, None
+    pts = get_adm_pts("./mimic-iv-1.0/")
+
+    if use_ICU:
+        pass
+    else:
+        cohort, invalid = get_case_ctrls(pts, interval, 'subject_id', 'hadm_id', 'admittime', 'min_valid_year')
+    # test_case_ctrls(test_case=False, df=pts, df_new=cohort, invalid=invalid)
+    cohort.to_csv(f"{cohort_output}.csv.gz", index=False, compression='gzip')
 
 if __name__ == '__main__':
     if TESTING:
