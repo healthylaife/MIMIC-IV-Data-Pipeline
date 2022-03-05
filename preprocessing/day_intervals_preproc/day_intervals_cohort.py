@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './..')
 
-TESTING = False # Variable for testing functions
+TESTING = True # Variable for testing functions
 OUTPUT_DIR = './data/day_intervals/cohort'
 
 def get_adm_pts(mimic4_path:str):
@@ -20,7 +20,6 @@ def get_adm_pts(mimic4_path:str):
 
     # Define anchor_year corresponding to the anchor_year_group 2017-2019. This is later used to prevent consideration
     # of visits with prediction windows outside the dataset's time range (2008-2019)
-
     adm_pts = adm[['subject_id', 'hadm_id', 'admittime', 'dischtime']].merge(
             pts[['subject_id', 'anchor_year', 'anchor_age', 'yob', 'min_valid_year']], how='inner', left_on='subject_id', right_on='subject_id'
         )
@@ -29,25 +28,26 @@ def get_adm_pts(mimic4_path:str):
     return adm_pts.dropna(subset=['min_valid_year'])[['subject_id', 'hadm_id', 'admittime', 'dischtime', 'min_valid_year']]
 
 
-def is_row_valid(row, gap, disch_col, valid_col, max_year):
+def validate_row(row, ctrl, invalid, max_year, disch_col, valid_col, gap):
+    """Checks if visit's prediction window potentially extends beyond the dataset range (2008-2019).
+    An 'invalid row' is NOT guaranteed to be outside the range, only potentially outside due to
+    de-identification of MIMIC-IV being done through 3-year time ranges.
+    
+    To be invalid, the end of the prediction window's year must both extend beyond the maximum seen year
+    for a patient AND beyond the year that corresponds to the 2017-2019 anchor year range for a patient"""
+
     pred_year = (row[disch_col] + gap).year
     if max_year < pred_year and pred_year > row[valid_col]:
-        return False
-    return True
+        invalid = invalid.append(row)
+    else:
+        ctrl = ctrl.append(row)
+    return ctrl, invalid
 
 
-def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit_col:str, disch_col:str, valid_col:str) -> pd.DataFrame:
+def partition_by_readmit(df:pd.DataFrame, gap:datetime.timedelta, group_col:str, visit_col:str, admit_col:str, disch_col:str, valid_col:str):
     case = pd.DataFrame()   # hadm_ids with readmission within the gap period
     ctrl = pd.DataFrame()   # hadm_ids without readmission within the gap period
     invalid = pd.DataFrame()    # hadm_ids that are not considered in the cohort
-    gap = datetime.timedelta(days=gap)  # transform gap into a timedelta to compare with datetime columns
-
-    def validate_row(row, ctrl, invalid, max_year):
-        if is_row_valid(row, gap, disch_col, valid_col, max_year):
-            ctrl = ctrl.append(row)
-        else:
-            invalid = invalid.append(row)
-        return ctrl, invalid
 
     # Iterate through groupbys based on group_col (subject_id). Data is sorted by subject_id and admit_col (admittime)
     # to ensure that the most current hadm_id is last in a group.
@@ -55,7 +55,7 @@ def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit
         max_year = group.max()[disch_col].year
 
         if group.shape[0] <= 1:
-            ctrl, invalid = validate_row(group.iloc[0], ctrl, invalid, max_year)   # A group with 1 row has no readmission; goes to ctrl
+            ctrl, invalid = validate_row(group.iloc[0], ctrl, invalid, max_year, disch_col, valid_col, gap)   # A group with 1 row has no readmission; goes to ctrl
         else:
             for idx in range(group.shape[0]-1):
                 visit_time = group.iloc[idx][disch_col]  # For each index (a unique hadm_id), get its timestamp
@@ -73,8 +73,37 @@ def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit
 
                     ctrl = ctrl.append(group.iloc[idx])
 
-            ctrl, invalid = validate_row(group.iloc[-1], ctrl, invalid, max_year)  # The last hadm_id datewise is guaranteed to have no readmission logically
+            ctrl, invalid = validate_row(group.iloc[-1], ctrl, invalid, max_year, disch_col, valid_col, gap)  # The last hadm_id datewise is guaranteed to have no readmission logically
             print(f"[ {gap.days} DAYS ] {case.shape[0] + ctrl.shape[0]}/{df.shape[0]} hadm_ids processed")
+
+    return case, ctrl, invalid
+
+
+def partition_by_mort(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, death_col:str, disch_col:str, valid_col:str):
+    pass
+
+
+def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit_col:str, disch_col:str, valid_col:str, use_mort=False) -> pd.DataFrame:
+    """Handles logic for creating the labelled cohort based on arguments passed to extract().
+
+    Parameters:
+    df: dataframe with patient data
+    gap: specified time interval gap for readmissions
+    group_col: patient identifier to group patients (normally subject_id)
+    visit_col: visit identifier for individual patient visits (normally hadm_id or stay_id)
+    admit_col: column for visit start date information (normally admittime or intime)
+    disch_col: column for visit end date information (normally dischtime or outtime)
+    valid_col: generated column containing a patient's year that corresponds to the 2017-2019 anchor time range"""
+
+    case = None  # hadm_ids with readmission within the gap period
+    ctrl = None   # hadm_ids without readmission within the gap period
+    invalid = None    # hadm_ids that are not considered in the cohort
+    gap = datetime.timedelta(days=gap)  # transform gap into a timedelta to compare with datetime columns
+
+    if use_mort:
+        case, ctrl, invalid = partition_by_mort(df, gap, group_col, visit_col, admit_col, disch_col, valid_col)
+    else:
+        case, ctrl, invalid = partition_by_readmit(df, gap, group_col, visit_col, admit_col, disch_col, valid_col)
 
     print(f"[ {gap.days} DAYS ] {invalid.shape[0]} hadm_ids are invalid")
     # case hadm_ids are labelled 1 for readmission, ctrls have a 0 label
@@ -122,26 +151,36 @@ def test_case_ctrls(test_case=True, df=None, df_new=None, invalid=None):
     print("All tests passed!")
 
 
-def extract(cohort_output:str, summary_output:str, use_ICU:bool, interval:int, label:str):
-    """
-    Extracts cohort data and summary from MIMIC-IV data based on provided parameters.
+def extract(cohort_output:str, summary_output:str, use_ICU:str, label:str):
+    """Extracts cohort data and summary from MIMIC-IV data based on provided parameters.
 
     Parameters:
     cohort_output: name of labelled cohort output file
     summary_output: name of summary output file
     use_ICU: state whether to use ICU patient data or not
-    interval: define what interval of days to check for readmission. Ignore if use_mortality=True
-    label: Can either be 'readmission' or 'mortality', decides what binary data label signifies
-    """
-    cohort, invalid = None, None
-    pts = get_adm_pts("./mimic-iv-1.0/")
+    label: Can either be '{day} day Readmission' or 'Mortality', decides what binary data label signifies"""
 
-    if use_ICU:
+    cohort, invalid, pts = None, None, None
+
+    if use_ICU == 'ICU':
         pass
     else:
+        pts = get_adm_pts("./mimic-iv-1.0/")
+
+    if label == "Mortality":
+        pass
+    else:
+        interval = int(label[:3].strip())
         cohort, invalid = get_case_ctrls(pts, interval, 'subject_id', 'hadm_id', 'admittime', 'dischtime','min_valid_year')
+
     # test_case_ctrls(test_case=False, df=pts, df_new=cohort, invalid=invalid)
     cohort.to_csv(f"{cohort_output}.csv.gz", index=False, compression='gzip')
+
+    print(f"{label} FOR {use_ICU} DATA")
+    print("Rowsize of dataset: ", cohort.shape[0])
+    print("Number of invalid visits: ", invalid.shape[0])
+    print(cohort.label.value_counts())
+    print("====================")
 
 
 if __name__ == '__main__':
