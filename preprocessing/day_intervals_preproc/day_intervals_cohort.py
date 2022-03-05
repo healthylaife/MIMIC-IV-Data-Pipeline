@@ -8,24 +8,41 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './..')
 TESTING = True # Variable for testing functions
 OUTPUT_DIR = './data/day_intervals/cohort'
 
-def get_adm_pts(mimic4_path:str):
-    adm = pd.read_csv(mimic4_path + "core/admissions.csv.gz", compression='gzip', header=0, index_col=None, parse_dates=['admittime', 'dischtime'])
-    adm = adm.loc[adm.hospital_expire_flag == 0]    # remove hospitalizations with a death; impossible for readmission for such visits
+def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, disch_col:str, use_mort:bool, use_ICU=False):
+    """Combines the MIMIC-IV core/patients table information with either the icu/icustays or core/admissions data.
+
+    Parameters:
+    mimic4_path: path to mimic-iv folder containing MIMIC-IV data
+    group_col: patient identifier to group patients (normally subject_id)
+    visit_col: visit identifier for individual patient visits (normally hadm_id or stay_id)
+    admit_col: column for visit start date information (normally admittime or intime)
+    disch_col: column for visit end date information (normally dischtime or outtime)
+    use_ICU: describes whether to speficially look at ICU visits in icu/icustays OR look at general admissions from core/admissions
+    """
+
+    visit = None
+    if use_ICU:
+        visit = pd.read_csv(mimic4_path + "icu/icustays.csv.gz", compression='gzip', header=0, index_col=None, parse_dates=[admit_col, disch_col])
+    else:
+        visit = pd.read_csv(mimic4_path + "core/admissions.csv.gz", compression='gzip', header=0, index_col=None, parse_dates=[admit_col, disch_col])
+    
+    if not use_mort:
+        visit = visit.loc[visit.hospital_expire_flag == 0]    # remove hospitalizations with a death; impossible for readmission for such visits
 
     pts = pd.read_csv(
-            mimic4_path + "core/patients.csv.gz", compression='gzip', header=0, index_col = None, usecols=['subject_id', 'anchor_year', 'anchor_age', 'anchor_year_group']
+            mimic4_path + "core/patients.csv.gz", compression='gzip', header=0, index_col = None, usecols=[group_col, 'anchor_year', 'anchor_age', 'anchor_year_group']
         )
     pts['yob']= pts['anchor_year'] - pts['anchor_age']  # get yob to ensure a given visit is from an adult
     pts['min_valid_year'] = pts['anchor_year'] + (2019 - pts['anchor_year_group'].str.slice(start=-4).astype(int))
 
     # Define anchor_year corresponding to the anchor_year_group 2017-2019. This is later used to prevent consideration
     # of visits with prediction windows outside the dataset's time range (2008-2019)
-    adm_pts = adm[['subject_id', 'hadm_id', 'admittime', 'dischtime']].merge(
-            pts[['subject_id', 'anchor_year', 'anchor_age', 'yob', 'min_valid_year']], how='inner', left_on='subject_id', right_on='subject_id'
+    visit_pts = visit[[group_col, visit_col, admit_col, disch_col]].merge(
+            pts[[group_col, 'anchor_year', 'anchor_age', 'yob', 'min_valid_year']], how='inner', left_on=group_col, right_on=group_col
         )
-    adm_pts = adm_pts.loc[adm_pts['admittime'].dt.year - adm_pts['yob'] >= 18]
+    visit_pts = visit_pts.loc[adm_pts[admit_col].dt.year - visit_pts['yob'] >= 18]
 
-    return adm_pts.dropna(subset=['min_valid_year'])[['subject_id', 'hadm_id', 'admittime', 'dischtime', 'min_valid_year']]
+    return visit_pts.dropna(subset=['min_valid_year'])[[group_col, visit_col, admit_col, disch_col, 'min_valid_year']]
 
 
 def validate_row(row, ctrl, invalid, max_year, disch_col, valid_col, gap):
@@ -79,7 +96,7 @@ def partition_by_readmit(df:pd.DataFrame, gap:datetime.timedelta, group_col:str,
     return case, ctrl, invalid
 
 
-def partition_by_mort(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, death_col:str, disch_col:str, valid_col:str):
+def partition_by_mort(df:pd.DataFrame, group_col:str, visit_col:str, death_col:str, disch_col:str, valid_col:str):
     pass
 
 
@@ -111,6 +128,62 @@ def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit
     ctrl['label'] = np.zeros(ctrl.shape[0]).astype(int)
 
     return pd.concat([case, ctrl], axis=0), invalid
+
+
+def extract(cohort_output:str, summary_output:str, use_ICU:str, label:str):
+    """Extracts cohort data and summary from MIMIC-IV data based on provided parameters.
+
+    Parameters:
+    cohort_output: name of labelled cohort output file
+    summary_output: name of summary output file
+    use_ICU: state whether to use ICU patient data or not
+    label: Can either be '{day} day Readmission' or 'Mortality', decides what binary data label signifies"""
+
+    cohort, invalid, pts = None, None, None
+    group_col, visit_col, admit_col, disch_col = "", "", "", ""
+    use_mort = label == "Mortality"
+
+    if use_ICU == 'ICU':
+        group_col='subject_id'
+        visit_col='stay_id'
+        admit_col='intime'
+        disch_col='outtime'
+
+        pts = get_visit_pts(
+            mimic4_path="./mimic-iv-1.0/",
+            group_col=group_col,
+            visit_col=visit_col,
+            admit_col=admit_col,
+            disch_col=disch_col
+        )
+    else:
+        group_col='subject_id'
+        visit_col='hadm_id'
+        admit_col='admittime'
+        disch_col='dischtime'
+
+        pts = get_visit_pts(
+            mimic4_path="./mimic-iv-1.0/",
+            group_col=group_col,
+            visit_col=visit_col,
+            admit_col=admit_col,
+            disch_col=disch_col
+        )
+
+    if use_mort:
+        cohort, invalid = get_case_ctrls(pts, None, group_col, visit_col, admit_col, disch_col,'min_valid_year', use_mort=True)
+    else:
+        interval = int(label[:3].strip())
+        cohort, invalid = get_case_ctrls(pts, interval, group_col, visit_col, admit_col, disch_col,'min_valid_year')
+
+    # test_case_ctrls(test_case=False, df=pts, df_new=cohort, invalid=invalid)
+    cohort.to_csv(f"{cohort_output}.csv.gz", index=False, compression='gzip')
+
+    print(f"{label} FOR {use_ICU} DATA")
+    print("Rowsize of dataset: ", cohort.shape[0])
+    print("Number of invalid visits: ", invalid.shape[0])
+    print(cohort.label.value_counts())
+    print("====================")
 
 
 def test_case_ctrls(test_case=True, df=None, df_new=None, invalid=None):
@@ -149,38 +222,6 @@ def test_case_ctrls(test_case=True, df=None, df_new=None, invalid=None):
     assert df.hadm_id.nunique() == df_new.hadm_id.nunique() + invalid.hadm_id.nunique() # Check that all hadm_ids remained
 
     print("All tests passed!")
-
-
-def extract(cohort_output:str, summary_output:str, use_ICU:str, label:str):
-    """Extracts cohort data and summary from MIMIC-IV data based on provided parameters.
-
-    Parameters:
-    cohort_output: name of labelled cohort output file
-    summary_output: name of summary output file
-    use_ICU: state whether to use ICU patient data or not
-    label: Can either be '{day} day Readmission' or 'Mortality', decides what binary data label signifies"""
-
-    cohort, invalid, pts = None, None, None
-
-    if use_ICU == 'ICU':
-        pass
-    else:
-        pts = get_adm_pts("./mimic-iv-1.0/")
-
-    if label == "Mortality":
-        pass
-    else:
-        interval = int(label[:3].strip())
-        cohort, invalid = get_case_ctrls(pts, interval, 'subject_id', 'hadm_id', 'admittime', 'dischtime','min_valid_year')
-
-    # test_case_ctrls(test_case=False, df=pts, df_new=cohort, invalid=invalid)
-    cohort.to_csv(f"{cohort_output}.csv.gz", index=False, compression='gzip')
-
-    print(f"{label} FOR {use_ICU} DATA")
-    print("Rowsize of dataset: ", cohort.shape[0])
-    print("Number of invalid visits: ", invalid.shape[0])
-    print(cohort.label.value_counts())
-    print("====================")
 
 
 if __name__ == '__main__':
