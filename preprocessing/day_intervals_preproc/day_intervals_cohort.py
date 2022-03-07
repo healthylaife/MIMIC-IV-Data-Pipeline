@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './..')
 
-TESTING = True # Variable for testing functions
 OUTPUT_DIR = './data/day_intervals/cohort'
 
 def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, disch_col:str, use_mort:bool, use_ICU=False):
@@ -100,7 +99,7 @@ def partition_by_readmit(df:pd.DataFrame, gap:datetime.timedelta, group_col:str,
     return case, ctrl, invalid
 
 
-def partition_by_mort(df:pd.DataFrame, group_col:str, visit_col:str, admit_col:str, disch_col:str, death_col:str, valid_col:str):
+def partition_by_mort(df:pd.DataFrame, group_col:str, visit_col:str, admit_col:str, disch_col:str, death_col:str):
     """Applies labels to individual visits according to whether or not a death has occurred within
     the times of the specified admit_col and disch_col"""
 
@@ -133,7 +132,7 @@ def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit
     gap = datetime.timedelta(days=gap)  # transform gap into a timedelta to compare with datetime columns
 
     if use_mort:
-        return partition_by_mort(df, gap, group_col, visit_col, admit_col, disch_col, death_col, valid_col)
+        return partition_by_mort(df, group_col, visit_col, admit_col, disch_col, death_col)
     else:
         case, ctrl, invalid = partition_by_readmit(df, gap, group_col, visit_col, admit_col, disch_col, valid_col)
 
@@ -208,68 +207,27 @@ def extract(cohort_output:str, summary_output:str, use_ICU:str, label:str):
     print("====================")
 
 
-def test_case_ctrls(test_case=True, df=None, df_new=None, invalid=None):
-    """Function for testing get_case_ctrls() with a small dataset and for testing attributes on the entire dataset"""
-    if test_case:
-        df = pd.DataFrame({
-            'subject_id':[1] + [2]*2 + [3]*7 + [4]*3 + [5]*2,
-            'hadm_id': range(15),
-            'admittime': [
-                datetime.datetime(year=2000, month=1 ,day=1) + datetime.timedelta(days=i) for i in [
-                    1,      # Test that group size of 1 automatically sends to ctrl
-                    1, 5,   # Ensures that the last visit is always ctrl (given that its within the min valid year)
-                    1, 3, 5, 60, 20, 100, 1000, # Tests reordering and that gaps are appropriately sent to ctrl
-                    1, 350, 357,    # Ensures that readmissions extending beyond the minimum valid year are removed
-                    1, 43     # Test to make sure readmissions are based on the end of disch_time, NOT admit_time
-                ]
-            ],
-            'dischtime': [
-                datetime.datetime(year=2000, month=1 ,day=1) + datetime.timedelta(days=i) for i in [
-                    2,      # Test that group size of 1 automatically sends to ctrl
-                    2, 7,   # Ensures that the last visit is always ctrl (given that its within the min valid year)
-                    2, 4, 6, 62, 22, 103, 1003, # Tests reordering
-                    2, 353, 360,    # Ensures that readmissions extending beyond the minimum valid year are removed
-                    40, 46     # Test to make sure readmissions are based on the end of disch_time, NOT admit_time
-                ]
-            ],
-            'min_valid_year':[2020]*10 + [2000]*5
-        })
-        df_new, invalid = get_case_ctrls(df, 30, 'subject_id', 'hadm_id', 'admittime', 'dischtime', 'min_valid_year') #, 'yob'
-
-        assert df_new.loc[df_new.label == 1].shape[0] == 6, f"New df has {df_new.loc[df_new.label == 1].shape[0]} readmits"
-        assert df_new.loc[df_new.label == 0].shape[0] == 8, f"New df has {df_new.loc[df_new.label == 0].shape[0]} ctrls"
-
-    assert df.shape[0] == df_new.shape[0] + invalid.shape[0]    # Ensure sizes are did not change
-    assert set(df.subject_id.unique()) == set(np.concatenate((df_new.subject_id.unique(), invalid.subject_id.unique())))    # Check that subject_ids are identical
-    assert df.hadm_id.nunique() == df_new.hadm_id.nunique() + invalid.hadm_id.nunique() # Check that all hadm_ids remained
-
-    print("All tests passed!")
-
-
 if __name__ == '__main__':
-    if TESTING:
-        test_case_ctrls()
-    else:
-        output_info = []
-        adm_pts = get_adm_pts("./mimic-iv-1.0/")
-        for i in [30, 60, 90]:
-            cohort, invalid = get_case_ctrls(
-                df=adm_pts,
-                gap=i,
-                group_col='subject_id',
-                visit_col='hadm_id',
-                admit_col='admittime',
-                disch_col='dischtime',
-                valid_col='min_valid_year'
-                )
-            test_case_ctrls(test_case=False, df=adm_pts, df_new=cohort, invalid=invalid)
-            cohort.to_csv(f"{OUTPUT_DIR}/cohort{i}day.csv.gz", index=False, compression='gzip')
+    output_info = []
+    adm_pts = get_adm_pts("./mimic-iv-1.0/")
+    for i in [30, 60, 90]:
+        cohort, invalid = get_case_ctrls(
+            df=adm_pts,
+            gap=i,
+            group_col='subject_id',
+            visit_col='hadm_id',
+            admit_col='admittime',
+            disch_col='dischtime',
+            valid_col='min_valid_year'
+            )
+        test_case_ctrls(test_case=False, df=adm_pts, df_new=cohort, invalid=invalid)
+        cohort.to_csv(f"{OUTPUT_DIR}/cohort{i}day.csv.gz", index=False, compression='gzip')
 
-            output_info.append((i, cohort.shape[0], invalid.shape[0], cohort.label.value_counts()))
+        output_info.append((i, cohort.shape[0], invalid.shape[0], cohort.label.value_counts()))
 
-        for info in output_info:
-            print(f"{info[0]} DAY GAP")
-            print("Rowsize of dataset: ", info[1])
-            print("Number of invalid hadm_ids: ", info[2])
-            print(info[3])
-            print("====================")
+    for info in output_info:
+        print(f"{info[0]} DAY GAP")
+        print("Rowsize of dataset: ", info[1])
+        print("Number of invalid hadm_ids: ", info[2])
+        print(info[3])
+        print("====================")
