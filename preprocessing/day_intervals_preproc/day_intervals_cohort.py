@@ -154,18 +154,18 @@ def extract(use_ICU:str, label:str, cohort_output=None, summary_output=None):
     use_ICU: state whether to use ICU patient data or not
     label: Can either be '{day} day Readmission' or 'Mortality', decides what binary data label signifies"""
     if not cohort_output:
-        cohort_output="cohort_" + use_ICU.lower() + label.lower().replace(" ", "_")
+        cohort_output="cohort_" + use_ICU.lower() + "_" + label.lower().replace(" ", "_")
     if not summary_output:
-        summary_output="summary_" + use_ICU.lower() + label.lower().replace(" ", "_")
+        summary_output="summary_" + use_ICU.lower() + "_" + label.lower().replace(" ", "_")
 
     print(f"EXTRACTING FOR: | {use_ICU.upper()} | {label.upper()} |")
 
     cohort, invalid, pts = None, None, None
     group_col, visit_col, admit_col, disch_col, death_col = "", "", "", "", ""
     use_mort = label == "Mortality"
-    use_ICU = label == "ICU"
+    use_ICU = use_ICU == "ICU"
 
-    if use_ICU == 'ICU':
+    if use_ICU:
         group_col='subject_id'
         visit_col='stay_id'
         admit_col='intime'
