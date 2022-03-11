@@ -153,7 +153,7 @@ def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit
     # print(f"[ {gap.days} DAYS ] {invalid.shape[0]} hadm_ids are invalid")
 
 
-def extract(use_ICU:str, label:str, cohort_output=None, summary_output=None):
+def extract_data(use_ICU:str, label:str, cohort_output=None, summary_output=None):
     """Extracts cohort data and summary from MIMIC-IV data based on provided parameters.
 
     Parameters:
@@ -212,14 +212,21 @@ def extract(use_ICU:str, label:str, cohort_output=None, summary_output=None):
     cohort[cols].to_csv(f"./data/day_intervals/cohort/{cohort_output}.csv.gz", index=False, compression='gzip')
     print("[ COHORT SUCCESSFULLY SAVED ]")
 
+    summary = "\n".join([
+        f"{label} FOR {use_ICU} DATA",
+        f"Rowsize of dataset: {cohort.shape[0]}",
+        f"Number of invalid visits: {invalid.shape[0]}",
+        str(cohort.label.value_counts())
+    ])
+
     # save basic summary of data
     with open(f"./data/day_intervals/cohort/{summary_output}.txt", "w") as f:
-        f.write(f"{label} FOR {use_ICU} DATA\n")
-        f.write(f"Rowsize of dataset: {cohort.shape[0]}\n")
-        f.write(f"Number of invalid visits: {invalid.shape[0]}\n")
-        f.write(str(cohort.label.value_counts()))
+        f.write(summary)
 
     print("[ SUMMARY SUCCESSFULLY SAVED ]")
+    print(summary)
+
+    return summary
 
 
 if __name__ == '__main__':
@@ -230,14 +237,14 @@ if __name__ == '__main__':
 
     response = input('Extra all datasets? (y/n)').strip().lower()
     if response == 'y':
-        extract("ICU", "Mortality")
-        extract("Non-ICU", "Mortality")
+        extract_data("ICU", "Mortality")
+        extract_data("Non-ICU", "Mortality")
 
-        extract("ICU", "30 Day Readmission")
-        extract("Non-ICU", "30 Day Readmission")
+        extract_data("ICU", "30 Day Readmission")
+        extract_data("Non-ICU", "30 Day Readmission")
 
-        extract("ICU", "60 Day Readmission")
-        extract("Non-ICU", "60 Day Readmission")
+        extract_data("ICU", "60 Day Readmission")
+        extract_data("Non-ICU", "60 Day Readmission")
 
-        extract("ICU", "120 Day Readmission")
-        extract("Non-ICU", "120 Day Readmission")
+        extract_data("ICU", "120 Day Readmission")
+        extract_data("Non-ICU", "120 Day Readmission")
