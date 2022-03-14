@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import pandas as pd
 from pathlib import Path
-import tqdm
+from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './../..')
 
 def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, disch_col:str, use_mort:bool, use_ICU:bool):
@@ -80,7 +80,8 @@ def partition_by_readmit(df:pd.DataFrame, gap:datetime.timedelta, group_col:str,
 
     # Iterate through groupbys based on group_col (subject_id). Data is sorted by subject_id and admit_col (admittime)
     # to ensure that the most current hadm_id is last in a group.
-    for subject, group in df[[group_col, visit_col, admit_col, disch_col, valid_col]].sort_values(by=[group_col, admit_col]).groupby(group_col):
+    grouped= df[[group_col, visit_col, admit_col, disch_col, valid_col]].sort_values(by=[group_col, admit_col]).groupby(group_col)
+    for subject, group in tqdm(grouped):
         max_year = group.max()[disch_col].year
 
         if group.shape[0] <= 1:
@@ -105,7 +106,7 @@ def partition_by_readmit(df:pd.DataFrame, gap:datetime.timedelta, group_col:str,
 
             #ctrl, invalid = validate_row(group.iloc[-1], ctrl, invalid, max_year, disch_col, valid_col, gap)  # The last hadm_id datewise is guaranteed to have no readmission logically
             ctrl = ctrl.append(group.iloc[-1])
-            print(f"[ {gap.days} DAYS ] {case.shape[0] + ctrl.shape[0]}/{df.shape[0]} {visit_col}s processed")
+            #print(f"[ {gap.days} DAYS ] {case.shape[0] + ctrl.shape[0]}/{df.shape[0]} {visit_col}s processed")
 
     print("[ READMISSION LABELS FINISHED ]")
     return case, ctrl, invalid
