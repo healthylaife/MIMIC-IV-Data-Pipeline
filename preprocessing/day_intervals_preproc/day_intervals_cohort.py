@@ -216,6 +216,9 @@ def extract_data(use_ICU:str, label:str, root_dir, cohort_output=None, summary_o
         cohort, invalid = get_case_ctrls(pts, interval, group_col, visit_col, admit_col, disch_col,'min_valid_year', death_col)
 
     # save output
+    if use_ICU:
+        cohort=cohort.rename(columns={"intime":"admittime","outtime":"dischtime","stay_id":"hadm_id"})
+        cols=['subject_id','hadm_id','admittime','dischtime','label']
     cohort[cols].to_csv(root_dir+"/data/cohort/"+cohort_output+".csv.gz", index=False, compression='gzip')
     print("[ COHORT SUCCESSFULLY SAVED ]")
 
@@ -234,7 +237,7 @@ def extract_data(use_ICU:str, label:str, root_dir, cohort_output=None, summary_o
     print("[ SUMMARY SUCCESSFULLY SAVED ]")
     print(summary)
 
-    return summary
+    return cohort_output
 
 
 if __name__ == '__main__':

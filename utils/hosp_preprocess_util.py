@@ -5,6 +5,8 @@ import sys, os
 import re
 import ast
 import datetime as dt
+from tqdm import tqdm
+
 from sklearn.preprocessing import MultiLabelBinarizer
 
 ########################## GENERAL ##########################
@@ -215,9 +217,12 @@ def preproc_icd_module(module_path:str, adm_cohort_path:str, icd_map_path=None, 
     
     def get_module_cohort(module_path:str, cohort_path:str):
         module = pd.read_csv(module_path, compression='gzip', header=0)
-        adm_cohort = pd.read_pickle(adm_cohort_path, compression='gzip')
-        adm_cohort = adm_cohort.loc[(adm_cohort.timedelta_years <= 6) & (~adm_cohort.timedelta_years.isna())]
-        return module.merge(adm_cohort[['hadm_id', 'label','timedelta_days', 'timedelta_years']], how='inner', left_on='hadm_id', right_on='hadm_id')
+        adm_cohort = pd.read_csv(adm_cohort_path, compression='gzip', header=0)
+        #print(module.head())
+        #print(adm_cohort.head())
+        
+        #adm_cohort = adm_cohort.loc[(adm_cohort.timedelta_years <= 6) & (~adm_cohort.timedelta_years.isna())]
+        return module.merge(adm_cohort[['hadm_id', 'label']], how='inner', left_on='hadm_id', right_on='hadm_id')
 
     def standardize_icd(mapping, df, root=False):
         """Takes an ICD9 -> ICD10 mapping table and a modulenosis dataframe; adds column with converted ICD10 column"""
@@ -230,7 +235,7 @@ def preproc_icd_module(module_path:str, adm_cohort_path:str, icd_map_path=None, 
                 # Many ICD-9's do not have a 1-to-1 mapping; get first index of mapped codes
                 return mapping.loc[mapping[map_code_colname] == icd].icd10cm.iloc[0]
             except:
-                print("Error on code", icd)
+                #print("Error on code", icd)
                 return np.nan
 
         # Create new column with original codes as default
@@ -239,7 +244,7 @@ def preproc_icd_module(module_path:str, adm_cohort_path:str, icd_map_path=None, 
         df[col_name] = df['icd_code'].values
 
         # Group identical ICD9 codes, then convert all ICD9 codes within a group to ICD10
-        for code, group in df.loc[df.icd_version == 9].groupby(by='icd_code'):
+        for code, group in tqdm(df.loc[df.icd_version == 9].groupby(by='icd_code')):
             new_code = icd_9to10(code)
             for idx in group.index.values:
                 # Modify values of original df at the indexes in the groups
@@ -250,12 +255,18 @@ def preproc_icd_module(module_path:str, adm_cohort_path:str, icd_map_path=None, 
             df['root'] = df[col_name].apply(lambda x: x[:3] if type(x) is str else np.nan)
 
     module = get_module_cohort(module_path, adm_cohort_path)
+    #print(module.shape)
+    #print(module['icd_code'].nunique())
 
     # Optional ICD mapping if argument passed
     if icd_map_path:
         icd_map = read_icd_mapping(icd_map_path)
+        #print(icd_map)
         standardize_icd(icd_map, module, root=True)
-
+        print("# unique ICD-9 codes",module[module['icd_version']==9]['icd_code'].nunique())
+        print("# unique ICD-10 codes",module[module['icd_version']==10]['icd_code'].nunique())
+        print("# unique ICD-10 codes (After converting ICD-9 to ICD-10)",module['root_icd10_convert'].nunique())
+        print("# unique ICD-10 codes (After clinical gruping ICD-10 codes)",module['root'].nunique())
     return module
 
 
