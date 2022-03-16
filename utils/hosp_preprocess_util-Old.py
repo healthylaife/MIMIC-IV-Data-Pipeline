@@ -183,90 +183,8 @@ def get_range(df: pd.DataFrame, time_col:str, anchor_col:str, measure='days') ->
     else:
         raise Exception('\'measure\' argument must be either \'years\' or \'days\'.')
 
-def preproc_meds(module_path:str, adm_cohort_path:str, mapping:str) -> pd.DataFrame:
-  
-    adm = pd.read_csv(adm_cohort_path, usecols=['hadm_id', 'admittime'], parse_dates = ['admittime'])
-    med = pd.read_csv(module_path, compression='gzip', usecols=['subject_id', 'hadm_id', 'drug', 'starttime', 'stoptime','ndc'], parse_dates = ['starttime', 'stoptime'])
-    med = med.merge(adm, left_on = 'hadm_id', right_on = 'hadm_id', how = 'inner')
-    med['start_hours_from_admit'] = med['starttime'] - med['admittime']
-    med['stop_hours_from_admit'] = med['stoptime'] - med['admittime']
-    
-    # Normalize drug strings and remove potential duplicates
 
-    med.drug = med.drug.fillna("").astype(str)
-    med.drug = med.drug.apply(lambda x: x.lower().strip().replace(" ", "_") if not "" else "")
-    med.drug=med.drug.dropna().apply(lambda x: x.lower().strip())
-    
-    #meds.to_csv(output_path, compression='gzip', index=False)
-    med = ndc_meds(med,mapping,output_path)
-    
-    print("Number of unique type of drug: ", med.drug.nunique())
-    print("Number of unique type of drug (after grouping): ", med.nonproprietaryname.nunique())
-    
-    return med
-    
-    
-def ndc_meds(med, mapping:str) -> pd.DataFrame:
-    
-    # Convert any nan values to a dummy value
-    med.ndc = med.ndc.fillna(-1)
-
-    # Ensures the decimal is removed from the ndc col
-    med.ndc = med.ndc.astype("Int64")
-    
-    # The NDC codes in the prescription dataset is the 11-digit NDC code, although codes are missing
-    # their leading 0's because the column was interpreted as a float then integer; this function restores
-    # the leading 0's, then obtains only the PRODUCT and MANUFACTUERER parts of the NDC code (first 9 digits)
-    def to_str(ndc):
-        if ndc < 0:         # dummy values are < 0
-            return np.nan
-        ndc = str(ndc)
-        return (("0"*(11 - len(ndc))) + ndc)[0:-2]
-
-    # The mapping table is ALSO incorrectly formatted for 11 digit NDC codes. An 11 digit NDC is in the
-    # form of xxxxx-xxxx-xx for manufactuerer-product-dosage. The hyphens are in the correct spots, but
-    # the number of digits within each section may not be 5-4-2, in which case we add leading 0's to each
-    # to restore the 11 digit format. However, we only take the 5-4 sections, just like the to_str function
-    def format_ndc_table(ndc):
-        parts = ndc.split("-")
-        return ("0"*(5 - len(parts[0])) + parts[0]) + ("0"*(4 - len(parts[1])) + parts[1])
-    
-    def read_ndc_mapping2(map_path):
-        ndc_map = pd.read_csv(map_path, header=0, delimiter='\t', encoding = 'latin1')
-        ndc_map.NONPROPRIETARYNAME = ndc_map.NONPROPRIETARYNAME.fillna("")
-        ndc_map.NONPROPRIETARYNAME = ndc_map.NONPROPRIETARYNAME.apply(str.lower)
-        ndc_map.columns = list(map(str.lower, ndc_map.columns))
-        return ndc_map
-    
-    # Read in NDC mapping table
-    ndc_map = read_ndc_mapping2(mapping)[['productndc', 'nonproprietaryname', 'pharm_classes']]
-    
-    # Normalize the NDC codes in the mapping table so that they can be merged
-    ndc_map['new_ndc'] = ndc_map.productndc.apply(format_ndc_table)
-    ndc_map.drop_duplicates(subset=['new_ndc', 'nonproprietaryname'], inplace=True)
-    med['new_ndc'] = med.ndc.apply(to_str)  
-    
-    # Left join the med dataset to the mapping information
-    med = med.merge(ndc_map, how='inner', left_on='new_ndc', right_on='new_ndc')
-    
-    # In NDC mapping table, the pharm_class col is structured as a text string, separating different pharm classes from eachother
-    # This can be [PE], [EPC], and others, but we're interested in EPC. Luckily, between each commas, it states if a phrase is [EPC]
-    # So, we just string split by commas and keep phrases containing "[EPC]"
-    def get_EPC(s):
-        """Gets the Established Pharmacologic Class (EPC) from the mapping table"""
-        if type(s) != str:
-            return np.nan
-        words = s.split(",")
-        return [x for x in words if "[EPC]" in x]
-    
-    # Function generates a list of EPCs, as a drug can have multiple EPCs
-    med['EPC'] = med.pharm_classes.apply(get_EPC)
-    
-    return med
-
-    
-    
-def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, anchor_col:str, dtypes: dict, usecols: list) -> pd.DataFrame:
+def timestamp_cohort_data(dataset_path: str, cohort_path:str, time_col:str, anchor_col:str, dtypes: dict, usecols: list) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
 
     def merge_module_cohort() -> pd.DataFrame:
@@ -276,25 +194,23 @@ def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, anchor_col:st
         module = pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col]).drop_duplicates()
 
         # Only consider values in our cohort
-        cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['admittime'])
-        
-        #print(module.head())
-        #print(cohort.head())
+        cohort = pd.read_pickle(cohort_path, compression='gzip')
+
+        # Get outer ranges of a subject's anchor_year_group, then extract year from each lab's charttime
+        cohort['min_year_group'] = cohort.anchor_year_group.str.slice(start=0, stop=4).astype(int)
+        cohort['max_year_group'] = cohort.anchor_year_group.str.slice(start=-4).astype(int)
+        module['admit_year'] = module[time_col].dt.year
 
         # merge module and cohort
-        return module.merge(cohort[['hadm_id', 'admittime','dischtime']], how='inner', left_on='hadm_id', right_on='hadm_id')
+        return module.merge(cohort[['subject_id', 'label', anchor_col, 'max_year_group', 'min_year_group', 'anchor_year']], how='inner', left_on='subject_id', right_on='subject_id')
 
     df_cohort = merge_module_cohort()
-    df_cohort['proc_time_from_admit'] = df_cohort['chartdate'] - df_cohort['admittime']
-    
-    # Print unique counts and value_counts
-    print("# Unique ICD9 Procedures:  ", df_cohort.loc[df_cohort.icd_version == 9].icd_code.dropna().nunique())
-    print("# Unique ICD10 Procedures: ",df_cohort.loc[df_cohort.icd_version == 10].icd_code.dropna().nunique())
-
-    print("\nValue counts of each ICD version:\n", df_cohort.icd_version.value_counts())
+    df_cohort['timedelta_days'] = get_range(df_cohort, time_col, anchor_col, measure='days')
+    df_cohort['timedelta_years'] = get_range(df_cohort, 'admit_year', 'anchor_year', measure='years')
 
     # Only return module measurements within the observation range, sorted by subject_id
-    return df_cohort
+    return df_cohort.loc[(df_cohort.timedelta_years <= 6) & (~df_cohort.timedelta_years.isna())].sort_values(by='subject_id')
+
 
 def preproc_icd_module(module_path:str, adm_cohort_path:str, icd_map_path=None, map_code_colname=None, only_icd10=True) -> pd.DataFrame:
     """Takes an module dataset with ICD codes and puts it in long_format, optionally mapping ICD-codes by a mapping table path"""    
