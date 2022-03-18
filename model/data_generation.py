@@ -42,13 +42,13 @@ class Generator():
         return data
     
     def generate_cond(self):
-        cond=pd.read_csv("./data/long_format/diag/long_diag_icd10_roots_norm.csv.gz", compression='gzip', header=0, index_col=None)
+        cond=pd.read_csv("./data/features/preproc_diag.csv.gz", compression='gzip', header=0, index_col=None)
         cond=cond[cond['hadm_id'].isin(data['hadm_id'])]
         cond_per_adm = cond.groupby('hadm_id').size().max()
         self.cond, self.cond_per_adm = cond, cond_per_adm
     
     def generate_proc(self):
-        proc=pd.read_csv("./data/long_format/proc/preproc_proc_icd10.csv.gz", compression='gzip', header=0, index_col=None)
+        proc=pd.read_csv("./data/features/preproc_proc.csv.gz", compression='gzip', header=0, index_col=None)
         proc=proc[proc['hadm_id'].isin(data['hadm_id'])]
         proc[['start_days', 'dummy','start_hours']] = proc['proc_time_from_admit'].str.split(' ', -1, expand=True)
         proc[['start_hours','min','sec']] = proc['start_hours'].str.split(':', -1, expand=True)
@@ -65,7 +65,7 @@ class Generator():
         self.proc=proc
         
     def generate_meds(self):
-        meds=pd.read_csv("./data/long_format/meds/preproc_med_nonproprietary.csv.gz", compression='gzip', header=0, index_col=None)
+        meds=pd.read_csv("./data/features/preproc_med.csv.gz", compression='gzip', header=0, index_col=None)
         meds[['start_days', 'dummy','start_hours']] = meds['start_hours_from_admit'].str.split(' ', -1, expand=True)
         meds[['start_hours','min','sec']] = meds['start_hours'].str.split(':', -1, expand=True)
         meds['start_time']=pd.to_numeric(meds['start_days'])*24+pd.to_numeric(meds['start_hours'])
@@ -88,11 +88,15 @@ class Generator():
         ####Any stop_time after end of visit is set at end of visit
         meds.loc[meds['stop_time'] > meds['los'],'stop_time']=meds.loc[meds['stop_time'] > meds['los'],'los']
         del meds['los']
+        
+        meds['dose_val_rx']=meds['dose_val_rx'].apply(pd.to_numeric, errors='coerce')
+        
         self.meds=meds
         
     def input_length(self,include_time,predW):
         self.los=include_time
         self.data=self.data[(self.data['los']>=include_time)]
+        self.hids=self.data['hadm_id'].unique()
         self.meds=self.meds[self.meds['hadm_id'].isin(self.data['hadm_id'])]
         self.cond=self.cond[self.cond['hadm_id'].isin(self.data['hadm_id'])]
         self.proc=self.proc[self.proc['hadm_id'].isin(self.data['hadm_id'])]
@@ -147,7 +151,7 @@ class Generator():
         for i in tqdm(range(0,self.los,bucket)): 
             ###MEDS
              if(self.feat_med):
-                sub_meds=self.meds[(self.meds['start_time']>=i) & (self.meds['start_time']<i+bucket)].groupby(['hadm_id','nonproprietaryname']).agg({'stop_time':'max','subject_id':'max'})
+                sub_meds=self.meds[(self.meds['start_time']>=i) & (self.meds['start_time']<i+bucket)].groupby(['hadm_id','drug_name']).agg({'stop_time':'max','subject_id':'max','dose_val_rx':np.nanmean})
                 sub_meds=sub_meds.reset_index()
                 sub_meds['start_time']=t
                 sub_meds['stop_time']=sub_meds['stop_time']/bucket
@@ -171,13 +175,13 @@ class Generator():
         
         ###MEDS
         if(self.feat_med):
-            f2_meds=final_meds.groupby(['hadm_id','nonproprietaryname']).size()
+            f2_meds=final_meds.groupby(['hadm_id','drug_name']).size()
             self.med_per_adm=f2_meds.groupby('hadm_id').sum().reset_index()[0].max()        
             self.medlength_per_adm=final_meds.groupby('hadm_id').size().max()
         
         ###PROC
         if(self.feat_proc):
-            f2_proc=final_proc.groupby(['hadm_id','nonproprietaryname']).size()
+            f2_proc=final_proc.groupby(['hadm_id','icd_code']).size()
             self.proc_per_adm=final_proc.groupby('hadm_id').sum().reset_index()[0].max()        
             self.proclength_per_adm=final_proc.groupby('hadm_id').size().max()
 
@@ -190,7 +194,8 @@ class Generator():
             ###MEDS
             if(self.feat_med):
                 df2=meds[meds['hadm_id']==hid]
-                df2=df2.pivot(index='start_time',columns='nonproprietaryname',values='stop_time')
+                val=df2.pivot(index='start_time',columns='drug_name',values='dose_val_rx')
+                df2=df2.pivot(index='start_time',columns='drug_name',values='stop_time')
                 #print(df2.shape)
                 add_indices = pd.Index(range(los)).difference(df2.index)
                 add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
@@ -198,12 +203,19 @@ class Generator():
                 df2=df2.sort_index()
                 df2=df2.ffill()
                 df2=df2.fillna(0)
+                
+                val=pd.concat([val, add_df])
+                val=val.sort_index()
+                val=val.ffill()
+                val=val.fillna(-1)
                 #print(df2.head())
-                df2.iloc[:,1:]=df2.iloc[:,1:].sub(df2.index,0)
+                df2.iloc[:,0:]=df2.iloc[:,0:].sub(df2.index,0)
                 df2[df2>0]=1
                 df2[df2<0]=0
+                val.iloc[:,0:]=df2.iloc[:,0:]*val.iloc[:,0:]
                 #print(df2.head())
-                dataDic[hid]['Med']=df2.iloc[:,1:].to_dict(orient="list")
+                dataDic[hid]['Med']['signal']=df2.iloc[:,0:].to_dict(orient="list")
+                dataDic[hid]['Med']['val']=val.iloc[:,0:].to_dict(orient="list")
             
             
             ###PROCS
@@ -226,11 +238,10 @@ class Generator():
                 if(grp.shape[0]==0):
                     dataDic[hid]['Cond']={'fids':list(['<PAD>'])}
                 else:
-                    dataDic[hid]['Cond']={'fids':list(grp['root'])}
+                    dataDic[hid]['Cond']={'fids':list(grp['new_icd_code'])}
                 
                 
         ######SAVE DICTIONARIES##############
-        path='C:/Users/mehak/OneDrive - University of Delaware - o365/Beheshti, Rahmat - Mehak - Brennan/model/data/'
 
         with open("./data/dict/dataDic", 'wb') as fp:
             pickle.dump(dataDic, fp)
