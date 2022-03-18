@@ -186,7 +186,7 @@ def get_range(df: pd.DataFrame, time_col:str, anchor_col:str, measure='days') ->
 def preproc_meds(module_path:str, adm_cohort_path:str, mapping:str) -> pd.DataFrame:
   
     adm = pd.read_csv(adm_cohort_path, usecols=['hadm_id', 'admittime'], parse_dates = ['admittime'])
-    med = pd.read_csv(module_path, compression='gzip', usecols=['subject_id', 'hadm_id', 'drug', 'starttime', 'stoptime','ndc'], parse_dates = ['starttime', 'stoptime'])
+    med = pd.read_csv(module_path, compression='gzip', usecols=['subject_id', 'hadm_id', 'drug', 'starttime', 'stoptime','ndc','dose_val_rx'], parse_dates = ['starttime', 'stoptime'])
     med = med.merge(adm, left_on = 'hadm_id', right_on = 'hadm_id', how = 'inner')
     med['start_hours_from_admit'] = med['starttime'] - med['admittime']
     med['stop_hours_from_admit'] = med['stoptime'] - med['admittime']
@@ -201,7 +201,8 @@ def preproc_meds(module_path:str, adm_cohort_path:str, mapping:str) -> pd.DataFr
     med = ndc_meds(med,mapping,output_path)
     
     print("Number of unique type of drug: ", med.drug.nunique())
-    print("Number of unique type of drug (after grouping): ", med.nonproprietaryname.nunique())
+    print("Number of unique type of drug (after grouping to use Non propietary names): ", med.nonproprietaryname.nunique())
+    print("Total number of rows: ", med.shape[0])
     
     return med
     
@@ -286,12 +287,13 @@ def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, anchor_col:st
 
     df_cohort = merge_module_cohort()
     df_cohort['proc_time_from_admit'] = df_cohort['chartdate'] - df_cohort['admittime']
-    
+    df_cohort=df_cohort.dropna()
     # Print unique counts and value_counts
     print("# Unique ICD9 Procedures:  ", df_cohort.loc[df_cohort.icd_version == 9].icd_code.dropna().nunique())
     print("# Unique ICD10 Procedures: ",df_cohort.loc[df_cohort.icd_version == 10].icd_code.dropna().nunique())
 
     print("\nValue counts of each ICD version:\n", df_cohort.icd_version.value_counts())
+    print("Total number of rows: ", df_cohort.shape[0])
 
     # Only return module measurements within the observation range, sorted by subject_id
     return df_cohort
