@@ -6,7 +6,9 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './../..')
-
+if not os.path.exists("./data/cohort"):
+    os.makedirs("./data/cohort")
+    
 def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, disch_col:str, adm_visit_col:str, use_mort:bool, use_ICU:bool):
     """Combines the MIMIC-IV core/patients table information with either the icu/icustays or core/admissions data.
 
@@ -35,7 +37,7 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
             visit = visit.loc[visit.hospital_expire_flag == 0]
 
     pts = pd.read_csv(
-            mimic4_path + "core/patients.csv.gz", compression='gzip', header=0, index_col = None, usecols=[group_col, 'anchor_year', 'anchor_age', 'anchor_year_group', 'dod']
+            mimic4_path + "core/patients.csv.gz", compression='gzip', header=0, index_col = None, usecols=[group_col, 'anchor_year', 'anchor_age', 'anchor_year_group', 'dod','gender']
         )
     pts['yob']= pts['anchor_year'] - pts['anchor_age']  # get yob to ensure a given visit is from an adult
     pts['min_valid_year'] = pts['anchor_year'] + (2019 - pts['anchor_year_group'].str.slice(start=-4).astype(int))
@@ -45,19 +47,25 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
     #[[group_col, visit_col, admit_col, disch_col]]
     if use_ICU:
         visit_pts = visit[[group_col, visit_col, adm_visit_col, admit_col, disch_col]].merge(
-            pts[[group_col, 'anchor_year', 'anchor_age', 'yob', 'min_valid_year', 'dod']], how='inner', left_on=group_col, right_on=group_col
+            pts[[group_col, 'anchor_year', 'anchor_age', 'yob', 'min_valid_year', 'dod','gender']], how='inner', left_on=group_col, right_on=group_col
         )
     else:
         visit_pts = visit[[group_col, visit_col, admit_col, disch_col]].merge(
-                pts[[group_col, 'anchor_year', 'anchor_age', 'yob', 'min_valid_year', 'dod']], how='inner', left_on=group_col, right_on=group_col
+                pts[[group_col, 'anchor_year', 'anchor_age', 'yob', 'min_valid_year', 'dod','gender']], how='inner', left_on=group_col, right_on=group_col
             )
 
     # only take adult patients
-    visit_pts = visit_pts.loc[visit_pts[admit_col].dt.year - visit_pts['yob'] >= 18]
+    visit_pts['Age']=visit_pts[admit_col].dt.year - visit_pts['yob']
+    visit_pts = visit_pts.loc[visit_pts['Age'] >= 18]
+    
+    ##Add Demo data
+    eth = pd.read_csv(mimic4_path + "core/admissions.csv.gz", compression='gzip', header=0, usecols=['hadm_id', 'ethnicity'], index_col=None)
+    visit_pts= visit_pts.merge(eth, how='inner', left_on='hadm_id', right_on='hadm_id')
+    
     if use_ICU:
-        return visit_pts.dropna(subset=['min_valid_year'])[[group_col, visit_col, adm_visit_col, admit_col, disch_col, 'min_valid_year', 'dod']]
+        return visit_pts.dropna(subset=['min_valid_year'])[[group_col, visit_col, adm_visit_col, admit_col, disch_col, 'min_valid_year', 'dod','Age','gender','ethnicity']]
     else:
-        return visit_pts.dropna(subset=['min_valid_year'])[[group_col, visit_col, admit_col, disch_col, 'min_valid_year', 'dod']]
+        return visit_pts.dropna(subset=['min_valid_year'])[[group_col, visit_col, admit_col, disch_col, 'min_valid_year', 'dod','Age','gender','ethnicity']]
 
 
 def validate_row(row, ctrl, invalid, max_year, disch_col, valid_col, gap):
@@ -231,7 +239,7 @@ def extract_data(use_ICU:str, label:str, root_dir, cohort_output=None, summary_o
     )
     #print("pts",pts.head())
     # cols to be extracted from get_case_ctrls
-    cols = [group_col, visit_col, admit_col, disch_col, 'label']
+    cols = [group_col, visit_col, admit_col, disch_col, 'Age','gender','ethnicity','label']
 
     if use_mort:
         cols.append(death_col)
@@ -243,7 +251,9 @@ def extract_data(use_ICU:str, label:str, root_dir, cohort_output=None, summary_o
     
     if use_ICU:
         cols.append(adm_visit_col)
-        
+    #print(cohort.head())
+    
+    
     #print(cohort[cols].head())
     # save output
     cohort[cols].to_csv(root_dir+"/data/cohort/"+cohort_output+".csv.gz", index=False, compression='gzip')

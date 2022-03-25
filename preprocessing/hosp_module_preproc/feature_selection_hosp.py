@@ -2,7 +2,8 @@ import os
 import pickle
 #os.chdir('../../')
 from utils.hosp_preprocess_util import *    # module of preprocessing functions
-
+if not os.path.exists("./data/features"):
+    os.makedirs("./data/features")
 
 def feature_nonicu(cohort_output, diag_flag=True,lab_flag=True,proc_flag=True,med_flag=True):
     if diag_flag:
