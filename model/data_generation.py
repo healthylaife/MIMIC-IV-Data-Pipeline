@@ -8,28 +8,39 @@ import os
 import sys
 from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './../..')
-
+if not os.path.exists("./data/dict"):
+    os.makedirs("./data/dict")
+    
 class Generator():
     def __init__(self,cohort_output,feat_cond,feat_lab,feat_proc,feat_med,include_time=24,bucket=1,predW=0):
         self.feat_cond,self.feat_proc,self.feat_med,self.feat_lab = feat_cond,feat_proc,feat_med,feat_lab
         self.cohort_output=cohort_output
         self.data = self.generate_adm()
+        print("[ READ COHORT ]")
         self.generate_feat()
+        print("[ READ ALL FEATURES ]")
         self.input_length(include_time,predW)
+        print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         self.smooth_meds(bucket)
+        print("[ PROCESSED TIME SERIES TO EQUAL TIME INTERVAL ]")
+        print("[ SUCCESSFULLY SAVED DATA DICTIONARIES ]")
     
     def generate_feat(self):
         if(self.feat_cond):
+            print("[ ======READING DIAGNOSIS ]")
             self.generate_cond()
         if(self.feat_proc):
+            print("[ ======READING PROCEDURES ]")
             self.generate_proc()
         if(self.feat_med):
+            print("[ ======READING MEDICATIONS ]")
             self.generate_meds()
         if(self.feat_lab):
+            print("[ ======READING LABS ]")
             self.generate_labs()
             
     def generate_adm(self):
-        data=pd.read_csv(f"./data/cohort/{summary_output}.csv.gz", compression='gzip', header=0, index_col=None)
+        data=pd.read_csv(f"./data/cohort/{self.cohort_output}.csv.gz", compression='gzip', header=0, index_col=None)
         data['admittime'] = pd.to_datetime(data['admittime'])
         data['dischtime'] = pd.to_datetime(data['dischtime'])
         data['los']=pd.to_timedelta(data['dischtime']-data['admittime'],unit='h')
@@ -43,13 +54,13 @@ class Generator():
     
     def generate_cond(self):
         cond=pd.read_csv("./data/features/preproc_diag.csv.gz", compression='gzip', header=0, index_col=None)
-        cond=cond[cond['hadm_id'].isin(data['hadm_id'])]
+        cond=cond[cond['hadm_id'].isin(self.data['hadm_id'])]
         cond_per_adm = cond.groupby('hadm_id').size().max()
         self.cond, self.cond_per_adm = cond, cond_per_adm
     
     def generate_proc(self):
         proc=pd.read_csv("./data/features/preproc_proc.csv.gz", compression='gzip', header=0, index_col=None)
-        proc=proc[proc['hadm_id'].isin(data['hadm_id'])]
+        proc=proc[proc['hadm_id'].isin(self.data['hadm_id'])]
         proc[['start_days', 'dummy','start_hours']] = proc['proc_time_from_admit'].str.split(' ', -1, expand=True)
         proc[['start_hours','min','sec']] = proc['start_hours'].str.split(':', -1, expand=True)
         proc['start_time']=pd.to_numeric(proc['start_days'])*24+pd.to_numeric(proc['start_hours'])
@@ -57,7 +68,7 @@ class Generator():
         proc=proc[proc['start_time']>=0]
         
         ###Remove where event time is after discharge time
-        proc=pd.merge(proc,data[['hadm_id','los']],on='hadm_id',how='left')
+        proc=pd.merge(proc,self.data[['hadm_id','los']],on='hadm_id',how='left')
         proc['sanity']=proc['los']-proc['start_time']
         proc=proc[proc['sanity']>0]
         del proc['sanity']
@@ -78,8 +89,8 @@ class Generator():
         meds=meds[meds['sanity']>0]
         del meds['sanity']
         #####Select hadm_id as in main file
-        meds=meds[meds['hadm_id'].isin(data['hadm_id'])]
-        meds=pd.merge(meds,data[['hadm_id','los']],on='hadm_id',how='left')
+        meds=meds[meds['hadm_id'].isin(self.data['hadm_id'])]
+        meds=pd.merge(meds,self.data[['hadm_id','los']],on='hadm_id',how='left')
 
         #####Remove where start time is after end of visit
         meds['sanity']=meds['los']-meds['start_time']
@@ -97,11 +108,8 @@ class Generator():
         self.los=include_time
         self.data=self.data[(self.data['los']>=include_time)]
         self.hids=self.data['hadm_id'].unique()
-        self.meds=self.meds[self.meds['hadm_id'].isin(self.data['hadm_id'])]
-        self.cond=self.cond[self.cond['hadm_id'].isin(self.data['hadm_id'])]
-        self.proc=self.proc[self.proc['hadm_id'].isin(self.data['hadm_id'])]
-        self.labs=self.labs[self.labs['hadm_id'].isin(self.data['hadm_id'])]
-        
+        if(self.feat_cond):
+            self.cond=self.cond[self.cond['hadm_id'].isin(self.data['hadm_id'])]
         self.data['select_time']=self.data['los']-include_time
         self.data['los']=include_time
 
@@ -109,6 +117,7 @@ class Generator():
         
         ###MEDS
         if(self.feat_med):
+            self.meds=self.meds[self.meds['hadm_id'].isin(self.data['hadm_id'])]
             self.meds=pd.merge(self.meds,self.data[['hadm_id','select_time']],on='hadm_id',how='left')
             self.meds['stop_time']=self.meds['stop_time']-self.meds['select_time']
             self.meds['start_time']=self.meds['start_time']-self.meds['select_time']
@@ -117,12 +126,14 @@ class Generator():
         
         ###PROCS
         if(self.feat_proc):
+            self.proc=self.proc[self.proc['hadm_id'].isin(self.data['hadm_id'])]
             self.proc=pd.merge(self.proc,self.data[['hadm_id','select_time']],on='hadm_id',how='left')
             self.proc['start_time']=self.proc['start_time']-self.proc['select_time']
             self.proc=self.proc[self.proc['start_time']>=0]
         
         ###LABS
         if(self.feat_lab):
+            self.labs=self.labs[self.labs['hadm_id'].isin(self.data['hadm_id'])]
             self.labs=pd.merge(self.labs,self.data[['hadm_id','select_time']],on='hadm_id',how='left')
             self.labs['start_time']=self.labs['start_time']-self.labs['select_time']
             self.labs=self.labs[self.labs['start_time']>=0]
@@ -171,7 +182,7 @@ class Generator():
                     final_proc=final_proc.append(sub_proc)
             
              t=t+1
-        los=int(los/bucket)
+        los=int(self.los/bucket)
         
         ###MEDS
         if(self.feat_med):
@@ -190,12 +201,16 @@ class Generator():
         
         
     def create_Dict(self,los,meds,proc):
+        dataDic={}
+        for hid in self.hids:
+            grp=self.data[self.data['hadm_id']==hid]
+            dataDic[hid]={'Cond':{},'Proc':{},'Med':{},'Lab':{},'label':int(grp['label'])}
         for hid in tqdm(hids):
             ###MEDS
             if(self.feat_med):
                 df2=meds[meds['hadm_id']==hid]
-                val=df2.pivot(index='start_time',columns='drug_name',values='dose_val_rx')
-                df2=df2.pivot(index='start_time',columns='drug_name',values='stop_time')
+                val=df2.pivot_table(index='start_time',columns='drug_name',values='dose_val_rx')
+                df2=df2.pivot_table(index='start_time',columns='drug_name',values='stop_time')
                 #print(df2.shape)
                 add_indices = pd.Index(range(los)).difference(df2.index)
                 add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
@@ -221,7 +236,8 @@ class Generator():
             ###PROCS
             if(self.feat_proc):
                 df2=proc[proc['hadm_id']==hid]
-                df2=df2.pivot(index='start_time',columns='icd_code',values='start_time')
+                df2['val']=1
+                df2=df2.pivot_table(index='start_time',columns='icd_code',values='val')
                 #print(df2.shape)
                 add_indices = pd.Index(range(los)).difference(df2.index)
                 add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)

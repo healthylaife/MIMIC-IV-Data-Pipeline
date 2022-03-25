@@ -4,7 +4,8 @@ import pickle
 #os.chdir('../../')
 #print(os.getcwd())
 from utils.icu_preprocess_util import *    # module of preprocessing functions
-
+if not os.path.exists("./data/features"):
+    os.makedirs("./data/features")
 
 def feature_icu(cohort_output, diag_flag=True,out_flag=True,chart_flag=True,proc_flag=True,med_flag=True):
     if diag_flag:

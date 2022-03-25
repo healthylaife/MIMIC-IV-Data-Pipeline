@@ -118,6 +118,7 @@ def preproc_meds(module_path:str, adm_cohort_path:str) -> pd.DataFrame:
     #print(med.isna().sum())
     #med[['amount','rate']]=med[['amount','rate']].fillna(0)
     print("# of unique type of drug: ", med.itemid.nunique())
+    print("# Admissions:  ", med.stay_id.nunique())
     print("# Total rows",  med.shape[0])
     
     return med
@@ -146,7 +147,7 @@ def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict,
     df_cohort=df_cohort.dropna()
     # Print unique counts and value_counts
     print("# Unique Events:  ", df_cohort.itemid.dropna().nunique())
-
+    print("# Admissions:  ", df_cohort.stay_id.nunique())
     print("Total rows", df_cohort.shape[0])
 
     # Only return module measurements within the observation range, sorted by subject_id
@@ -160,7 +161,7 @@ def preproc_out(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict, 
         
         # read module w/ custom params
         module = pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col]).drop_duplicates()
-        print(module.head())
+        #print(module.head())
         # Only consider values in our cohort
         cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['intime'])
         
@@ -174,8 +175,8 @@ def preproc_out(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict, 
     df_cohort['event_time_from_admit'] = df_cohort[time_col] - df_cohort['intime']
     df_cohort=df_cohort.dropna()
     # Print unique counts and value_counts
-    print("# Unique Events:  ", df_cohort.itemid.dropna().nunique())
-
+    print("# Unique Events:  ", df_cohort.itemid.nunique())
+    print("# Admissions:  ", df_cohort.stay_id.nunique())
     print("Total rows", df_cohort.shape[0])
 
     # Only return module measurements within the observation range, sorted by subject_id
@@ -205,7 +206,7 @@ def preproc_chart(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict
     df_cohort=df_cohort.dropna()
     # Print unique counts and value_counts
     print("# Unique Events:  ", df_cohort.itemid.dropna().nunique())
-
+    print("# Admissions:  ", df_cohort.stay_id.nunique())
     print("Total rows", df_cohort.shape[0])
 
     # Only return module measurements within the observation range, sorted by subject_id
@@ -243,7 +244,7 @@ def preproc_icd_module(module_path:str, adm_cohort_path:str, icd_map_path=None, 
         df[col_name] = df['icd_code'].values
 
         # Group identical ICD9 codes, then convert all ICD9 codes within a group to ICD10
-        for code, group in tqdm(df.loc[df.icd_version == 9].groupby(by='icd_code')):
+        for code, group in df.loc[df.icd_version == 9].groupby(by='icd_code'):
             new_code = icd_9to10(code)
             for idx in group.index.values:
                 # Modify values of original df at the indexes in the groups
@@ -266,6 +267,8 @@ def preproc_icd_module(module_path:str, adm_cohort_path:str, icd_map_path=None, 
         print("# unique ICD-10 codes",module[module['icd_version']==10]['icd_code'].nunique())
         print("# unique ICD-10 codes (After converting ICD-9 to ICD-10)",module['root_icd10_convert'].nunique())
         print("# unique ICD-10 codes (After clinical gruping ICD-10 codes)",module['root'].nunique())
+        print("# Admissions:  ", module.stay_id.nunique())
+        print("Total rows", module.shape[0])
     return module
 
 

@@ -203,6 +203,7 @@ def preproc_meds(module_path:str, adm_cohort_path:str, mapping:str) -> pd.DataFr
     print("Number of unique type of drug: ", med.drug.nunique())
     print("Number of unique type of drug (after grouping to use Non propietary names): ", med.nonproprietaryname.nunique())
     print("Total number of rows: ", med.shape[0])
+    print("# Admissions:  ", med.hadm_id.nunique())
     
     return med
     
@@ -293,6 +294,7 @@ def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, anchor_col:st
     print("# Unique ICD10 Procedures: ",df_cohort.loc[df_cohort.icd_version == 10].icd_code.dropna().nunique())
 
     print("\nValue counts of each ICD version:\n", df_cohort.icd_version.value_counts())
+    print("# Admissions:  ", df_cohort.hadm_id.nunique())
     print("Total number of rows: ", df_cohort.shape[0])
 
     # Only return module measurements within the observation range, sorted by subject_id
@@ -353,6 +355,7 @@ def preproc_icd_module(module_path:str, adm_cohort_path:str, icd_map_path=None, 
         print("# unique ICD-10 codes",module[module['icd_version']==10]['icd_code'].nunique())
         print("# unique ICD-10 codes (After converting ICD-9 to ICD-10)",module['root_icd10_convert'].nunique())
         print("# unique ICD-10 codes (After clinical gruping ICD-10 codes)",module['root'].nunique())
+        print("# Admissions:  ", module.hadm_id.nunique())
     return module
 
 

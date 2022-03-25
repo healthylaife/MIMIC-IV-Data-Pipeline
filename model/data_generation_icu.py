@@ -8,30 +8,49 @@ import os
 import sys
 from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './../..')
-
+if not os.path.exists("./data/dict"):
+    os.makedirs("./data/dict")
+    
 class Generator():
-    def __init__(self,cohort_output,feat_cond,feat_proc,feat_out,feat_chart,feat_med,include_time=24,bucket=1,predW=0):
+    def __init__(self,cohort_output,if_mort,feat_cond,feat_proc,feat_out,feat_chart,feat_med,include_time=24,bucket=1,predW=6):
         self.feat_cond,self.feat_proc,self.feat_out,self.feat_chart,self.feat_med = feat_cond,feat_proc,feat_out,feat_chart,feat_med
         self.cohort_output=cohort_output
+        
         self.data = self.generate_adm()
+        print("[ READ COHORT ]")
+        
         self.generate_feat()
-        self.input_length(include_time,predW)
+        print("[ READ ALL FEATURES ]")
+        
+        if if_mort:
+            self.mortality_length(include_time,predW)
+            print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
+        else:
+            self.readmission_length(include_time,predW)
+            print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
+        
         self.smooth_meds(bucket)
+        print("[ SUCCESSFULLY SAVED DATA DICTIONARIES ]")
     
     def generate_feat(self):
         if(self.feat_cond):
+            print("[ ======READING DIAGNOSIS ]")
             self.generate_cond()
         if(self.feat_proc):
+            print("[ ======READING PROCEDURES ]")
             self.generate_proc()
         if(self.feat_out):
+            print("[ ======READING OUT EVENTS ]")
             self.generate_out()
         if(self.feat_chart):
+            print("[ ======READING CHART EVENTS ]")
             self.generate_chart()
         if(self.feat_med):
+            print("[ ======READING MEDICATIONS ]")
             self.generate_meds()
 
     def generate_adm(self):
-        data=pd.read_csv(f"./data/cohort/{summary_output}.csv.gz", compression='gzip', header=0, index_col=None)
+        data=pd.read_csv(f"./data/cohort/{self.cohort_output}.csv.gz", compression='gzip', header=0, index_col=None)
         data['intime'] = pd.to_datetime(data['intime'])
         data['outtime'] = pd.to_datetime(data['outtime'])
         data['los']=pd.to_timedelta(data['outtime']-data['intime'],unit='h')
@@ -41,17 +60,18 @@ class Generator():
         data['los']=pd.to_numeric(data['days'])*24+pd.to_numeric(data['hours'])
         data=data.drop(columns=['days', 'dummy','hours','min','sec'])
         data=data[data['los']>0]
+        data['Age']=data['Age'].astype(int)
         return data
     
     def generate_cond(self):
         cond=pd.read_csv("./data/features/preproc_diag_icu.csv.gz", compression='gzip', header=0, index_col=None)
-        cond=cond[cond['stay_id'].isin(data['stay_id'])]
+        cond=cond[cond['stay_id'].isin(self.data['stay_id'])]
         cond_per_adm = cond.groupby('stay_id').size().max()
         self.cond, self.cond_per_adm = cond, cond_per_adm
     
     def generate_proc(self):
         proc=pd.read_csv("./data/features/preproc_proc_icu.csv.gz", compression='gzip', header=0, index_col=None)
-        proc=proc[proc['stay_id'].isin(data['stay_id'])]
+        proc=proc[proc['stay_id'].isin(self.data['stay_id'])]
         proc[['start_days', 'dummy','start_hours']] = proc['event_time_from_admit'].str.split(' ', -1, expand=True)
         proc[['start_hours','min','sec']] = proc['start_hours'].str.split(':', -1, expand=True)
         proc['start_time']=pd.to_numeric(proc['start_days'])*24+pd.to_numeric(proc['start_hours'])
@@ -59,7 +79,7 @@ class Generator():
         proc=proc[proc['start_time']>=0]
         
         ###Remove where event time is after discharge time
-        proc=pd.merge(proc,data[['stay_id','los']],on='stay_id',how='left')
+        proc=pd.merge(proc,self.data[['stay_id','los']],on='stay_id',how='left')
         proc['sanity']=proc['los']-proc['start_time']
         proc=proc[proc['sanity']>0]
         del proc['sanity']
@@ -68,7 +88,7 @@ class Generator():
         
     def generate_out(self):
         out=pd.read_csv("./data/features/preproc_out_icu.csv.gz", compression='gzip', header=0, index_col=None)
-        out=out[out['stay_id'].isin(data['stay_id'])]
+        out=out[out['stay_id'].isin(self.data['stay_id'])]
         out[['start_days', 'dummy','start_hours']] = out['event_time_from_admit'].str.split(' ', -1, expand=True)
         out[['start_hours','min','sec']] = out['start_hours'].str.split(':', -1, expand=True)
         out['start_time']=pd.to_numeric(out['start_days'])*24+pd.to_numeric(out['start_hours'])
@@ -76,7 +96,7 @@ class Generator():
         out=out[out['start_time']>=0]
         
         ###Remove where event time is after discharge time
-        out=pd.merge(out,data[['stay_id','los']],on='stay_id',how='left')
+        out=pd.merge(out,self.data[['stay_id','los']],on='stay_id',how='left')
         out['sanity']=out['los']-out['start_time']
         out=out[out['sanity']>0]
         del out['sanity']
@@ -86,7 +106,7 @@ class Generator():
         
     def generate_chart(self):
         chart=pd.read_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', header=0, index_col=None)
-        chart=chart[chart['stay_id'].isin(data['stay_id'])]
+        chart=chart[chart['stay_id'].isin(self.data['stay_id'])]
         chart[['start_days', 'dummy','start_hours']] = chart['event_time_from_admit'].str.split(' ', -1, expand=True)
         chart[['start_hours','min','sec']] = chart['start_hours'].str.split(':', -1, expand=True)
         chart['start_time']=pd.to_numeric(chart['start_days'])*24+pd.to_numeric(chart['start_hours'])
@@ -94,7 +114,7 @@ class Generator():
         chart=chart[chart['start_time']>=0]
         
         ###Remove where event time is after discharge time
-        chart=pd.merge(chart,data[['stay_id','los']],on='stay_id',how='left')
+        chart=pd.merge(chart,self.data[['stay_id','los']],on='stay_id',how='left')
         chart['sanity']=chart['los']-chart['start_time']
         chart=chart[chart['sanity']>0]
         del chart['sanity']
@@ -117,8 +137,8 @@ class Generator():
         meds=meds[meds['sanity']>0]
         del meds['sanity']
         #####Select hadm_id as in main file
-        meds=meds[meds['stay_id'].isin(data['stay_id'])]
-        meds=pd.merge(meds,data[['stay_id','los']],on='stay_id',how='left')
+        meds=meds[meds['stay_id'].isin(self.data['stay_id'])]
+        meds=pd.merge(meds,self.data[['stay_id','los']],on='stay_id',how='left')
 
         #####Remove where start time is after end of visit
         meds['sanity']=meds['los']-meds['start_time']
@@ -132,16 +152,50 @@ class Generator():
         meds['amount']=meds['amount'].apply(pd.to_numeric, errors='coerce')
         
         self.meds=meds
+    
+    def mortality_length(self,include_time,predW):
+        self.los=include_time
+        self.data=self.data[(self.data['los']>=include_time+predW)]
+        self.hids=self.data['stay_id'].unique()
         
-    def input_length(self,include_time,predW):
+        if(self.feat_cond):
+            self.cond=self.cond[self.cond['stay_id'].isin(self.data['stay_id'])]
+        
+        self.data['los']=include_time
+
+        ####Make equal length input time series and remove data for pred window if needed
+        
+        ###MEDS
+        if(self.feat_med):
+            self.meds=self.meds[self.meds['stay_id'].isin(self.data['stay_id'])]
+            self.meds=self.meds[self.meds['start_time']<=include_time]
+            self.meds.loc[self.meds.stop_time >include_time, 'stop_time']=include_time
+                    
+        
+        ###PROCS
+        if(self.feat_proc):
+            self.proc=self.proc[self.proc['stay_id'].isin(self.data['stay_id'])]
+            self.proc=self.proc[self.proc['start_time']<=include_time]
+            
+        ###OUT
+        if(self.feat_out):
+            self.out=self.out[self.out['stay_id'].isin(self.data['stay_id'])]
+            self.out=self.out[self.out['start_time']<=include_time]
+            
+       ###CHART
+        if(self.feat_chart):
+            self.chart=self.out[self.chart['stay_id'].isin(self.data['stay_id'])]
+            self.chart=self.chart[self.chart['start_time']<=include_time]
+        
+        self.los=include_time
+                
+    def readmission_length(self,include_time):
         self.los=include_time
         self.data=self.data[(self.data['los']>=include_time)]
         self.hids=self.data['stay_id'].unique()
-        self.meds=self.meds[self.meds['stay_id'].isin(self.data['stay_id'])]
-        self.cond=self.cond[self.cond['stay_id'].isin(self.data['stay_id'])]
-        self.proc=self.proc[self.proc['stay_id'].isin(self.data['stay_id'])]
-        self.labs=self.labs[self.labs['stay_id'].isin(self.data['stay_id'])]
         
+        if(self.feat_cond):
+            self.cond=self.cond[self.cond['stay_id'].isin(self.data['stay_id'])]
         self.data['select_time']=self.data['los']-include_time
         self.data['los']=include_time
 
@@ -149,6 +203,7 @@ class Generator():
         
         ###MEDS
         if(self.feat_med):
+            self.meds=self.meds[self.meds['stay_id'].isin(self.data['stay_id'])]
             self.meds=pd.merge(self.meds,self.data[['stay_id','select_time']],on='stay_id',how='left')
             self.meds['stop_time']=self.meds['stop_time']-self.meds['select_time']
             self.meds['start_time']=self.meds['start_time']-self.meds['select_time']
@@ -157,34 +212,25 @@ class Generator():
         
         ###PROCS
         if(self.feat_proc):
+            self.proc=self.proc[self.proc['stay_id'].isin(self.data['stay_id'])]
             self.proc=pd.merge(self.proc,self.data[['stay_id','select_time']],on='stay_id',how='left')
             self.proc['start_time']=self.proc['start_time']-self.proc['select_time']
             self.proc=self.proc[self.proc['start_time']>=0]
             
         ###OUT
         if(self.feat_out):
+            self.out=self.out[self.out['stay_id'].isin(self.data['stay_id'])]
             self.out=pd.merge(self.out,self.data[['stay_id','select_time']],on='stay_id',how='left')
             self.out['start_time']=self.out['start_time']-self.out['select_time']
             self.out=self.out[self.out['start_time']>=0]
             
        ###CHART
         if(self.feat_chart):
+            self.chart=self.out[self.chart['stay_id'].isin(self.data['stay_id'])]
             self.chart=pd.merge(self.chart,self.data[['stay_id','select_time']],on='stay_id',how='left')
             self.chart['start_time']=self.chart['start_time']-self.chart['select_time']
             self.chart=self.chart[self.chart['start_time']>=0]
         
-
-        if(predW):
-            self.los=include_time-predW
-            if(self.feat_med):
-                self.meds=self.meds[self.meds['start_time']<los]
-                self.meds.loc[self.meds['stop_time'] > los,'stop_time']=los
-            if(self.feat_proc):
-                self.proc=self.proc[self.proc['start_time']<los]
-            if(self.feat_out):
-                self.out=self.out[self.out['start_time']<los]
-            if(self.feat_chart):
-                self.chart=self.chart[self.chart['start_time']<los]
             
     def smooth_meds(self,bucket):
         final_meds=pd.DataFrame()
@@ -226,7 +272,7 @@ class Generator():
                     
               ###OUT
              if(self.feat_out):
-                sub_proc=self.out[(self.out['start_time']>=i) & (self.out['start_time']<i+bucket)].groupby(['stay_id','itemid']).agg({'subject_id':'max'})
+                sub_out=self.out[(self.out['start_time']>=i) & (self.out['start_time']<i+bucket)].groupby(['stay_id','itemid']).agg({'subject_id':'max'})
                 sub_out=sub_out.reset_index()
                 sub_out['start_time']=t
                 if final_out.empty:
@@ -246,46 +292,54 @@ class Generator():
                     final_chart=final_chart.append(sub_chart)
             
              t=t+1
-        los=int(los/bucket)
+        los=int(self.los/bucket)
+        
         
         ###MEDS
         if(self.feat_med):
             f2_meds=final_meds.groupby(['stay_id','itemid','orderid']).size()
-            self.med_per_adm=f2_meds.groupby('stay_id').sum().reset_index()[0].max()        
+            self.med_per_adm=f2_meds.groupby('stay_id').sum().reset_index()[0].max()                 
             self.medlength_per_adm=final_meds.groupby('stay_id').size().max()
         
         ###PROC
         if(self.feat_proc):
             f2_proc=final_proc.groupby(['stay_id','itemid']).size()
-            self.proc_per_adm=final_proc.groupby('stay_id').sum().reset_index()[0].max()        
+            self.proc_per_adm=f2_proc.groupby('stay_id').sum().reset_index()[0].max()       
             self.proclength_per_adm=final_proc.groupby('stay_id').size().max()
             
         ###OUT
         if(self.feat_out):
             f2_out=final_out.groupby(['stay_id','itemid']).size()
-            self.out_per_adm=final_out.groupby('stay_id').sum().reset_index()[0].max()        
+            self.out_per_adm=f2_out.groupby('stay_id').sum().reset_index()[0].max() 
             self.outlength_per_adm=final_out.groupby('stay_id').size().max()
             
             
         ###chart
         if(self.feat_chart):
             f2_chart=final_chart.groupby(['stay_id','itemid']).size()
-            self.chart_per_adm=final_chart.groupby('stay_id').sum().reset_index()[0].max()        
+            self.chart_per_adm=f2_chart.groupby('stay_id').sum().reset_index()[0].max()             
             self.chartlength_per_adm=final_chart.groupby('stay_id').size().max()
-
+        
+        print("[ PROCESSED TIME SERIES TO EQUAL TIME INTERVAL ]")
         ###CREATE DICT
-        create_Dict(final_meds,final_proc,final_out,final_chart,los)
+        self.create_Dict(final_meds,final_proc,final_out,final_chart,los)
         
     
         
     def create_Dict(self,meds,proc,out,chart,los):
+        dataDic={}
+        for hid in self.hids:
+            grp=self.data[self.data['stay_id']==hid]
+            dataDic[hid]={'Cond':{},'Proc':{},'Med':{},'Out':{},'Chart':{},'ethnicity':grp['ethnicity'].iloc[0],'age':int(grp['Age']),'gender':grp['gender'].iloc[0],'label':int(grp['label'])}
         for hid in tqdm(self.hids):
             ###MEDS
             if(self.feat_med):
                 df2=meds[meds['stay_id']==hid]
-                rate=df2.pivot(index='start_time',columns='itemid',values='rate')
-                amount=df2.pivot(index='start_time',columns='itemid',values='amount')
-                df2=df2.pivot(index='start_time',columns='itemid',values='stop_time')
+                #print(df2)
+                rate=df2.pivot_table(index='start_time',columns='itemid',values='rate')
+                #print(rate)
+                amount=df2.pivot_table(index='start_time',columns='itemid',values='amount')
+                df2=df2.pivot_table(index='start_time',columns='itemid',values='stop_time')
                 #print(df2.shape)
                 add_indices = pd.Index(range(los)).difference(df2.index)
                 add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
@@ -318,7 +372,9 @@ class Generator():
             ###PROCS
             if(self.feat_proc):
                 df2=proc[proc['stay_id']==hid]
-                df2=df2.pivot(index='start_time',columns='itemid',values='start_time')
+                df2['val']=1
+                #print(df2)
+                df2=df2.pivot_table(index='start_time',columns='itemid',values='val')
                 #print(df2.shape)
                 add_indices = pd.Index(range(los)).difference(df2.index)
                 add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
@@ -333,7 +389,8 @@ class Generator():
             ###OUT
             if(self.feat_out):
                 df2=out[out['stay_id']==hid]
-                df2=df2.pivot(index='start_time',columns='itemid',values='start_time')
+                df2['val']=1
+                df2=df2.pivot_table(index='start_time',columns='itemid',values='val')
                 #print(df2.shape)
                 add_indices = pd.Index(range(los)).difference(df2.index)
                 add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
@@ -348,7 +405,8 @@ class Generator():
             ###CHART
             if(self.feat_chart):
                 df2=chart[chart['stay_id']==hid]
-                df2=df2.pivot(index='start_time',columns='itemid',values='start_time')
+                df2['val']=1
+                df2=df2.pivot_table(index='start_time',columns='itemid',values='val')
                 #print(df2.shape)
                 add_indices = pd.Index(range(los)).difference(df2.index)
                 add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
@@ -366,31 +424,56 @@ class Generator():
                     dataDic[hid]['Cond']={'fids':list(['<PAD>'])}
                 else:
                     dataDic[hid]['Cond']={'fids':list(grp['new_icd_code'])}
-                
+            
                 
         ######SAVE DICTIONARIES##############
-
+        metaDic={'Cond':{},'Proc':{},'Med':{},'Out':{},'Chart':{},'LOS':{}}
+        metaDic['LOS']=los
         with open("./data/dict/dataDic", 'wb') as fp:
             pickle.dump(dataDic, fp)
 
-        with open("./data/dict/hadmDic", 'wb') as fp:
-            pickle.dump(hids, fp)
+        with open("./data/dict/stayDic", 'wb') as fp:
+            pickle.dump(self.hids, fp)
         
+        with open("./data/dict/ethVocab", 'wb') as fp:
+            pickle.dump(list(self.data['ethnicity'].unique()), fp)
+            self.eth_vocab = self.data['ethnicity'].nunique()
+            
+        with open("./data/dict/ageVocab", 'wb') as fp:
+            pickle.dump(list(self.data['Age'].unique()), fp)
+            self.eth_vocab = self.data['Age'].nunique()
+            
         if(self.feat_med):
             with open("./data/dict/medVocab", 'wb') as fp:
-                pickle.dump(list(meds['nonproprietaryname'].unique()), fp)
-            self.med_vocab = meds['nonproprietaryname'].nunique()
+                pickle.dump(list(meds['itemid'].unique()), fp)
+            self.med_vocab = meds['itemid'].nunique()
+            metaDic['Med']=self.med_per_adm
+            
+        if(self.feat_out):
+            with open("./data/dict/outVocab", 'wb') as fp:
+                pickle.dump(list(out['itemid'].unique()), fp)
+            self.out_vocab = out['itemid'].nunique()
+            metaDic['Out']=self.out_per_adm
+            
+        if(self.feat_chart):
+            with open("./data/dict/chartVocab", 'wb') as fp:
+                pickle.dump(list(chart['itemid'].unique()), fp)
+            self.chart_vocab = chart['itemid'].nunique()
+            metaDic['Chart']=self.chart_per_adm
         
         if(self.feat_cond):
             with open("./data/dict/condVocab", 'wb') as fp:
-                pickle.dump(list(self.cond['root'].unique()), fp)
-            self.cond_vocab = cond['root'].nunique()
+                pickle.dump(list(self.cond['new_icd_code'].unique()), fp)
+            self.cond_vocab = self.cond['new_icd_code'].nunique()
+            metaDic['Cond']=self.cond_per_adm
         
         if(self.feat_proc):    
             with open("./data/dict/procVocab", 'wb') as fp:
-                pickle.dump(list(self.proc['root'].unique()), fp)
-            self.proc_vocab = self.proc['root'].unique()
+                pickle.dump(list(proc['itemid'].unique()), fp)
+            self.proc_vocab = proc['itemid'].nunique()
+            metaDic['Proc']=self.proc_per_adm
             
-
+        with open("./data/dict/metaDic", 'wb') as fp:
+            pickle.dump(metaDic, fp)
 
 
