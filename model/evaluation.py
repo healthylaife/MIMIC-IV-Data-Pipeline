@@ -20,7 +20,8 @@ if not os.path.exists("./data/output"):
 class Loss(nn.Module):
     def __init__(self,device,acc,ppv,sensi,tnr,npv,auroc,aurocPlot,auprc,auprcPlot,callb,callbPlot):
         super(Loss, self).__init__()
-        self.classify_loss = nn.BCELoss()
+        #self.classify_loss = nn.BCELoss()
+        self.classify_loss = nn.BCEWithLogitsLoss()
         self.device=device
         self.acc=acc
         self.ppv=ppv
@@ -34,7 +35,7 @@ class Loss(nn.Module):
         self.callb=callb
         self.callbPlot=callbPlot
 
-    def forward(self, prob, labels, train=True):
+    def forward(self, prob, labels,logits, train=True):
         classify_loss='NA' 
         auc,apr='NA'
         base='NA'
@@ -52,6 +53,7 @@ class Loss(nn.Module):
         #print(labels.shape)
         prob=prob.type(torch.FloatTensor)
         labels=labels.type(torch.FloatTensor)
+        logits=logits.type(torch.FloatTensor)
         
         pos_ind = labels >= 0.5
         neg_ind = labels < 0.5
@@ -72,8 +74,8 @@ class Loss(nn.Module):
             neg_label=neg_label.to(self.device)
             neg_loss = self.classify_loss(neg_prob, neg_label)
         
-        classify_loss = pos_loss + neg_loss
-        # classify_loss = self.classify_loss(prob, labels)
+        #classify_loss = pos_loss + neg_loss
+        classify_loss = self.classify_loss(logits, labels)
         
         if train:
             return classify_loss

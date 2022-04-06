@@ -12,7 +12,8 @@ ARG_PARSER.add_argument('--batch_size', default=200, type=int)
 ARG_PARSER.add_argument('--test_size', default=0.2, type=int)
 ARG_PARSER.add_argument('--val_size', default=0.1, type=int)
 
-ARG_PARSER.add_argument('--num_epochs', default=100, type=int)
+ARG_PARSER.add_argument('--num_epochs', default=50, type=int)
+ARG_PARSER.add_argument('--patience', default=10, type=int)
 
 
 # ARG_PARSER.add_argument('--cond_seq_len', default=39, type=int)#473
@@ -28,8 +29,8 @@ ARG_PARSER.add_argument('--num_epochs', default=100, type=int)
 # ARG_PARSER.add_argument('--chart_vocab_size', default=76, type=int)#74,75
 
 ARG_PARSER.add_argument('--embedding_size', default=124, type=float)
-ARG_PARSER.add_argument('--rnn_size', default=256, type=float)
-ARG_PARSER.add_argument('--lrn_rate', default=0.0001, type=float)
+ARG_PARSER.add_argument('--rnn_size', default=512, type=float)
+ARG_PARSER.add_argument('--lrn_rate', default=0.001, type=float)
 
 
 args = ARG_PARSER.parse_args(args=[])
