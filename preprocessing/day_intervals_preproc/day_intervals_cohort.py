@@ -5,6 +5,10 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
+import importlib
+import disease_cohort
+importlib.reload(disease_cohort)
+import disease_cohort
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './../..')
 if not os.path.exists("./data/cohort"):
     os.makedirs("./data/cohort")
@@ -191,7 +195,7 @@ def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit
     # print(f"[ {gap.days} DAYS ] {invalid.shape[0]} hadm_ids are invalid")
 
 
-def extract_data(use_ICU:str, label:str, root_dir, cohort_output=None, summary_output=None):
+def extract_data(use_ICU:str, label:str, icd_code:str, root_dir, cohort_output=None, summary_output=None):
     """Extracts cohort data and summary from MIMIC-IV data based on provided parameters.
 
     Parameters:
@@ -212,7 +216,8 @@ def extract_data(use_ICU:str, label:str, root_dir, cohort_output=None, summary_o
     group_col, visit_col, admit_col, disch_col, death_col, adm_visit_col = "", "", "", "", "", ""
     use_mort = label == "Mortality" # change to boolean value
     use_ICU = use_ICU == "ICU" # change to boolean value
-
+    use_disease=icd_code!="No Disease Filter"
+    
     if use_ICU:
         group_col='subject_id'
         visit_col='stay_id'
@@ -253,7 +258,14 @@ def extract_data(use_ICU:str, label:str, root_dir, cohort_output=None, summary_o
         cols.append(adm_visit_col)
     #print(cohort.head())
     
-    
+    if use_disease:
+        hids=disease_cohort.extract_diag_cohort(cohort['hadm_id'],icd_code,root_dir+"/mimic-iv-1.0/")
+        #print(hids.shape)
+        #print(cohort.shape)
+        #print(len(list(set(hids['hadm_id'].unique()).intersection(set(cohort['hadm_id'].unique())))))
+        cohort=cohort[cohort['hadm_id'].isin(hids['hadm_id'])]
+        cohort_output=cohort_output+"_"+icd_code
+        summary_output=summary_output+"_"+icd_code
     #print(cohort[cols].head())
     # save output
     cohort[cols].to_csv(root_dir+"/data/cohort/"+cohort_output+".csv.gz", index=False, compression='gzip')

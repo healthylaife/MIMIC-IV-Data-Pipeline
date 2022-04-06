@@ -26,7 +26,7 @@ class Generator():
             self.mortality_length(include_time,predW)
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         else:
-            self.readmission_length(include_time,predW)
+            self.readmission_length(include_time)
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         
         self.smooth_meds(bucket)
@@ -105,19 +105,26 @@ class Generator():
         
         
     def generate_chart(self):
-        chart=pd.read_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', header=0, index_col=None)
-        chart=chart[chart['stay_id'].isin(self.data['stay_id'])]
-        chart[['start_days', 'dummy','start_hours']] = chart['event_time_from_admit'].str.split(' ', -1, expand=True)
-        chart[['start_hours','min','sec']] = chart['start_hours'].str.split(':', -1, expand=True)
-        chart['start_time']=pd.to_numeric(chart['start_days'])*24+pd.to_numeric(chart['start_hours'])
-        chart=chart.drop(columns=['start_days', 'dummy','start_hours','min','sec'])
-        chart=chart[chart['start_time']>=0]
-        
-        ###Remove where event time is after discharge time
-        chart=pd.merge(chart,self.data[['stay_id','los']],on='stay_id',how='left')
-        chart['sanity']=chart['los']-chart['start_time']
-        chart=chart[chart['sanity']>0]
-        del chart['sanity']
+        chunksize = 10000000
+        final=pd.DataFrame()
+        for chart in tqdm(pd.read_csv("./data/features/preproc_chart.csv.gz", compression='gzip', header=0, index_col=None,chunksize=chunksize)):
+            chart=chart[chart['stay_id'].isin(self.data['stay_id'])]
+            chart[['start_days', 'dummy','start_hours']] = chart['event_time_from_admit'].str.split(' ', -1, expand=True)
+            chart[['start_hours','min','sec']] = chart['start_hours'].str.split(':', -1, expand=True)
+            chart['start_time']=pd.to_numeric(chart['start_days'])*24+pd.to_numeric(chart['start_hours'])
+            chart=chart.drop(columns=['start_days', 'dummy','start_hours','min','sec'])
+            chart=chart[chart['start_time']>=0]
+
+            ###Remove where event time is after discharge time
+            chart=pd.merge(chart,self.data[['stay_id','los']],on='stay_id',how='left')
+            chart['sanity']=chart['los']-chart['start_time']
+            chart=chart[chart['sanity']>0]
+            del chart['sanity']
+            
+            if final.empty:
+                final=chart
+            else:
+                final=final.append(chart, ignore_index=True)
         
         self.chart=chart
         
@@ -283,7 +290,7 @@ class Generator():
                     
               ###CHART
              if(self.feat_chart):
-                sub_chart=self.chart[(self.chart['start_time']>=i) & (self.chart['start_time']<i+bucket)].groupby(['stay_id','itemid']).agg({'subject_id':'max'})
+                sub_chart=self.chart[(self.chart['start_time']>=i) & (self.chart['start_time']<i+bucket)].groupby(['stay_id','itemid']).agg({'subject_id':'max','valuenum':np.nanmean})
                 sub_chart=sub_chart.reset_index()
                 sub_chart['start_time']=t
                 if final_chart.empty:
@@ -405,6 +412,7 @@ class Generator():
             ###CHART
             if(self.feat_chart):
                 df2=chart[chart['stay_id']==hid]
+                val=df2.pivot_table(index='start_time',columns='itemid',values='valuenum')
                 df2['val']=1
                 df2=df2.pivot_table(index='start_time',columns='itemid',values='val')
                 #print(df2.shape)
@@ -413,9 +421,19 @@ class Generator():
                 df2=pd.concat([df2, add_df])
                 df2=df2.sort_index()
                 df2=df2.fillna(0)
+                
+                val=pd.concat([val, add_df])
+                val=val.sort_index()
+                val=val.ffill()
+                val=val.bfill()
+                val=val.fillna(0)
+                
+                
                 df2[df2>0]=1
+                df2[df2<0]=0
                 #print(df2.head())
-                dataDic[hid]['Chart']=df2.to_dict(orient="list")
+                dataDic[hid]['Chart']['signal']=df2.iloc[:,0:].to_dict(orient="list")
+                dataDic[hid]['Chart']['val']=val.iloc[:,0:].to_dict(orient="list")
             
             ##########COND#########
             if(self.feat_cond):

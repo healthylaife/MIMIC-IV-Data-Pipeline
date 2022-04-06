@@ -12,17 +12,26 @@ if not os.path.exists("./data/dict"):
     os.makedirs("./data/dict")
     
 class Generator():
-    def __init__(self,cohort_output,feat_cond,feat_lab,feat_proc,feat_med,include_time=24,bucket=1,predW=0):
+    def __init__(self,cohort_output,if_mort,feat_cond,feat_lab,feat_proc,feat_med,include_time=24,bucket=1,predW=0):
         self.feat_cond,self.feat_proc,self.feat_med,self.feat_lab = feat_cond,feat_proc,feat_med,feat_lab
         self.cohort_output=cohort_output
         self.data = self.generate_adm()
         print("[ READ COHORT ]")
         self.generate_feat()
         print("[ READ ALL FEATURES ]")
-        self.input_length(include_time,predW)
-        print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
+        if if_mort:
+            self.mortality_length(include_time,predW)
+            print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
+        else:
+            self.readmission_length(include_time)
+            print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         self.smooth_meds(bucket)
-        print("[ PROCESSED TIME SERIES TO EQUAL TIME INTERVAL ]")
+        
+        #if(self.feat_lab):
+        #    print("[ ======READING LABS ]")
+        #    nhid=len(self.hids)
+        #    for n in range(0,nhids,10000):
+        #        self.generate_labs(self.hids[n,n+10000])
         print("[ SUCCESSFULLY SAVED DATA DICTIONARIES ]")
     
     def generate_feat(self):
@@ -38,6 +47,7 @@ class Generator():
         if(self.feat_lab):
             print("[ ======READING LABS ]")
             self.generate_labs()
+        
             
     def generate_adm(self):
         data=pd.read_csv(f"./data/cohort/{self.cohort_output}.csv.gz", compression='gzip', header=0, index_col=None)
@@ -50,6 +60,7 @@ class Generator():
         data['los']=pd.to_numeric(data['days'])*24+pd.to_numeric(data['hours'])
         data=data.drop(columns=['days', 'dummy','hours','min','sec'])
         data=data[data['los']>0]
+        data['Age']=data['Age'].astype(int)
         return data
     
     def generate_cond(self):
@@ -74,6 +85,30 @@ class Generator():
         del proc['sanity']
         
         self.proc=proc
+        
+    def generate_labs(self):
+        chunksize = 10000000
+        final=pd.DataFrame()
+        for labs in tqdm(pd.read_csv("./data/features/preproc_labs.csv.gz", compression='gzip', header=0, index_col=None,chunksize=chunksize)):
+            labs=labs[labs['hadm_id'].isin(self.data['hadm_id'])]
+            labs[['start_days', 'dummy','start_hours']] = labs['lab_time_from_admit'].str.split(' ', -1, expand=True)
+            labs[['start_hours','min','sec']] = labs['start_hours'].str.split(':', -1, expand=True)
+            labs['start_time']=pd.to_numeric(labs['start_days'])*24+pd.to_numeric(labs['start_hours'])
+            labs=labs.drop(columns=['start_days', 'dummy','start_hours','min','sec'])
+            labs=labs[labs['start_time']>=0]
+
+            ###Remove where event time is after discharge time
+            labs=pd.merge(labs,self.data[['hadm_id','los']],on='hadm_id',how='left')
+            labs['sanity']=labs['los']-labs['start_time']
+            labs=labs[labs['sanity']>0]
+            del labs['sanity']
+            
+            if final.empty:
+                final=labs
+            else:
+                final=final.append(labs, ignore_index=True)
+
+        self.labs=final
         
     def generate_meds(self):
         meds=pd.read_csv("./data/features/preproc_med.csv.gz", compression='gzip', header=0, index_col=None)
@@ -104,7 +139,39 @@ class Generator():
         
         self.meds=meds
         
-    def input_length(self,include_time,predW):
+    
+    def mortality_length(self,include_time,predW):
+        self.los=include_time
+        self.data=self.data[(self.data['los']>=include_time+predW)]
+        self.hids=self.data['hadm_id'].unique()
+        
+        if(self.feat_cond):
+            self.cond=self.cond[self.cond['hadm_id'].isin(self.data['hadm_id'])]
+        
+        self.data['los']=include_time
+        ###MEDS
+        if(self.feat_med):
+            self.meds=self.meds[self.meds['hadm_id'].isin(self.data['hadm_id'])]
+            self.meds=self.meds[self.meds['start_time']<=include_time]
+            self.meds.loc[self.meds.stop_time >include_time, 'stop_time']=include_time
+                    
+        
+        ###PROCS
+        if(self.feat_proc):
+            self.proc=self.proc[self.proc['hadm_id'].isin(self.data['hadm_id'])]
+            self.proc=self.proc[self.proc['start_time']<=include_time]
+            
+        ###LAB
+        if(self.feat_lab):
+            self.labs=self.labs[self.labs['hadm_id'].isin(self.data['hadm_id'])]
+            self.labs=self.labs[self.labs['start_time']<=include_time]
+            
+        
+        self.los=include_time
+        
+        
+    
+    def readmission_length(self,include_time):
         self.los=include_time
         self.data=self.data[(self.data['los']>=include_time)]
         self.hids=self.data['hadm_id'].unique()
@@ -138,20 +205,11 @@ class Generator():
             self.labs['start_time']=self.labs['start_time']-self.labs['select_time']
             self.labs=self.labs[self.labs['start_time']>=0]
 
-        if(predW):
-            self.los=include_time-predW
-            if(self.feat_med):
-                self.meds=self.meds[self.meds['start_time']<los]
-                self.meds.loc[self.meds['stop_time'] > los,'stop_time']=los
-            if(self.feat_proc):
-                self.proc=self.proc[self.proc['start_time']<los]
-            if(self.feat_lab):
-                self.labs=self.labs[self.labs['start_time']<los]
-
             
     def smooth_meds(self,bucket):
         final_meds=pd.DataFrame()
         final_proc=pd.DataFrame()
+        final_labs=pd.DataFrame()
         
         if(self.feat_med):
             self.meds=self.meds.sort_values(by=['start_time'])
@@ -180,6 +238,16 @@ class Generator():
                     final_proc=sub_proc
                 else:    
                     final_proc=final_proc.append(sub_proc)
+                    
+            ###LABS
+             if(self.feat_lab):
+                sub_labs=self.labs[(self.labs['start_time']>=i) & (self.labs['start_time']<i+bucket)].groupby(['hadm_id','itemid']).agg({'subject_id':'max','valuenum':np.nanmean})
+                sub_labs=sub_labs.reset_index()
+                sub_labs['start_time']=t
+                if final_labs.empty:
+                    final_labs=sub_labs
+                else:    
+                    final_labs=final_labs.append(sub_labs)
             
              t=t+1
         los=int(self.los/bucket)
@@ -193,19 +261,31 @@ class Generator():
         ###PROC
         if(self.feat_proc):
             f2_proc=final_proc.groupby(['hadm_id','icd_code']).size()
-            self.proc_per_adm=final_proc.groupby('hadm_id').sum().reset_index()[0].max()        
+            self.proc_per_adm=f2_proc.groupby('hadm_id').sum().reset_index()[0].max()        
             self.proclength_per_adm=final_proc.groupby('hadm_id').size().max()
+            
+       ###LABS
+        if(self.feat_lab):
+            f2_labs=final_labs.groupby(['hadm_id','itemid']).size()
+            self.labs_per_adm=f2_labs.groupby('hadm_id').sum().reset_index()[0].max()        
+            self.labslength_per_adm=final_labs.groupby('hadm_id').size().max()
 
         ###CREATE DICT
-        create_Dict(final_meds,final_proc,los)
+        print("[ PROCESSED TIME SERIES TO EQUAL TIME INTERVAL ]")
+        self.create_Dict(final_meds,final_proc,final_labs,los)
         
         
-    def create_Dict(self,los,meds,proc):
+    def create_Dict(self,meds,proc,labs,los):
+        print("[ CREATING DATA DICTIONARIES ]")
         dataDic={}
         for hid in self.hids:
             grp=self.data[self.data['hadm_id']==hid]
-            dataDic[hid]={'Cond':{},'Proc':{},'Med':{},'Lab':{},'label':int(grp['label'])}
-        for hid in tqdm(hids):
+            #print(grp.head())
+            #print(grp['gender'])
+            #print(int(grp['Age']))
+            #print(grp['ethnicity'].iloc[0])
+            dataDic[hid]={'Cond':{},'Proc':{},'Med':{},'Lab':{},'ethnicity':grp['ethnicity'].iloc[0],'age':int(grp['Age']),'gender':grp['gender'].iloc[0],'label':int(grp['label'])}
+        for hid in tqdm(self.hids):
             ###MEDS
             if(self.feat_med):
                 df2=meds[meds['hadm_id']==hid]
@@ -247,6 +327,32 @@ class Generator():
                 df2[df2>0]=1
                 #print(df2.head())
                 dataDic[hid]['Proc']=df2.to_dict(orient="list")
+                
+            ###LABS
+            if(self.feat_lab):
+                df2=labs[labs['hadm_id']==hid]
+                val=df2.pivot_table(index='start_time',columns='itemid',values='valuenum')
+                df2['val']=1
+                df2=df2.pivot_table(index='start_time',columns='itemid',values='val')
+                #print(df2.shape)
+                add_indices = pd.Index(range(los)).difference(df2.index)
+                add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
+                df2=pd.concat([df2, add_df])
+                df2=df2.sort_index()
+                df2=df2.fillna(0)
+                
+                val=pd.concat([val, add_df])
+                val=val.sort_index()
+                val=val.ffill()
+                val=val.bfill()
+                val=val.fillna(0)
+                
+                df2[df2>0]=1
+                df2[df2<0]=0
+            
+                #print(df2.head())
+                dataDic[hid]['Lab']['signal']=df2.iloc[:,0:].to_dict(orient="list")
+                dataDic[hid]['Lab']['val']=val.iloc[:,0:].to_dict(orient="list")
             
             ##########COND#########
             if(self.feat_cond):
@@ -258,27 +364,48 @@ class Generator():
                 
                 
         ######SAVE DICTIONARIES##############
-
+        metaDic={'Cond':{},'Proc':{},'Med':{},'Lab':{},'LOS':{}}
+        metaDic['LOS']=los
         with open("./data/dict/dataDic", 'wb') as fp:
             pickle.dump(dataDic, fp)
 
         with open("./data/dict/hadmDic", 'wb') as fp:
-            pickle.dump(hids, fp)
+            pickle.dump(self.hids, fp)
         
+        with open("./data/dict/ethVocab", 'wb') as fp:
+            pickle.dump(list(self.data['ethnicity'].unique()), fp)
+            self.eth_vocab = self.data['ethnicity'].nunique()
+            
+        with open("./data/dict/ageVocab", 'wb') as fp:
+            pickle.dump(list(self.data['Age'].unique()), fp)
+            self.eth_vocab = self.data['Age'].nunique()
+            
         if(self.feat_med):
             with open("./data/dict/medVocab", 'wb') as fp:
-                pickle.dump(list(meds['nonproprietaryname'].unique()), fp)
-            self.med_vocab = meds['nonproprietaryname'].nunique()
+                pickle.dump(list(meds['drug_name'].unique()), fp)
+            self.med_vocab = meds['drug_name'].nunique()
+            metaDic['Med']=self.med_per_adm
         
         if(self.feat_cond):
             with open("./data/dict/condVocab", 'wb') as fp:
-                pickle.dump(list(self.cond['root'].unique()), fp)
-            self.cond_vocab = cond['root'].nunique()
+                pickle.dump(list(self.cond['new_icd_code'].unique()), fp)
+            self.cond_vocab = self.cond['new_icd_code'].nunique()
+            metaDic['Cond']=self.cond_per_adm
         
         if(self.feat_proc):    
             with open("./data/dict/procVocab", 'wb') as fp:
-                pickle.dump(list(self.proc['root'].unique()), fp)
-            self.proc_vocab = self.proc['root'].unique()
+                pickle.dump(list(self.proc['icd_code'].unique()), fp)
+            self.proc_vocab = self.proc['icd_code'].unique()
+            metaDic['Proc']=self.proc_per_adm
+            
+        if(self.feat_lab):    
+            with open("./data/dict/labsVocab", 'wb') as fp:
+                pickle.dump(list(self.labs['itemid'].unique()), fp)
+            self.lab_vocab = self.labs['itemid'].unique()
+            metaDic['Lab']=self.labs_per_adm
+            
+        with open("./data/dict/metaDic", 'wb') as fp:
+            pickle.dump(metaDic, fp)
             
 
 

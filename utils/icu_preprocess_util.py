@@ -184,26 +184,30 @@ def preproc_out(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict, 
 
 def preproc_chart(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict, usecols: list) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
-
-    def merge_module_cohort() -> pd.DataFrame:
-        """Gets the initial module data with patients anchor year data and only the year of the charttime"""
-        
-        # read module w/ custom params
-        module = pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col]).drop_duplicates()
-        #print(module.head())
-        # Only consider values in our cohort
-        cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['intime'])
-        
-        #print(module.head())
-        #print(cohort.head())
-
-        # merge module and cohort
-        return module.merge(cohort[['subject_id','hadm_id','stay_id', 'intime','outtime']], how='inner', left_on='stay_id', right_on='stay_id')
-
-    df_cohort = merge_module_cohort()
-    df_cohort['event_time_from_admit'] = df_cohort[time_col] - df_cohort['intime']
     
-    df_cohort=df_cohort.dropna()
+    # Only consider values in our cohort
+    cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['intime'])
+    df_cohort=pd.DataFrame()
+        # read module w/ custom params
+    chunksize = 5000000
+    for chunk in tqdm(pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col],chunksize=chunksize)):
+        #print(chunk.head())
+        chunk['valuenum']=chunk['valuenum'].fillna(0)
+        chunk_merged=chunk.merge(cohort[['stay_id', 'intime']], how='inner', left_on='stay_id', right_on='stay_id')
+        chunk_merged['event_time_from_admit'] = chunk_merged[time_col] - chunk_merged['intime']
+        
+        del chunk_merged[time_col] 
+        del chunk_merged['intime']
+        chunk_merged=chunk_merged.dropna()
+        chunk_merged=chunk_merged.drop_duplicates()
+        
+        if df_cohort.empty:
+            df_cohort=chunk_merged
+        else:
+            df_cohort=df_cohort.append(chunk_merged, ignore_index=True)
+                
+        
+    
     # Print unique counts and value_counts
     print("# Unique Events:  ", df_cohort.itemid.dropna().nunique())
     print("# Admissions:  ", df_cohort.stay_id.nunique())
