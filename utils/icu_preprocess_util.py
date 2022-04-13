@@ -189,10 +189,16 @@ def preproc_chart(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict
     cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['intime'])
     df_cohort=pd.DataFrame()
         # read module w/ custom params
-    chunksize = 5000000
+    chunksize = 10000000
+    count=0
+    nitem=[]
+    nstay=[]
+    nrows=0
     for chunk in tqdm(pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col],chunksize=chunksize)):
         #print(chunk.head())
-        chunk['valuenum']=chunk['valuenum'].fillna(0)
+        count=count+1
+        #chunk['valuenum']=chunk['valuenum'].fillna(0)
+        chunk=chunk.dropna(subset=['valuenum'])
         chunk_merged=chunk.merge(cohort[['stay_id', 'intime']], how='inner', left_on='stay_id', right_on='stay_id')
         chunk_merged['event_time_from_admit'] = chunk_merged[time_col] - chunk_merged['intime']
         
@@ -200,16 +206,23 @@ def preproc_chart(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict
         del chunk_merged['intime']
         chunk_merged=chunk_merged.dropna()
         chunk_merged=chunk_merged.drop_duplicates()
-        
         if df_cohort.empty:
             df_cohort=chunk_merged
         else:
             df_cohort=df_cohort.append(chunk_merged, ignore_index=True)
+        
+        
+#         nitem.append(chunk_merged.itemid.dropna().unique())
+#         nstay=nstay.append(chunk_merged.stay_id.unique())
+#         nrows=nrows+chunk_merged.shape[0]
                 
         
     
     # Print unique counts and value_counts
-    print("# Unique Events:  ", df_cohort.itemid.dropna().nunique())
+#     print("# Unique Events:  ", len(set(nitem)))
+#     print("# Admissions:  ", len(set(nstay)))
+#     print("Total rows", nrows)
+    print("# Unique Events:  ", df_cohort.itemid.nunique())
     print("# Admissions:  ", df_cohort.stay_id.nunique())
     print("Total rows", df_cohort.shape[0])
 

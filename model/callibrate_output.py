@@ -27,17 +27,16 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './../..')
 
 
 def callibrate(inputFile, outputFile):
-    if os.path.isfile('./data/dict/'+inputFile):
-        output_dict = pickle.load(open('./data/dict/'+inputFile,"rb"))
-    else:
-        print("output file not found.")
+    
+    output_dict = pickle.load(open('./data/output/'+inputFile,"rb"))
+   
 
     if torch.cuda.is_available():
         device='cuda:0'
     temperature = nn.Parameter(torch.ones(1).to(device))
     #temperature=temperature.to('cuda:0')
     args = {'temperature': temperature}
-    optimizer = optim.LBFGS([temperature], lr=0.001, max_iter=1000, line_search_fn='strong_wolfe')
+    optimizer = optim.LBFGS([temperature], lr=0.0001, max_iter=100000, line_search_fn='strong_wolfe')
 
 
     def T_scaling(logits, args):
@@ -67,10 +66,14 @@ def callibrate(inputFile, outputFile):
     #print(prob)
     loss=evaluation.Loss(device,True,True,True,True,True,True,True,True,True,True,True)
     print("BEFORE CALLIBRATION")
-    out_loss=loss(torch.tensor(output_dict['Prob']),torch.tensor(output_dict['Labels']),torch.tensor(output_dict['Logits']),False)
+    if 'Prob' in output_dict.columns:
+        out_loss=loss(torch.tensor(output_dict['Prob']),torch.tensor(output_dict['Labels']),torch.tensor(output_dict['Logits']),False)
+        output_dict['Prob']=prob.data.cpu().numpy()
+    else:
+        out_loss=loss(sm(torch.tensor(output_dict['Logits']).to(device)),torch.tensor(output_dict['Labels']),torch.tensor(output_dict['Logits']),False)
+    
     print("AFTER CALLIBRATION")
-    out_loss=loss(prob,torch.tensor(output_dict['Labels']),pred,False)
-    output_dict['Prob']=prob.data.cpu().numpy()
+    out_loss=loss(prob,torch.tensor(output_dict['Labels']),pred,False)   
     output_dict['Logits']=pred.data.cpu().numpy()
     
     

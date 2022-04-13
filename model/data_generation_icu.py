@@ -12,10 +12,10 @@ if not os.path.exists("./data/dict"):
     os.makedirs("./data/dict")
     
 class Generator():
-    def __init__(self,cohort_output,if_mort,feat_cond,feat_proc,feat_out,feat_chart,feat_med,include_time=24,bucket=1,predW=6):
+    def __init__(self,cohort_output,if_mort,feat_cond,feat_proc,feat_out,feat_chart,feat_med,impute,include_time=24,bucket=1,predW=6):
         self.feat_cond,self.feat_proc,self.feat_out,self.feat_chart,self.feat_med = feat_cond,feat_proc,feat_out,feat_chart,feat_med
         self.cohort_output=cohort_output
-        
+        self.impute=impute
         self.data = self.generate_adm()
         print("[ READ COHORT ]")
         
@@ -105,14 +105,14 @@ class Generator():
         
         
     def generate_chart(self):
-        chunksize = 10000000
+        chunksize = 5000000
         final=pd.DataFrame()
-        for chart in tqdm(pd.read_csv("./data/features/preproc_chart.csv.gz", compression='gzip', header=0, index_col=None,chunksize=chunksize)):
+        for chart in tqdm(pd.read_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', header=0, index_col=None,chunksize=chunksize)):
             chart=chart[chart['stay_id'].isin(self.data['stay_id'])]
             chart[['start_days', 'dummy','start_hours']] = chart['event_time_from_admit'].str.split(' ', -1, expand=True)
             chart[['start_hours','min','sec']] = chart['start_hours'].str.split(':', -1, expand=True)
             chart['start_time']=pd.to_numeric(chart['start_days'])*24+pd.to_numeric(chart['start_hours'])
-            chart=chart.drop(columns=['start_days', 'dummy','start_hours','min','sec'])
+            chart=chart.drop(columns=['start_days', 'dummy','start_hours','min','sec','event_time_from_admit'])
             chart=chart[chart['start_time']>=0]
 
             ###Remove where event time is after discharge time
@@ -120,13 +120,14 @@ class Generator():
             chart['sanity']=chart['los']-chart['start_time']
             chart=chart[chart['sanity']>0]
             del chart['sanity']
+            del chart['los']
             
             if final.empty:
                 final=chart
             else:
                 final=final.append(chart, ignore_index=True)
         
-        self.chart=chart
+        self.chart=final
         
         
         
@@ -161,6 +162,7 @@ class Generator():
         self.meds=meds
     
     def mortality_length(self,include_time,predW):
+        print("include_time",include_time)
         self.los=include_time
         self.data=self.data[(self.data['los']>=include_time+predW)]
         self.hids=self.data['stay_id'].unique()
@@ -191,10 +193,10 @@ class Generator():
             
        ###CHART
         if(self.feat_chart):
-            self.chart=self.out[self.chart['stay_id'].isin(self.data['stay_id'])]
+            self.chart=self.chart[self.chart['stay_id'].isin(self.data['stay_id'])]
             self.chart=self.chart[self.chart['start_time']<=include_time]
         
-        self.los=include_time
+        #self.los=include_time
                 
     def readmission_length(self,include_time):
         self.los=include_time
@@ -233,7 +235,7 @@ class Generator():
             
        ###CHART
         if(self.feat_chart):
-            self.chart=self.out[self.chart['stay_id'].isin(self.data['stay_id'])]
+            self.chart=self.chart[self.chart['stay_id'].isin(self.data['stay_id'])]
             self.chart=pd.merge(self.chart,self.data[['stay_id','select_time']],on='stay_id',how='left')
             self.chart['start_time']=self.chart['start_time']-self.chart['select_time']
             self.chart=self.chart[self.chart['start_time']>=0]
@@ -290,7 +292,7 @@ class Generator():
                     
               ###CHART
              if(self.feat_chart):
-                sub_chart=self.chart[(self.chart['start_time']>=i) & (self.chart['start_time']<i+bucket)].groupby(['stay_id','itemid']).agg({'subject_id':'max','valuenum':np.nanmean})
+                sub_chart=self.chart[(self.chart['start_time']>=i) & (self.chart['start_time']<i+bucket)].groupby(['stay_id','itemid']).agg({'valuenum':np.nanmean})
                 sub_chart=sub_chart.reset_index()
                 sub_chart['start_time']=t
                 if final_chart.empty:
@@ -299,6 +301,7 @@ class Generator():
                     final_chart=final_chart.append(sub_chart)
             
              t=t+1
+        print("bucket",bucket)
         los=int(self.los/bucket)
         
         
@@ -329,12 +332,69 @@ class Generator():
         
         print("[ PROCESSED TIME SERIES TO EQUAL TIME INTERVAL ]")
         ###CREATE DICT
-        self.create_Dict(final_meds,final_proc,final_out,final_chart,los)
+        if(self.feat_chart):
+            self.create_chartDict(final_chart,los)
+        else:
+            self.create_Dict(final_meds,final_proc,final_out,final_chart,los)
         
     
+    def create_chartDict(self,chart,los):
+        dataDic={}
+        for hid in self.hids:
+            grp=self.data[self.data['stay_id']==hid]
+            dataDic[hid]={'Chart':{},'label':int(grp['label'])}
+        for hid in tqdm(self.hids):
+            ###CHART
+            if(self.feat_chart):
+                df2=chart[chart['stay_id']==hid]
+                val=df2.pivot_table(index='start_time',columns='itemid',values='valuenum')
+                df2['val']=1
+                df2=df2.pivot_table(index='start_time',columns='itemid',values='val')
+                #print(df2.shape)
+                add_indices = pd.Index(range(los)).difference(df2.index)
+                add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
+                df2=pd.concat([df2, add_df])
+                df2=df2.sort_index()
+                df2=df2.fillna(0)
+                
+                val=pd.concat([val, add_df])
+                val=val.sort_index()
+                if self.impute:
+                    val=val.ffill()
+                    val=val.bfill()
+                    val=val.fillna(val.mean())
+                val=val.fillna(0)
+                
+                
+                df2[df2>0]=1
+                df2[df2<0]=0
+                #print(df2.head())
+                dataDic[hid]['Chart']['signal']=df2.iloc[:,0:].to_dict(orient="list")
+                dataDic[hid]['Chart']['val']=val.iloc[:,0:].to_dict(orient="list")
+            
+            
+                
+        ######SAVE DICTIONARIES##############
+        with open("./data/dict/metaDic", 'rb') as fp:
+            metaDic=pickle.load(fp)
         
+        with open("./data/dict/dataChartDic", 'wb') as fp:
+            pickle.dump(dataDic, fp)
+
+      
+        with open("./data/dict/chartVocab", 'wb') as fp:
+            pickle.dump(list(chart['itemid'].unique()), fp)
+        self.chart_vocab = chart['itemid'].nunique()
+        metaDic['Chart']=self.chart_per_adm
+        
+            
+        with open("./data/dict/metaDic", 'wb') as fp:
+            pickle.dump(metaDic, fp)
+            
+            
     def create_Dict(self,meds,proc,out,chart,los):
         dataDic={}
+        print(los)
         for hid in self.hids:
             grp=self.data[self.data['stay_id']==hid]
             dataDic[hid]={'Cond':{},'Proc':{},'Med':{},'Out':{},'Chart':{},'ethnicity':grp['ethnicity'].iloc[0],'age':int(grp['Age']),'gender':grp['gender'].iloc[0],'label':int(grp['label'])}
@@ -424,8 +484,10 @@ class Generator():
                 
                 val=pd.concat([val, add_df])
                 val=val.sort_index()
-                val=val.ffill()
-                val=val.bfill()
+                if self.impute:
+                    val=val.ffill()
+                    val=val.bfill()
+                    val=val.fillna(val.mean())
                 val=val.fillna(0)
                 
                 
@@ -450,7 +512,7 @@ class Generator():
         with open("./data/dict/dataDic", 'wb') as fp:
             pickle.dump(dataDic, fp)
 
-        with open("./data/dict/stayDic", 'wb') as fp:
+        with open("./data/dict/hadmDic", 'wb') as fp:
             pickle.dump(self.hids, fp)
         
         with open("./data/dict/ethVocab", 'wb') as fp:
@@ -493,5 +555,8 @@ class Generator():
             
         with open("./data/dict/metaDic", 'wb') as fp:
             pickle.dump(metaDic, fp)
+            
+            
+      
 
 

@@ -12,14 +12,17 @@ if not os.path.exists("./data/dict"):
     os.makedirs("./data/dict")
     
 class Generator():
-    def __init__(self,cohort_output,if_mort,feat_cond,feat_lab,feat_proc,feat_med,include_time=24,bucket=1,predW=0):
+    def __init__(self,cohort_output,if_mort,feat_cond,feat_lab,feat_proc,feat_med,impute,include_time=24,bucket=1,predW=0):
+        self.impute=impute
         self.feat_cond,self.feat_proc,self.feat_med,self.feat_lab = feat_cond,feat_proc,feat_med,feat_lab
         self.cohort_output=cohort_output
+        
         self.data = self.generate_adm()
         print("[ READ COHORT ]")
         self.generate_feat()
         print("[ READ ALL FEATURES ]")
         if if_mort:
+            print(predW)
             self.mortality_length(include_time,predW)
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         else:
@@ -343,8 +346,10 @@ class Generator():
                 
                 val=pd.concat([val, add_df])
                 val=val.sort_index()
-                val=val.ffill()
-                val=val.bfill()
+                if self.impute:
+                    val=val.ffill()
+                    val=val.bfill()
+                    val=val.fillna(val.mean())
                 val=val.fillna(0)
                 
                 df2[df2>0]=1

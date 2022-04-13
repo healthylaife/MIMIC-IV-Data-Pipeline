@@ -27,6 +27,8 @@ class LSTMBase(nn.Module):
         self.chart_seq_len=chart_seq_len
         self.lab_vocab_size=lab_vocab_size
         self.lab_seq_len=lab_seq_len
+        if self.chart_seq_len>500:
+            self.chart_seq_len=500
         self.batch_size=batch_size
         self.padding_idx = 0
         self.modalities=0
@@ -36,20 +38,20 @@ class LSTMBase(nn.Module):
         
     def build(self):
         if self.med_vocab_size:
-            self.med=CodeBase(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal)
+            self.med=CodeBase(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal,False)
             self.modalities=self.modalities+1
                 
         if self.proc_vocab_size:
-            self.proc=CodeBase(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True)
+            self.proc=CodeBase(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.out_vocab_size:
-            self.out=CodeBase(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True)
+            self.out=CodeBase(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.chart_vocab_size:
-            self.chart=CodeBase(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal)
+            self.chart=CodeBase(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
         if self.lab_vocab_size:
-            self.lab=CodeBase(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal)
+            self.lab=CodeBase(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
        
         
@@ -59,7 +61,7 @@ class LSTMBase(nn.Module):
         self.fc1=nn.Linear(int(self.rnn_size*self.modalities), int((self.rnn_size*self.modalities)/2), False)
         self.fc2=nn.Linear(int((self.rnn_size*self.modalities)/2), 1, False)
         
-        self.sig = nn.Sigmoid()
+        #self.sig = nn.Sigmoid()
         
     def forward(self,meds,procs,outs,charts,labs,conds,demo,contrib):        
         out1 = torch.zeros(size=(1,0))
@@ -116,13 +118,14 @@ class LSTMBase(nn.Module):
         out1 = self.fc2(out1)
         #print("out1",out1.shape)
         
-        sigout1 = self.sig(out1)
+        sig = nn.Sigmoid()
+        sigout1=sig(out1)
         #print("sig out",sigout1[16])
         #print("sig out",sigout1)
         #print(out1[0])
         #print("hi")
         
-        return sigout1
+        return sigout1,out1
     
     
     
@@ -144,6 +147,8 @@ class LSTMBaseH(nn.Module):
         self.out_seq_len=out_seq_len
         self.chart_vocab_size=chart_vocab_size
         self.chart_seq_len=chart_seq_len
+        if self.chart_seq_len>500:
+            self.chart_seq_len=500
         self.lab_vocab_size=lab_vocab_size
         self.lab_seq_len=lab_seq_len
         self.batch_size=batch_size
@@ -155,20 +160,20 @@ class LSTMBaseH(nn.Module):
         
     def build(self):
         if self.med_vocab_size:
-            self.med=CodeBase(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal)
+            self.med=CodeBase(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal,False)
             self.modalities=self.modalities+1
                 
         if self.proc_vocab_size:
-            self.proc=CodeBase(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True)
+            self.proc=CodeBase(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.out_vocab_size:
-            self.out=CodeBase(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True)
+            self.out=CodeBase(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.chart_vocab_size:
-            self.chart=CodeBase(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal)
+            self.chart=CodeBase(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
         if self.lab_vocab_size:
-            self.lab=CodeBase(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal)
+            self.lab=CodeBase(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
 
         self.condEmbed=nn.Embedding(self.cond_vocab_size,self.embed_size,self.padding_idx) 
@@ -183,7 +188,7 @@ class LSTMBaseH(nn.Module):
         self.fc1=nn.Linear(int(self.rnn_size*(self.modalities+2)), int((self.rnn_size*(self.modalities+2))/2), False)
         self.fc2=nn.Linear(int((self.rnn_size*(self.modalities+2))/2), 1, False)
         
-        self.sig = nn.Sigmoid()
+        #self.sig = nn.Sigmoid()
         
     def forward(self,meds,procs,outs,charts,labs,conds,demo,contrib):         
         
@@ -257,18 +262,19 @@ class LSTMBaseH(nn.Module):
         out1 = self.fc2(out1)
         #print("out1",out1.shape)
         
-        sigout1 = self.sig(out1)
+        sig = nn.Sigmoid()
+        sigout1=sig(out1)
         #print("sig out",sigout1[16])
         #print("sig out",sigout1)
         #print(out1[0])
         #print("hi")
         
-        return sigout1
+        return sigout1,out1
         
             
 
 class CodeBase(nn.Module):
-    def __init__(self,device,embed_size,rnn_size,code_vocab_size,code_seq_len,batch_size,signal):             
+    def __init__(self,device,embed_size,rnn_size,code_vocab_size,code_seq_len,batch_size,signal,lab):             
         super(CodeBase, self).__init__()
         self.embed_size=embed_size
         self.rnn_size=rnn_size
@@ -278,6 +284,7 @@ class CodeBase(nn.Module):
         self.padding_idx = 0
         self.device=device
         self.signal=signal
+        self.lab_sig=lab
         self.build()
     
     def build(self):
@@ -304,16 +311,46 @@ class CodeBase(nn.Module):
         if code.shape[0]==2:
             dat=code[1]
             code=code[0]
-            code=self.codeEmbed(code)
+            if self.lab_sig:
+                if code.shape[1]>500:
+                    code=code[:,0:500,:]
+                    dat=dat[:,0:500,:]
             #print(code.shape)
+            #print(dat.shape)
+            codeEmbedded=self.codeEmbed(code)
+            #code=self.codeEmbed(code)
+            #code=torch.transpose(code,1,2)
+            #code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
+            #code=torch.sum(code,1)
+            #print(code.shape)
+            #print(self.signal)
             if not self.signal:
+                if self.lab_sig:
+                    #codeEmbedded=0
+                    test=torch.max(code,2)
+                    test=test.values
+                    test=test.unsqueeze(2)
+                    code=torch.zeros(code.shape[0],code.shape[1],code.shape[2])
+                    code=code.type(torch.FloatTensor)
+                    code=code.to(self.device)
+                    test=test.type(torch.FloatTensor)
+                    test=test.to(self.device)
+                    code=torch.add(code,test)
+                    code=code.type(torch.LongTensor)
+                    code=code.to(self.device)
+                    codeEmbedded=self.codeEmbed(code)
+                #code=0
                 dat=dat.unsqueeze(3)
                 #print(dat.shape)
                 dat=dat.type(torch.FloatTensor)
                 dat=dat.to(self.device)
-                code=torch.cat((code,dat),3)
-                code=torch.transpose(code,1,2)
-                code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
+                #print(dat.shape)
+                #print(codeEmbedded.shape)
+                codeEmbedded=torch.cat((codeEmbedded,dat),3)
+            code=torch.transpose(codeEmbedded,1,2)
+            #code=torch.transpose(code,1,2)
+            code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
+            
                 #print(code.shape)
         else:
             code=self.codeEmbed(code)
@@ -390,6 +427,8 @@ class LSTMAttn(nn.Module):
         self.chart_seq_len=chart_seq_len
         self.lab_vocab_size=lab_vocab_size
         self.lab_seq_len=lab_seq_len
+        if self.chart_seq_len>500:
+            self.chart_seq_len=500
         self.batch_size=batch_size
         self.padding_idx = 0
         self.modalities=0
@@ -400,20 +439,20 @@ class LSTMAttn(nn.Module):
     def build(self):
         
         if self.med_vocab_size:
-            self.med=CodeAttn(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal)
+            self.med=CodeAttn(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal,False)
             self.modalities=self.modalities+1
                 
         if self.proc_vocab_size:
-            self.proc=CodeAttn(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True)
+            self.proc=CodeAttn(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.out_vocab_size:
-            self.out=CodeAttn(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True)
+            self.out=CodeAttn(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.chart_vocab_size:
-            self.chart=CodeAttn(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal)
+            self.chart=CodeAttn(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
         if self.lab_vocab_size:
-            self.lab=CodeAttn(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal)
+            self.lab=CodeAttn(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
 
         
@@ -521,7 +560,7 @@ class LSTMAttn(nn.Module):
 
 
 class CodeAttn(nn.Module):
-    def __init__(self,device,embed_size,rnn_size,code_vocab_size,code_seq_len,batch_size,signal):           
+    def __init__(self,device,embed_size,rnn_size,code_vocab_size,code_seq_len,batch_size,signal,lab):           
         super(CodeAttn, self).__init__()
         self.embed_size=embed_size
         self.rnn_size=rnn_size
@@ -532,16 +571,17 @@ class CodeAttn(nn.Module):
         self.device=device
         self.signal=signal
         self.build()
+        self.lab_sig=lab
     
     def build(self):
         
         self.codeEmbed=nn.Embedding(self.code_vocab_size,self.embed_size,self.padding_idx)
         if self.signal: 
-            #self.codeRnn = nn.LSTM(input_size=int(self.embed_size*self.code_seq_len),hidden_size=self.rnn_size,num_layers = 2,dropout=0.2,batch_first=True)
-            self.codeRnn = nn.LSTM(input_size=self.embed_size,hidden_size=self.rnn_size,num_layers = 2,dropout=0.2,batch_first=True)
+            self.codeRnn = nn.LSTM(input_size=int(self.embed_size*self.code_seq_len),hidden_size=self.rnn_size,num_layers = 2,dropout=0.2,batch_first=True)
+            #self.codeRnn = nn.LSTM(input_size=self.embed_size,hidden_size=self.rnn_size,num_layers = 2,dropout=0.2,batch_first=True)
         else:
-            #self.codeRnn = nn.LSTM(input_size=int((self.embed_size+1)*self.code_seq_len),hidden_size=self.rnn_size,num_layers = 2,dropout=0.2,batch_first=True)
-            self.codeRnn = nn.LSTM(input_size=self.embed_size+1,hidden_size=self.rnn_size,num_layers = 2,dropout=0.2,batch_first=True)
+            self.codeRnn = nn.LSTM(input_size=int((self.embed_size+1)*self.code_seq_len),hidden_size=self.rnn_size,num_layers = 2,dropout=0.2,batch_first=True)
+            #self.codeRnn = nn.LSTM(input_size=self.embed_size+1,hidden_size=self.rnn_size,num_layers = 2,dropout=0.2,batch_first=True)
 
         self.code_fc=nn.Linear(self.rnn_size, 1, False)
         #self.dropout1 = nn.Dropout(0.2)
@@ -559,27 +599,44 @@ class CodeAttn(nn.Module):
         if code.shape[0]==2:
             dat=code[1]
             code=code[0]
-            code=self.codeEmbed(code)
+            if self.lab_sig:
+                if code.shape[1]>500:
+                    code=code[:,0:500,:]
+                    dat=dat[:,0:500,:]
+            codeEmbedded=self.codeEmbed(code)
             #code=torch.transpose(code,1,2)
             #code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
             #code=torch.sum(code,1)
             #print(code.shape)
             #print(self.signal)
             if not self.signal:
+                if self.lab_sig:
+                    test=torch.max(code,2)
+                    test=test.values
+                    test=test.unsqueeze(2)
+                    code=torch.zeros(code.shape[0],code.shape[1],code.shape[2])
+                    code=code.type(torch.FloatTensor)
+                    code=code.to(self.device)
+                    test=test.type(torch.FloatTensor)
+                    test=test.to(self.device)
+                    code=torch.add(code,test)
+                    code=code.type(torch.LongTensor)
+                    code=code.to(self.device)
+                    codeEmbedded=self.codeEmbed(code)
                 dat=dat.unsqueeze(3)
                 #print(dat.shape)
                 dat=dat.type(torch.FloatTensor)
                 dat=dat.to(self.device)
-                code=torch.cat((code,dat),3)
-            #code=torch.transpose(code,1,2)
-            #code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
+                codeEmbedded=torch.cat((codeEmbedded,dat),3)
+            code=torch.transpose(codeEmbedded,1,2)
+            code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
             
                 #print(code.shape)
         else:
             code=self.codeEmbed(code)
-            #code=torch.transpose(code,1,2)
-            #code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
-        code=torch.sum(code,1)
+            code=torch.transpose(code,1,2)
+            code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
+        #code=torch.sum(code,1)
         #print(code.shape)
         #code=torch.transpose(code,1,2)
         #print(code[0])
@@ -624,118 +681,7 @@ class CodeAttn(nn.Module):
 
         return (h, c)    
     
-    
-    
-class LSTMAttnH(nn.Module):
-    def __init__(self,device,cond_vocab_size,cond_seq_len,proc_vocab_size,proc_seq_len,med_vocab_size,med_seq_len,out_vocab_size,out_seq_len,chart_vocab_size,chart_seq_len,lab_vocab_size,lab_seq_len,eth_vocab_size,gender_vocab_size,age_vocab_size,med_signal,lab_signal,embed_size,rnn_size,batch_size):#proc_vocab_size,med_vocab_size,lab_vocab_size
-        super(LSTMAttnH, self).__init__()
-        self.embed_size=embed_size
-        self.rnn_size=rnn_size
-        self.eth_vocab_size=eth_vocab_size
-        self.gender_vocab_size=gender_vocab_size
-        self.age_vocab_size=age_vocab_size
-        self.cond_vocab_size=cond_vocab_size
-        self.cond_seq_len=cond_seq_len
-        self.proc_vocab_size=proc_vocab_size
-        self.proc_seq_len=proc_seq_len
-        self.med_vocab_size=med_vocab_size
-        self.med_seq_len=med_seq_len
-        self.out_vocab_size=out_vocab_size
-        self.out_seq_len=out_seq_len
-        self.chart_vocab_size=chart_vocab_size
-        self.chart_seq_len=chart_seq_len
-        self.lab_vocab_size=lab_vocab_size
-        self.lab_seq_len=lab_seq_len
-        self.batch_size=batch_size
-        self.padding_idx = 0
-        self.modalities=1
-        self.device=device
-        self.build()
-        
-    def build(self):
 
-        if med_vocab_size:
-            self.med=CodeAttn(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size)
-        if proc_vocab_size:
-            self.proc=CodeAttn(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size)
-        if out_vocab_size:
-            self.out=CodeAttn(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size)
-        if chart_vocab_size:
-            self.chart=CodeAttn(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size)
-        if lab_vocab_size:
-            self.lab=CodeAttn(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size)
-
-        
-        self.condEmbed=nn.Embedding(self.cond_vocab_size,self.embed_size,self.padding_idx) 
-        #self.cond_fc=nn.Linear(self.embed_size, 1, False)
-        
-        self.ethEmbed=nn.Embedding(self.eth_vocab_size,self.embed_size,self.padding_idx) 
-        self.genderEmbed=nn.Embedding(self.gender_vocab_size,self.embed_size,self.padding_idx) 
-        self.ageEmbed=nn.Embedding(self.age_vocab_size,self.embed_size,self.padding_idx) 
-        self.demo_fc=nn.Linear(self.embed_size*3, self.rnn_size, False)
-        
-        self.fc=nn.Linear((self.embed_size*self.cond_seq_len)+3*self.rnn_size, 1, False)
-        
-        self.sig = nn.Sigmoid()
-        
-    def forward(self, meds,proc,out,chart,labs,conds,demo,contrib):        
-        
-        if meds:
-            med_h_n = self.med(meds[0])  
-            med_h_n=med_h_n.view(med_h_n.shape[0],-1)
-            print("med_h_n",med_h_n.shape)
-        if proc:
-            proc_h_n = self.proc(procs)  
-            proc_h_n=proc_h_n.view(proc_h_n.shape[0],-1)
-            print("proc_h_n",proc_h_n.shape)
-        if labs:
-            lab_h_n = self.lab(labs)  
-            lab_h_n=lab_h_n.view(lab_h_n.shape[0],-1)
-            print("lab_h_n",lab_h_n.shape)
-        if outs:
-            out_h_n = self.out(outs)  
-            out_h_n=out_h_n.view(out_h_n.shape[0],-1)
-        if charts:
-            chart_h_n = self.chart(charts)  
-            chart_h_n=out_h_n.view(chart_h_n.shape[0],-1)
-        
-        conds=conds.to(self.device)
-        conds=self.condEmbed(conds)
-        #print(conds.shape)
-        conds=conds.view(conds.shape[0],-1)
-        #print(conds.shape)
-        #print("demo[0]",demo[0].shape)
-        
-        eth=demo[0].to(self.device)
-        eth=self.ethEmbed(eth)
-        
-        gender=demo[1].to(self.device)
-        gender=self.genderEmbed(gender)
-        
-        age=demo[2].to(self.device)
-        age=self.ageEmbed(age)
-        
-        demog=torch.cat((eth,gender),1)
-        demog=torch.cat((demog,age),1)
-        #print("demog",demog.shape)
-        demog=self.demo_fc(demog)
-        #print("demog",demog.shape)
-        
-        out1=torch.cat((conds,med_h_n),1)
-        out1=torch.cat((out1,proc_h_n),1)
-        out1=torch.cat((out1,demog),1)
-        #print("out1",out1.shape)
-        out1 = self.fc(out1)
-        #print("out1",out1.shape)
-        
-        sigout1 = self.sig(out1)
-        #print("sig out",sigout1[16])
-        #print("sig out",sigout1)
-        #print(out1[0])
-        #print("hi")
-        
-        return sigout1
-        
             
 class CNNBase(nn.Module):
     def __init__(self,device,cond_vocab_size,cond_seq_len,proc_vocab_size,proc_seq_len,med_vocab_size,med_seq_len,out_vocab_size,out_seq_len,chart_vocab_size,chart_seq_len,lab_vocab_size,lab_seq_len,med_signal,lab_signal,embed_size,rnn_size,batch_size):
@@ -754,6 +700,8 @@ class CNNBase(nn.Module):
         self.chart_seq_len=chart_seq_len
         self.lab_vocab_size=lab_vocab_size
         self.lab_seq_len=lab_seq_len
+        if self.chart_seq_len>500:
+            self.chart_seq_len=500
         self.batch_size=batch_size
         self.padding_idx = 0
         self.modalities=0
@@ -763,26 +711,26 @@ class CNNBase(nn.Module):
         
     def build(self):
         if self.med_vocab_size:
-            self.med=CodeCNN(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal)
+            self.med=CodeCNN(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal,False)
             self.modalities=self.modalities+1
                 
         if self.proc_vocab_size:
-            self.proc=CodeCNN(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True)
+            self.proc=CodeCNN(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.out_vocab_size:
-            self.out=CodeCNN(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True)
+            self.out=CodeCNN(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.chart_vocab_size:
-            self.chart=CodeCNN(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal)
+            self.chart=CodeCNN(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
         if self.lab_vocab_size:
-            self.lab=CodeCNN(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal)
+            self.lab=CodeCNN(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,False)
             self.modalities=self.modalities+1
             
         self.fc1=nn.Linear(int(self.rnn_size*self.modalities), int((self.rnn_size*self.modalities)/2), False)
         self.fc2=nn.Linear(int((self.rnn_size*self.modalities)/2), 1, False)
         
-        self.sig = nn.Sigmoid()
+        #self.sig = nn.Sigmoid()
         
     def forward(self,meds,procs,outs,charts,labs,conds,demo,contrib):        
         out1 = torch.zeros(size=(1,0))
@@ -839,13 +787,14 @@ class CNNBase(nn.Module):
         out1 = self.fc2(out1)
         #print("out1",out1.shape)
         
-        sigout1 = self.sig(out1)
+        sig = nn.Sigmoid()
+        sigout1=sig(out1)
         #print("sig out",sigout1[16])
         #print("sig out",sigout1)
         #print(out1[0])
         #print("hi")
         
-        return sigout1
+        return sigout1,out1
     
     
     
@@ -869,6 +818,8 @@ class CNNBaseH(nn.Module):
         self.chart_seq_len=chart_seq_len
         self.lab_vocab_size=lab_vocab_size
         self.lab_seq_len=lab_seq_len
+        if self.chart_seq_len>500:
+            self.chart_seq_len=500
         self.batch_size=batch_size
         self.padding_idx = 0
         self.modalities=0
@@ -878,20 +829,20 @@ class CNNBaseH(nn.Module):
         
     def build(self):
         if self.med_vocab_size:
-            self.med=CodeCNN(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal)
+            self.med=CodeCNN(self.device,self.embed_size,self.rnn_size,self.med_vocab_size,self.med_seq_len,self.batch_size,self.med_signal,False)
             self.modalities=self.modalities+1
                 
         if self.proc_vocab_size:
-            self.proc=CodeCNN(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True)
+            self.proc=CodeCNN(self.device,self.embed_size,self.rnn_size,self.proc_vocab_size,self.proc_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.out_vocab_size:
-            self.out=CodeCNN(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True)
+            self.out=CodeCNN(self.device,self.embed_size,self.rnn_size,self.out_vocab_size,self.out_seq_len,self.batch_size,True,False)
             self.modalities=self.modalities+1
         if self.chart_vocab_size:
-            self.chart=CodeCNN(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal)
+            self.chart=CodeCNN(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
         if self.lab_vocab_size:
-            self.lab=CodeCNN(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal)
+            self.lab=CodeCNN(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,False)
             self.modalities=self.modalities+1
 
         self.condEmbed=nn.Embedding(self.cond_vocab_size,self.embed_size,self.padding_idx) 
@@ -999,7 +950,7 @@ class CNNBaseH(nn.Module):
 
 
 class CodeCNN(nn.Module):
-    def __init__(self,device,embed_size,rnn_size,code_vocab_size,code_seq_len,batch_size,signal):             
+    def __init__(self,device,embed_size,rnn_size,code_vocab_size,code_seq_len,batch_size,signal,lab):             
         super(CodeCNN, self).__init__()
         self.embed_size=embed_size
         self.rnn_size=rnn_size
@@ -1009,6 +960,7 @@ class CodeCNN(nn.Module):
         self.padding_idx = 0
         self.device=device
         self.signal=signal
+        self.lab_sig=lab
         self.build()
     
     
@@ -1043,6 +995,10 @@ class CodeCNN(nn.Module):
         if code.shape[0]==2:
             dat=code[1]
             code=code[0]
+            if self.lab_sig:
+                if code.shape[1]>500:
+                    dat=dat[:,0:500,:]
+                    code=code[:,0:500,:]
             code=self.codeEmbed(code)
             #print(code.shape)
             if not self.signal:

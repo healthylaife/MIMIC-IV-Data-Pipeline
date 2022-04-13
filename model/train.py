@@ -116,7 +116,6 @@ class Model_Train():
                                self.out_vocab_size,self.out_seq_len,
                                self.chart_vocab_size,self.chart_seq_len,
                                self.lab_vocab_size,self.lab_seq_len,
-                               self.eth_vocab_size,self.gender_vocab_size,self.age_vocab_size,
                                self.med_signal,self.lab_signal,
                                embed_size=args.embedding_size,rnn_size=args.rnn_size,
                                batch_size=args.batch_size) 
@@ -168,7 +167,7 @@ class Model_Train():
         counter=0
         for epoch in range(args.num_epochs):
             if counter==args.patience:
-                print("STOPPING THE TRAINING BECAUSE VALIDATION ERROR DID nOT IMPROVE FOR {:.1f} EPOCHS".format(args.patience))
+                print("STOPPING THE TRAINING BECAUSE VALIDATION ERROR DID NOT IMPROVE FOR {:.1f} EPOCHS".format(args.patience))
                 break
             print("======= EPOCH {:.1f} ========".format(epoch))
             # reinit the hidden and cell steates
@@ -180,7 +179,7 @@ class Model_Train():
             for key, value in model_utils.get_batches().items():
                 if key in self.train_batch:
                     #print("new batch")
-                    meds,proc,outs,charts,labs,conds,demo,labels=model_utils.get_batch_data(value,self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag)
+                    meds,proc,outs,charts,labs,conds,demo,labels=model_utils.get_batch_data(key,value,self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag)
                     
                     if len(meds[0]):
                         meds=torch.tensor(meds)
@@ -203,7 +202,7 @@ class Model_Train():
                     
                     if len(charts[0]):
                         charts=torch.tensor(charts)
-                        #print(proc.shape)
+                        #print(charts.shape)
                         charts=charts.type(torch.LongTensor)
 
                     if len(labs[0]):
@@ -225,7 +224,7 @@ class Model_Train():
                     output=output.squeeze()
                     logits=logits.squeeze()
 
-                    out_loss=self.loss(output,labels,logits,True)
+                    out_loss=self.loss(output,labels,logits,True,False)
                     #print(out_loss)
                     # calculate the gradients
                     out_loss.backward()
@@ -236,11 +235,11 @@ class Model_Train():
                     train_truth.extend(labels.data.cpu().numpy())
                     train_logits.extend(logits.data.cpu().numpy())
             
-            self.loss(torch.tensor(train_prob),torch.tensor(train_truth),torch.tensor(train_logits),False)
+            self.loss(torch.tensor(train_prob),torch.tensor(train_truth),torch.tensor(train_logits),False,False)
             val_loss=self.model_val()
             #print("Updating Model")
             #T.save(self.net,self.save_path)
-            if(val_loss<=min_loss+0.3):
+            if(val_loss<=min_loss+0.03):
                 print("Validation results improved")
                 min_loss=val_loss
                 print("Updating Model")
@@ -263,7 +262,7 @@ class Model_Train():
         self.net.eval()
         for key, value in model_utils.get_batches().items():
             if key in self.test_batch:
-                meds,proc,outs,charts,labs,conds,demo,labels=model_utils.get_batch_data(value,self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag)
+                meds,proc,outs,charts,labs,conds,demo,labels=model_utils.get_batch_data(key,value,self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag)
                     
                 if len(meds[0]):
                     meds=torch.tensor(meds)
@@ -316,7 +315,7 @@ class Model_Train():
                 self.truth.extend(labels.data.cpu().numpy())
                 self.logits.extend(logits.data.cpu().numpy())
 
-        self.loss(torch.tensor(self.prob),torch.tensor(self.truth),torch.tensor(self.logits),False)
+        self.loss(torch.tensor(self.prob),torch.tensor(self.truth),torch.tensor(self.logits),False,False)
             
     def model_val(self):
         
@@ -329,7 +328,7 @@ class Model_Train():
         self.net.eval()
         for key, value in model_utils.get_batches().items():
             if key in self.val_batch:
-                meds,proc,outs,charts,labs,conds,demo,labels=model_utils.get_batch_data(value,self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag)
+                meds,proc,outs,charts,labs,conds,demo,labels=model_utils.get_batch_data(key,value,self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag)
                 
                 if meds:
                     meds=torch.tensor(meds)
@@ -377,8 +376,8 @@ class Model_Train():
                 val_truth.extend(val_labels.data.cpu().numpy())
                 val_logits.extend(logits.data.cpu().numpy())
         
-        self.loss(torch.tensor(val_prob),torch.tensor(val_truth),torch.tensor(val_logits),False)
-        val_loss=self.loss(torch.tensor(val_prob),torch.tensor(val_truth),torch.tensor(val_logits),True)
+        self.loss(torch.tensor(val_prob),torch.tensor(val_truth),torch.tensor(val_logits),False,False)
+        val_loss=self.loss(torch.tensor(val_prob),torch.tensor(val_truth),torch.tensor(val_logits),True,False)
         return val_loss.item()
             
     def save_output(self):
@@ -406,7 +405,7 @@ class Model_Train():
         output_df['gender']=self.gender
         output_df['age']=self.age
         
-        with open('./data/dict/'+'outputDict', 'wb') as fp:
+        with open('./data/output/'+'outputDict', 'wb') as fp:
                pickle.dump(output_df, fp)
 
         
