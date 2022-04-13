@@ -35,7 +35,7 @@ class Loss(nn.Module):
         self.callb=callb
         self.callbPlot=callbPlot
 
-    def forward(self, prob, labels,logits, train=True):
+    def forward(self, prob, labels,logits, train=True, standalone=False):
         classify_loss='NA' 
         auc,apr='NA'
         base='NA'
@@ -51,6 +51,11 @@ class Loss(nn.Module):
         #print(torch.sum(torch.isnan(prob)))
         #print(prob.shape)
         #print(labels.shape)
+        #print(prob)
+        #prob=torch.tensor(prob)
+        #labels=torch.tensor(labels)
+        #logits=torch.tensor(logits)
+        #print(prob)
         prob=prob.type(torch.FloatTensor)
         labels=labels.type(torch.FloatTensor)
         logits=logits.type(torch.FloatTensor)
@@ -73,6 +78,7 @@ class Loss(nn.Module):
             neg_prob=neg_prob.to(self.device)
             neg_label=neg_label.to(self.device)
             neg_loss = self.classify_loss(neg_prob, neg_label)
+        
         
         #classify_loss = pos_loss + neg_loss
         classify_loss = self.classify_loss(logits, labels)

@@ -341,8 +341,8 @@ def preproc_labs(dataset_path: str, cohort_path:str, time_col:str, anchor_col:st
     #df_cohort['lab_time_from_admit'] = df_cohort['charttime'] - df_cohort['admittime']
     #df_cohort['valuenum']=df_cohort['valuenum'].fillna(0)
     #df_cohort=df_cohort.dropna()
-    print("# Itemid:\n", df_cohort.itemid.nunique())
-    print("# Admissions:  ", df_cohort.hadm_id.nunique())
+    print("# Itemid: ", df_cohort.itemid.nunique())
+    print("# Admissions: ", df_cohort.hadm_id.nunique())
     print("Total number of rows: ", df_cohort.shape[0])
 
     # Only return module measurements within the observation range, sorted by subject_id

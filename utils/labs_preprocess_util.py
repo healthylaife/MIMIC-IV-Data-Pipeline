@@ -7,7 +7,8 @@ from collections import defaultdict
 from typing import Union, List, Tuple
 import pandas as pd
 import numpy as np
-
+if not os.path.exists("./data/temp"):
+    os.makedirs("./data/temp")
 
 def hadm_imputer(
     charttime: pd._libs.tslibs.timestamps.Timestamp,
@@ -22,14 +23,14 @@ def hadm_imputer(
 ) -> Tuple[str, pd._libs.tslibs.timestamps.Timestamp]:
     # if old hadm exists use that
     if not np.isnan(hadm_old):
-        print("old")
+        #print("old")
         hadm_old = int(hadm_old)
         admtime, dischtime = [
             [adm_time, disch_time]
             for h_id, adm_time, disch_time in hadm_ids_w_timestamps
             if h_id == hadm_old
         ][0]
-        print("got old")
+        #print("got old")
         return (
             hadm_old,
             admtime.strftime("%Y-%m-%d %H:%M:%S"),

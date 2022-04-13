@@ -45,7 +45,7 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
         )
     pts['yob']= pts['anchor_year'] - pts['anchor_age']  # get yob to ensure a given visit is from an adult
     pts['min_valid_year'] = pts['anchor_year'] + (2019 - pts['anchor_year_group'].str.slice(start=-4).astype(int))
-
+    
     # Define anchor_year corresponding to the anchor_year_group 2017-2019. This is later used to prevent consideration
     # of visits with prediction windows outside the dataset's time range (2008-2019)
     #[[group_col, visit_col, admit_col, disch_col]]
@@ -59,7 +59,9 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
             )
 
     # only take adult patients
-    visit_pts['Age']=visit_pts[admit_col].dt.year - visit_pts['yob']
+#     visit_pts['Age']=visit_pts[admit_col].dt.year - visit_pts['yob']
+#     visit_pts = visit_pts.loc[visit_pts['Age'] >= 18]
+    visit_pts['Age']=visit_pts['anchor_age']
     visit_pts = visit_pts.loc[visit_pts['Age'] >= 18]
     
     ##Add Demo data
@@ -67,7 +69,7 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
     visit_pts= visit_pts.merge(eth, how='inner', left_on='hadm_id', right_on='hadm_id')
     
     if use_ICU:
-        return visit_pts.dropna(subset=['min_valid_year'])[[group_col, visit_col, adm_visit_col, admit_col, disch_col, 'min_valid_year', 'dod','Age','gender','ethnicity']]
+        return visit_pts[[group_col, visit_col, adm_visit_col, admit_col, disch_col, 'min_valid_year', 'dod','Age','gender','ethnicity']]
     else:
         return visit_pts.dropna(subset=['min_valid_year'])[[group_col, visit_col, admit_col, disch_col, 'min_valid_year', 'dod','Age','gender','ethnicity']]
 
@@ -140,15 +142,23 @@ def partition_by_mort(df:pd.DataFrame, group_col:str, visit_col:str, admit_col:s
     invalid = df.loc[(df[admit_col].isna()) | (df[disch_col].isna())]
 
     cohort = df.loc[(~df[admit_col].isna()) & (~df[disch_col].isna())]
+    
+#     cohort["label"] = (
+#         (~cohort[death_col].isna())
+#         & (cohort[death_col] >= cohort[admit_col])
+#         & (cohort[death_col] <= cohort[disch_col])
+#     )
+#     cohort["label"] = cohort["label"].astype("Int32")
     #print("cohort",cohort.shape)
     #print(np.where(~cohort[death_col].isna(),1,0))
     #print(np.where(cohort.loc[death_col] >= cohort.loc[admit_col],1,0))
     #print(np.where(cohort.loc[death_col] <= cohort.loc[disch_col],1,0))
     cohort['label']=0
-    cohort=cohort.fillna(0)
+    #cohort=cohort.fillna(0)
     pos_cohort=cohort[~cohort[death_col].isna()]
     neg_cohort=cohort[cohort[death_col].isna()]
-
+    neg_cohort=neg_cohort.fillna(0)
+    pos_cohort=pos_cohort.fillna(0)
     pos_cohort[death_col] = pd.to_datetime(pos_cohort[death_col])
 
     pos_cohort['label'] = np.where((pos_cohort[death_col] >= pos_cohort[admit_col]) & (pos_cohort[death_col] <= pos_cohort[disch_col]),1,0)
@@ -243,6 +253,7 @@ def extract_data(use_ICU:str, label:str, icd_code:str, root_dir, cohort_output=N
         use_ICU=use_ICU
     )
     #print("pts",pts.head())
+    
     # cols to be extracted from get_case_ctrls
     cols = [group_col, visit_col, admit_col, disch_col, 'Age','gender','ethnicity','label']
 

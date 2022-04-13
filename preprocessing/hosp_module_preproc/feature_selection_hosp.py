@@ -39,7 +39,7 @@ def feature_nonicu(cohort_output, diag_flag=True,lab_flag=True,proc_flag=True,me
     if lab_flag:
         print("[EXTRACTING LABS DATA]")
         lab = preproc_labs("./mimic-iv-1.0/hosp/labevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz','charttime', 'base_anchor_year', dtypes=None, usecols=None)
-        lab[['subject_id', 'hadm_id', 'charttime', 'itemid','admittime','lab_time_from_admit','valuenum','valueuom']].to_csv('./data/features/preproc_labs.csv.gz', compression='gzip', index=False)
+        lab[['subject_id', 'hadm_id', 'charttime', 'itemid','admittime','lab_time_from_admit','valuenum']].to_csv('./data/features/preproc_labs.csv.gz', compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED LABS DATA]")
         
         
@@ -89,9 +89,9 @@ def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_fla
         
         
     if lab_flag:
-        print("[PROCESSING LABS DATA]")
-        labs = pd.read_csv("./data/features/preproc_labs.csv.gz", compression='gzip',header=0)
         if clean_labs:   
+            print("[PROCESSING LABS DATA]")
+            labs = pd.read_csv("./data/features/preproc_labs.csv.gz", compression='gzip',header=0)
             labs=labs[(labs['valuenum'] >= 0) & (labs['valuenum'] < 99999)]
             for i in [51249, 51282]:
                 try:
@@ -99,9 +99,10 @@ def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_fla
                     labs = labs.loc[~((labs.itemid == i) & (labs.valueuom == maj))]
                 except IndexError:
                     print(f"{idx} not found")
-        print("Total number of rows",labs.shape[0])
-        labs.to_csv("./data/features/preproc_labs.csv.gz", compression='gzip', index=False)
-        print("[SUCCESSFULLY SAVED LABS DATA]")
+            print("Total number of rows",labs.shape[0])
+            del labs['valueuom']
+            labs.to_csv("./data/features/preproc_labs.csv.gz", compression='gzip', index=False)
+            print("[SUCCESSFULLY SAVED LABS DATA]")
         
 def generate_summary_hosp(diag_flag,proc_flag,med_flag,lab_flag):
     print("[GENERATING FEATURE SUMMARY]")
