@@ -52,9 +52,10 @@ class Loss(nn.Module):
         #print(prob.shape)
         #print(labels.shape)
         #print(prob)
-        #prob=torch.tensor(prob)
-        #labels=torch.tensor(labels)
-        #logits=torch.tensor(logits)
+        if standalone:
+            prob=torch.tensor(prob)
+            labels=torch.tensor(labels)
+            logits=torch.tensor(logits)
         #print(prob)
         prob=prob.type(torch.FloatTensor)
         labels=labels.type(torch.FloatTensor)

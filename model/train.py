@@ -158,7 +158,7 @@ class Model_Train():
         
         #self.loss=model.Loss(self.device)
         # define the loss and the optimizer
-        self.optimizer = optim.Adam(self.net.parameters(), lr=0.0001)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=args.lrn_rate)
         #criterion = nn.CrossEntropyLoss()
         self.net.to(self.device)
         
@@ -187,12 +187,14 @@ class Model_Train():
 
                     if len(proc):
                         proc=torch.tensor(proc)
-                        #print(proc.shape)
+                        #print("Proc",proc.shape)
+                        #print(proc[10,0:5,:])
                         proc=proc.type(torch.LongTensor)
 
                     if len(conds):
                         conds=torch.tensor(conds)
-                        #print(conds.shape)
+                        print("Cond",conds.shape)
+                        print(conds[10,:])
                         conds=conds.type(torch.LongTensor)
 
                     if len(outs):
@@ -207,7 +209,9 @@ class Model_Train():
 
                     if len(labs[0]):
                         labs=torch.tensor(labs)
-                        #print(conds.shape)
+                        #print("Lab",labs.shape)
+                        #print(labs[0,10,0:5,:])
+                        #print(labs[0,10,0:5,:])
                         labs=labs.type(torch.LongTensor)
 
                     demo=torch.tensor(demo)
