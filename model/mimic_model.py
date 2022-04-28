@@ -51,7 +51,7 @@ class LSTMBase(nn.Module):
             self.chart=CodeBase(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
         if self.lab_vocab_size:
-            self.lab=CodeBase(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,True)
+            self.lab=CodeBase(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,False)
             self.modalities=self.modalities+1
        
         
@@ -173,7 +173,7 @@ class LSTMBaseH(nn.Module):
             self.chart=CodeBase(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
         if self.lab_vocab_size:
-            self.lab=CodeBase(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,True)
+            self.lab=CodeBase(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,False)
             self.modalities=self.modalities+1
 
         self.condEmbed=nn.Embedding(self.cond_vocab_size,self.embed_size,self.padding_idx) 
@@ -452,7 +452,7 @@ class LSTMAttn(nn.Module):
             self.chart=CodeAttn(self.device,self.embed_size,self.rnn_size,self.chart_vocab_size,self.chart_seq_len,self.batch_size,self.lab_signal,True)
             self.modalities=self.modalities+1
         if self.lab_vocab_size:
-            self.lab=CodeAttn(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,True)
+            self.lab=CodeAttn(self.device,self.embed_size,self.rnn_size,self.lab_vocab_size,self.lab_seq_len,self.batch_size,self.lab_signal,False)
             self.modalities=self.modalities+1
 
         
@@ -630,13 +630,14 @@ class CodeAttn(nn.Module):
                 codeEmbedded=torch.cat((codeEmbedded,dat),3)
             code=torch.transpose(codeEmbedded,1,2)
             code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
+            #code=torch.sum(codeEmbedded,1)
             
                 #print(code.shape)
         else:
             code=self.codeEmbed(code)
             code=torch.transpose(code,1,2)
             code=torch.reshape(code,(code.shape[0],code.shape[1],-1))
-        #code=torch.sum(code,1)
+            #code=torch.sum(code,1)
         #print(code.shape)
         #code=torch.transpose(code,1,2)
         #print(code[0])
