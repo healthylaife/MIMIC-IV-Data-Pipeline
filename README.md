@@ -27,7 +27,7 @@ If you use MIMIC-IV Data Pipeline in a scientific publication, we would apprecia
 - [Steps to download MIMIC-IV dataset for the pipeline](#Steps-to-download-MIMIC-IV-dataset-for-the-pipeline)
 - [Repository Structure](#Repository-Structure)
 
-##### Steps to download MIMIC-IV dataset for the pipeline
+### Steps to download MIMIC-IV dataset for the pipeline
 
 Go to https://physionet.org/content/mimiciv/1.0/
 
@@ -35,16 +35,23 @@ Follow instructions to get access to MIMIC-IV dataset.
 
 Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-password https://physionet.org/files/mimiciv/1.0/
 
-## Repository Structure
+### Repository Structure
 
-![](images/r1.png)
-
-
-![](images/r2.png)
-
-
-
-![](images/r3.png)
+- mainPipeline.ipynb
+	It is the main file to interact with the pipeline. It provides step-step by options to extract and pre-process cohorts.
+- ./data
+	It consists of all data files stored during pre-processing
+- ./mimic-iv-1.0
+	It consist of files downloaded from MIMIC-IV website.
+- ./saved_models
+	It consists of models saved during training.
+- ./preprocessing
+	- /day_intervals_preproc
+		- day_intervals_cohort.py file is used to extract samples, labels and demographic data for cohorts.
+		- disease_cohort.py is used to filter samples based on diagnoses codes at time of admission
+	- /hosp_module_preproc
+		- feature_selection_hosp.py is used to extract, clean and summarize selected features for non-ICU data.
+		- feature_selection_icu.py is used to extract, clean and summarize selected features for ICU data.
 
 
 
