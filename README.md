@@ -11,16 +11,21 @@ The evaluation module offers a series of standard methods for evaluating the per
 This module also includes options for reporting individual and group fairness measures.
 
 ##### Citing MIMIC-IV Data Pipeline:
-MIMIC-IV Data Pipeline is available on arxive (https://arxiv.org/abs/2204.13841).
+MIMIC-IV Data Pipeline is available on [arxiv](https://arxiv.org/abs/2204.13841).
 If you use MIMIC-IV Data Pipeline in a scientific publication, we would appreciate citations to the following paper.
 
+```
 @article{gupta2022extensive,
   title={An Extensive Data Processing Pipeline for MIMIC-IV},
   author={Gupta, Mehak and Gallamoza, Brennan and Cutrona, Nicolas and Dhakal, Pranjal and Poulain, Raphael and Beheshti, Rahmatollah},
   journal={arXiv preprint arXiv:2204.13841},
-  year={2022}
+ year={2022}
 }
+```
 
+## Table of Contents:
+- [Steps to download MIMIC-IV dataset for the pipeline](#Steps-to-download-MIMIC-IV-dataset-for-the-pipeline)
+- [Repository Structure](#Repository-Structure)
 
 ##### Steps to download MIMIC-IV dataset for the pipeline
 
@@ -30,7 +35,7 @@ Follow instructions to get access to MIMIC-IV dataset.
 
 Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-password https://physionet.org/files/mimiciv/1.0/
 
-Below we show he repo structure.
+## Repository Structure
 
 ![](images/r1.png)
 
