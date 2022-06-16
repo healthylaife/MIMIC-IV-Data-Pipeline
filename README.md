@@ -37,25 +37,49 @@ Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-pa
 
 ### Repository Structure
 
-- mainPipeline.ipynb
+- **mainPipeline.ipynb**
 	It is the main file to interact with the pipeline. It provides step-step by options to extract and pre-process cohorts.
-- ./data
+- **./data**
 	It consists of all data files stored during pre-processing
-- ./mimic-iv-1.0
+- **./mimic-iv-1.0**
 	It consist of files downloaded from MIMIC-IV website.
-- ./saved_models
+- **./saved_models**
 	It consists of models saved during training.
-- ./preprocessing
-	- /day_intervals_preproc
-		- day_intervals_cohort.py file is used to extract samples, labels and demographic data for cohorts.
-		- disease_cohort.py is used to filter samples based on diagnoses codes at time of admission
-	- /hosp_module_preproc
-		- feature_selection_hosp.py is used to extract, clean and summarize selected features for non-ICU data.
-		- feature_selection_icu.py is used to extract, clean and summarize selected features for ICU data.
-
-
-
-![](images/r4.png)
+- **./preprocessing**
+	- **./day_intervals_preproc**
+		- **day_intervals_cohort.py** file is used to extract samples, labels and demographic data for cohorts.
+		- **disease_cohort.py** is used to filter samples based on diagnoses codes at time of admission
+	- **./hosp_module_preproc**
+		- **feature_selection_hosp.py** is used to extract, clean and summarize selected features for non-ICU data.
+		- **feature_selection_icu.py** is used to extract, clean and summarize selected features for ICU data.
+- **./data**
+	- **./cohort**
+		consists of files saved during cohort extraction
+	- **./features**
+		consist of files containing features data for all selected features.
+	- **./summary**
+		consists of summary files for all features.
+	 	It also consists of file with list of variables in all features and can be used for feature selection.
+	- **./dict**
+		consists of dictionary structured files for all features obtained after time-series representation
+	- **./output**
+		consists output files saved after training and testing of model. These files are used during evaluation.
+- **./model**
+	**train.py**
+		consists of code to create batches of data according to batch_size and create, train and test different models.
+	**Mimic_model.py**
+		consist of different model architectures.
+	**evaluation.py**
+		consists of class to perform evaluation of results obtained from models.
+		This class can be instantiated separated for use as standalone module.
+	**fairness.py**
+		consists of code to perform fairness evaluation.
+		It can also be used as standalone module.
+	**parameters.py**
+		consists of list of hyperparameters to be defined for model training.
+	**callibrate_output**
+		consists of code to calibrate model output.
+		It can also be used as standalone module.
 
 
 
