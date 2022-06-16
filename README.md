@@ -26,7 +26,7 @@ If you use MIMIC-IV Data Pipeline in a scientific publication, we would apprecia
 ## Table of Contents:
 - [Steps to download MIMIC-IV dataset for the pipeline](#Steps-to-download-MIMIC-IV-dataset-for-the-pipeline)
 - [Repository Structure](#Repository-Structure)
-
+- [Output Dictionary Structure for all features after time-series representation](#Output-Dictionary-Structure-for-all-features-after-time-series-representation)
 ### Steps to download MIMIC-IV dataset for the pipeline
 
 Go to https://physionet.org/content/mimiciv/1.0/
@@ -38,21 +38,9 @@ Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-pa
 ### Repository Structure
 
 - **mainPipeline.ipynb**
-	It is the main file to interact with the pipeline. It provides step-step by options to extract and pre-process cohorts.
+	is the main file to interact with the pipeline. It provides step-step by options to extract and pre-process cohorts.
 - **./data**
-	It consists of all data files stored during pre-processing
-- **./mimic-iv-1.0**
-	It consist of files downloaded from MIMIC-IV website.
-- **./saved_models**
-	It consists of models saved during training.
-- **./preprocessing**
-	- **./day_intervals_preproc**
-		- **day_intervals_cohort.py** file is used to extract samples, labels and demographic data for cohorts.
-		- **disease_cohort.py** is used to filter samples based on diagnoses codes at time of admission
-	- **./hosp_module_preproc**
-		- **feature_selection_hosp.py** is used to extract, clean and summarize selected features for non-ICU data.
-		- **feature_selection_icu.py** is used to extract, clean and summarize selected features for ICU data.
-- **./data**
+	consists of all data files stored during pre-processing
 	- **./cohort**
 		consists of files saved during cohort extraction
 	- **./features**
@@ -64,26 +52,37 @@ Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-pa
 		consists of dictionary structured files for all features obtained after time-series representation
 	- **./output**
 		consists output files saved after training and testing of model. These files are used during evaluation.
+- **./mimic-iv-1.0**
+	consist of files downloaded from MIMIC-IV website.
+- **./saved_models**
+	consists of models saved during training.
+- **./preprocessing**
+	- **./day_intervals_preproc**
+		- **day_intervals_cohort.py** file is used to extract samples, labels and demographic data for cohorts.
+		- **disease_cohort.py** is used to filter samples based on diagnoses codes at time of admission
+	- **./hosp_module_preproc**
+		- **feature_selection_hosp.py** is used to extract, clean and summarize selected features for non-ICU data.
+		- **feature_selection_icu.py** is used to extract, clean and summarize selected features for ICU data.
 - **./model**
-	**train.py**
+	- **train.py**
 		consists of code to create batches of data according to batch_size and create, train and test different models.
-	**Mimic_model.py**
+	- **Mimic_model.py**
 		consist of different model architectures.
-	**evaluation.py**
+	- **evaluation.py**
 		consists of class to perform evaluation of results obtained from models.
 		This class can be instantiated separated for use as standalone module.
-	**fairness.py**
+	- **fairness.py**
 		consists of code to perform fairness evaluation.
 		It can also be used as standalone module.
-	**parameters.py**
+	- **parameters.py**
 		consists of list of hyperparameters to be defined for model training.
-	**callibrate_output**
+	- **callibrate_output**
 		consists of code to calibrate model output.
 		It can also be used as standalone module.
 
 
 
-Output Dictionary Structure for all features after time-series representation.
+### Output Dictionary Structure for all features after time-series representation
 
 ![](images/dict.png)
 
