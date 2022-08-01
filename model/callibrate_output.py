@@ -33,7 +33,9 @@ def callibrate(inputFile, outputFile):
 
     if torch.cuda.is_available():
         device='cuda:0'
+    device='cpu'
     temperature = nn.Parameter(torch.ones(1).to(device))
+    temperature=temperature.type(torch.FloatTensor)
     #temperature=temperature.to('cuda:0')
     args = {'temperature': temperature}
     optimizer = optim.LBFGS([temperature], lr=0.0001, max_iter=100000, line_search_fn='strong_wolfe')
@@ -47,7 +49,8 @@ def callibrate(inputFile, outputFile):
     losses = []
     def _eval():
        # scaled=T_scaling(torch.tensor(output_dict['Prob']).cuda(), temperature)
-        loss = criterion(T_scaling(torch.tensor(output_dict['Logits']).to(device), temperature), torch.tensor(output_dict['Labels']).to(device))
+        
+        loss = criterion(T_scaling(torch.tensor(output_dict['Logits']).type(torch.FloatTensor).to(device), temperature), torch.tensor(output_dict['Labels']).type(torch.FloatTensor).to(device))
         #print(loss)
         loss.backward()
         temps.append(temperature.item())

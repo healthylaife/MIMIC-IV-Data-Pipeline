@@ -20,8 +20,8 @@ if not os.path.exists("./data/output"):
 class Loss(nn.Module):
     def __init__(self,device,acc,ppv,sensi,tnr,npv,auroc,aurocPlot,auprc,auprcPlot,callb,callbPlot):
         super(Loss, self).__init__()
-        #self.classify_loss = nn.BCELoss()
-        self.classify_loss = nn.BCEWithLogitsLoss()
+        self.classify_loss = nn.BCELoss()
+        self.classify_loss2 = nn.BCEWithLogitsLoss()
         self.device=device
         self.acc=acc
         self.ppv=ppv
@@ -49,8 +49,8 @@ class Loss(nn.Module):
         
         #prob = prob.data.cpu().numpy()
         #print(torch.sum(torch.isnan(prob)))
-        #print(prob.shape)
-        #print(labels.shape)
+#         print(prob.shape)
+#         print(labels.shape)
         #print(prob)
         if standalone:
             prob=torch.tensor(prob)
@@ -81,8 +81,10 @@ class Loss(nn.Module):
             neg_loss = self.classify_loss(neg_prob, neg_label)
         
         
-        #classify_loss = pos_loss + neg_loss
-        classify_loss = self.classify_loss(logits, labels)
+        classify_loss = pos_loss + neg_loss
+        logits=logits.to(self.device)
+        labels=labels.to(self.device)
+        classify_loss2 = self.classify_loss2(logits, labels)
         
         if train:
             return classify_loss
