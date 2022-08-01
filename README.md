@@ -26,7 +26,7 @@ If you use MIMIC-IV Data Pipeline in a scientific publication, we would apprecia
 ## Table of Contents:
 - [Steps to download MIMIC-IV dataset for the pipeline](#Steps-to-download-MIMIC-IV-dataset-for-the-pipeline)
 - [Repository Structure](#Repository-Structure)
-- [How to use the pipeline?](#How to use the pipeline?)
+- [How to use the pipeline](#How to use the pipeline)
 ### Steps to download MIMIC-IV dataset for the pipeline
 
 Go to https://physionet.org/content/mimiciv/1.0/
@@ -80,4 +80,9 @@ Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-pa
 		consists of code to calibrate model output.
 		It can also be used as standalone module.
 
-### How to use the pipeline?
+### How to use the pipeline
+- After downloading the repo, open **mainPipeline.ipynb**.
+- **mainPipeline.ipynb**, contains sequential code blocks to extract, preprocess, model and train MIMIC-IV EHR data.
+- Follow each code bloack and read intructions give just before each code block to run code block.
+- Follow the exact file paths and filenames given in instructions for each code block to run the pipeline.
+- For evaluation module, clear instructions are provided on how to use it as a standalone module.
