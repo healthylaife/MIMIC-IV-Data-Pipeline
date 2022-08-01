@@ -26,7 +26,7 @@
   contains definition of deep learning models included in the pipeline.
   Refere to **Block 9** of **mainPipeline.ipynb** for details.
   
-- **train.py**
+- **dl_train.py**
   contains the code to train and test deep learning models included in the pipeline.
   Refere to **Block 9** of **mainPipeline.ipynb** for details.
 
