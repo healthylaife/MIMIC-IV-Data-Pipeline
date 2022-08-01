@@ -9,10 +9,12 @@ import datetime as dt
 from tqdm import tqdm
 import labs_preprocess_util
 from labs_preprocess_util import *
+
 from sklearn.preprocessing import MultiLabelBinarizer
 importlib.reload(labs_preprocess_util)
 import labs_preprocess_util
 from labs_preprocess_util import *
+
 ########################## GENERAL ##########################
 def dataframe_from_csv(path, compression='gzip', header=0, index_col=0, chunksize=None):
     return pd.read_csv(path, compression=compression, header=header, index_col=index_col, chunksize=None)
@@ -292,7 +294,7 @@ def preproc_labs(dataset_path: str, cohort_path:str, time_col:str, anchor_col:st
     for chunk in tqdm(pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col],chunksize=chunksize)):
         #print(chunk.shape)
         #chunk.dropna(subset=['hadm_id'],inplace=True,axis=1)
-        chunk['valuenum']=chunk['valuenum'].fillna(0)
+        chunk=chunk.dropna(subset=['valuenum'])
         chunk['valueuom']=chunk['valueuom'].fillna(0)
         
         chunk=chunk[chunk['subject_id'].isin(cohort['subject_id'].unique())]

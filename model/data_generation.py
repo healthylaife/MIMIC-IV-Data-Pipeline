@@ -12,7 +12,7 @@ if not os.path.exists("./data/dict"):
     os.makedirs("./data/dict")
     
 class Generator():
-    def __init__(self,cohort_output,if_mort,feat_cond,feat_lab,feat_proc,feat_med,impute,include_time=24,bucket=1,predW=0):
+    def __init__(self,cohort_output,if_mort,if_admn,if_los,feat_cond,feat_lab,feat_proc,feat_med,impute,include_time=24,bucket=1,predW=0):
         self.impute=impute
         self.feat_cond,self.feat_proc,self.feat_med,self.feat_lab = feat_cond,feat_proc,feat_med,feat_lab
         self.cohort_output=cohort_output
@@ -25,8 +25,11 @@ class Generator():
             print(predW)
             self.mortality_length(include_time,predW)
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
-        else:
+        elif if_admn:
             self.readmission_length(include_time)
+            print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
+        elif if_los:
+            self.los_length(include_time)
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         self.smooth_meds(bucket)
         
@@ -172,7 +175,34 @@ class Generator():
         
         self.los=include_time
         
+    def los_length(self,include_time,predW):
+        self.los=include_time
+        self.data=self.data[(self.data['los']>=include_time)]
+        self.hids=self.data['hadm_id'].unique()
         
+        if(self.feat_cond):
+            self.cond=self.cond[self.cond['hadm_id'].isin(self.data['hadm_id'])]
+        
+        self.data['los']=include_time
+        ###MEDS
+        if(self.feat_med):
+            self.meds=self.meds[self.meds['hadm_id'].isin(self.data['hadm_id'])]
+            self.meds=self.meds[self.meds['start_time']<=include_time]
+            self.meds.loc[self.meds.stop_time >include_time, 'stop_time']=include_time
+                    
+        
+        ###PROCS
+        if(self.feat_proc):
+            self.proc=self.proc[self.proc['hadm_id'].isin(self.data['hadm_id'])]
+            self.proc=self.proc[self.proc['start_time']<=include_time]
+            
+        ###LAB
+        if(self.feat_lab):
+            self.labs=self.labs[self.labs['hadm_id'].isin(self.data['hadm_id'])]
+            self.labs=self.labs[self.labs['start_time']<=include_time]
+            
+        
+        self.los=include_time    
     
     def readmission_length(self,include_time):
         self.los=include_time
@@ -281,6 +311,9 @@ class Generator():
     def create_Dict(self,meds,proc,labs,los):
         print("[ CREATING DATA DICTIONARIES ]")
         dataDic={}
+        labels_csv=pd.DataFrame(columns=['hadm_id','label'])
+        labels_csv['hadm_id']=pd.Series(self.hids)
+        labels_csv['label']=0
         for hid in self.hids:
             grp=self.data[self.data['hadm_id']==hid]
             #print(grp.head())
@@ -288,84 +321,166 @@ class Generator():
             #print(int(grp['Age']))
             #print(grp['ethnicity'].iloc[0])
             dataDic[hid]={'Cond':{},'Proc':{},'Med':{},'Lab':{},'ethnicity':grp['ethnicity'].iloc[0],'age':int(grp['Age']),'gender':grp['gender'].iloc[0],'label':int(grp['label'])}
+            labels_csv.loc[labels_csv['hadm_id']==hid,'label']=int(grp['label'])
         for hid in tqdm(self.hids):
+            grp=self.data[self.data['hadm_id']==hid]
+            demo_csv=grp[['Age','gender','ethnicity','insurance']]
+            if not os.path.exists("./data/csv"+str(hid)):
+                os.makedirs("./data/csv/"+str(hid))
+            demo_csv.to_csv('./data/csv/'+str(hid)+'/demo.csv',index=False)
+            
+            dyn_csv=pd.DataFrame()
             ###MEDS
             if(self.feat_med):
+                feat=meds['itemid'].unique()
                 df2=meds[meds['hadm_id']==hid]
-                val=df2.pivot_table(index='start_time',columns='drug_name',values='dose_val_rx')
-                df2=df2.pivot_table(index='start_time',columns='drug_name',values='stop_time')
-                #print(df2.shape)
-                add_indices = pd.Index(range(los)).difference(df2.index)
-                add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
-                df2=pd.concat([df2, add_df])
-                df2=df2.sort_index()
-                df2=df2.ffill()
-                df2=df2.fillna(0)
-                
-                val=pd.concat([val, add_df])
-                val=val.sort_index()
-                val=val.ffill()
-                val=val.fillna(-1)
-                #print(df2.head())
-                df2.iloc[:,0:]=df2.iloc[:,0:].sub(df2.index,0)
-                df2[df2>0]=1
-                df2[df2<0]=0
-                val.iloc[:,0:]=df2.iloc[:,0:]*val.iloc[:,0:]
-                #print(df2.head())
-                dataDic[hid]['Med']['signal']=df2.iloc[:,0:].to_dict(orient="list")
-                dataDic[hid]['Med']['val']=val.iloc[:,0:].to_dict(orient="list")
+                if df2.shape[0]==0:
+                    val=pd.DataFrame(np.zeros([los,len(feat)]),columns=feat)
+                    val=val.fillna(0)
+                    val.columns=pd.MultiIndex.from_product([["MEDS"], val.columns])
+                else:
+                    val=df2.pivot_table(index='start_time',columns='drug_name',values='dose_val_rx')
+                    df2=df2.pivot_table(index='start_time',columns='drug_name',values='stop_time')
+                    #print(df2.shape)
+                    add_indices = pd.Index(range(los)).difference(df2.index)
+                    add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
+                    df2=pd.concat([df2, add_df])
+                    df2=df2.sort_index()
+                    df2=df2.ffill()
+                    df2=df2.fillna(0)
+
+                    val=pd.concat([val, add_df])
+                    val=val.sort_index()
+                    val=val.ffill()
+                    val=val.fillna(-1)
+                    #print(df2.head())
+                    df2.iloc[:,0:]=df2.iloc[:,0:].sub(df2.index,0)
+                    df2[df2>0]=1
+                    df2[df2<0]=0
+                    val.iloc[:,0:]=df2.iloc[:,0:]*val.iloc[:,0:]
+                    #print(df2.head())
+                    dataDic[hid]['Med']['signal']=df2.iloc[:,0:].to_dict(orient="list")
+                    dataDic[hid]['Med']['val']=val.iloc[:,0:].to_dict(orient="list")
+                    
+                    
+                    feat_df=pd.DataFrame(columns=list(set(feat)-set(val.columns)))
+ 
+                    val=pd.concat([val,feat_df],axis=1)
+
+                    val=val[feat]
+                    val=val.fillna(0)
+  
+                    val.columns=pd.MultiIndex.from_product([["MEDS"], val.columns])
+                if(dyn_csv.empty):
+                    dyn_csv=val
+                else:
+                    dyn_csv=pd.concat([dyn_csv,val],axis=1)
+
             
             
             ###PROCS
             if(self.feat_proc):
+                feat=proc['itemid'].unique()
                 df2=proc[proc['hadm_id']==hid]
-                df2['val']=1
-                df2=df2.pivot_table(index='start_time',columns='icd_code',values='val')
-                #print(df2.shape)
-                add_indices = pd.Index(range(los)).difference(df2.index)
-                add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
-                df2=pd.concat([df2, add_df])
-                df2=df2.sort_index()
-                df2=df2.fillna(0)
-                df2[df2>0]=1
-                #print(df2.head())
-                dataDic[hid]['Proc']=df2.to_dict(orient="list")
+                if df2.shape[0]==0:
+                    df2=pd.DataFrame(np.zeros([los,len(feat)]),columns=feat)
+                    df2=df2.fillna(0)
+                    df2.columns=pd.MultiIndex.from_product([["PROC"], df2.columns])
+                else:
+                    df2['val']=1
+                    df2=df2.pivot_table(index='start_time',columns='icd_code',values='val')
+                    #print(df2.shape)
+                    add_indices = pd.Index(range(los)).difference(df2.index)
+                    add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
+                    df2=pd.concat([df2, add_df])
+                    df2=df2.sort_index()
+                    df2=df2.fillna(0)
+                    df2[df2>0]=1
+                    #print(df2.head())
+                    dataDic[hid]['Proc']=df2.to_dict(orient="list")
+                    
+                    feat_df=pd.DataFrame(columns=list(set(feat)-set(df2.columns)))
+                    df2=pd.concat([df2,feat_df],axis=1)
+
+                    df2=df2[feat]
+                    df2=df2.fillna(0)
+                    df2.columns=pd.MultiIndex.from_product([["PROC"], df2.columns])
+                
+                if(dyn_csv.empty):
+                    dyn_csv=df2
+                else:
+                    dyn_csv=pd.concat([dyn_csv,df2],axis=1)
                 
             ###LABS
             if(self.feat_lab):
+                feat=labs['itemid'].unique()
                 df2=labs[labs['hadm_id']==hid]
-                val=df2.pivot_table(index='start_time',columns='itemid',values='valuenum')
-                df2['val']=1
-                df2=df2.pivot_table(index='start_time',columns='itemid',values='val')
-                #print(df2.shape)
-                add_indices = pd.Index(range(los)).difference(df2.index)
-                add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
-                df2=pd.concat([df2, add_df])
-                df2=df2.sort_index()
-                df2=df2.fillna(0)
+                if df2.shape[0]==0:
+                    val=pd.DataFrame(np.zeros([los,len(feat)]),columns=feat)
+                    val=val.fillna(0)
+                    val.columns=pd.MultiIndex.from_product([["LAB"], val.columns])
+                else:
+                    val=df2.pivot_table(index='start_time',columns='itemid',values='valuenum')
+                    df2['val']=1
+                    df2=df2.pivot_table(index='start_time',columns='itemid',values='val')
+                    #print(df2.shape)
+                    add_indices = pd.Index(range(los)).difference(df2.index)
+                    add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
+                    df2=pd.concat([df2, add_df])
+                    df2=df2.sort_index()
+                    df2=df2.fillna(0)
+
+                    val=pd.concat([val, add_df])
+                    val=val.sort_index()
+                    if self.impute:
+                        val=val.ffill()
+                        val=val.bfill()
+                        val=val.fillna(val.mean())
+                    val=val.fillna(0)
+
+                    df2[df2>0]=1
+                    df2[df2<0]=0
+
+                    #print(df2.head())
+                    dataDic[hid]['Lab']['signal']=df2.iloc[:,0:].to_dict(orient="list")
+                    dataDic[hid]['Lab']['val']=val.iloc[:,0:].to_dict(orient="list")
+                    
+                    feat_df=pd.DataFrame(columns=list(set(feat)-set(val.columns)))
+                    val=pd.concat([val,feat_df],axis=1)
+
+                    val=val[feat]
+                    val=val.fillna(0)
+                    val.columns=pd.MultiIndex.from_product([["LAB"], val.columns])
                 
-                val=pd.concat([val, add_df])
-                val=val.sort_index()
-                if self.impute:
-                    val=val.ffill()
-                    val=val.bfill()
-                    val=val.fillna(val.mean())
-                val=val.fillna(0)
-                
-                df2[df2>0]=1
-                df2[df2<0]=0
+                if(dyn_csv.empty):
+                    dyn_csv=val
+                else:
+                    dyn_csv=pd.concat([dyn_csv,val],axis=1)
             
-                #print(df2.head())
-                dataDic[hid]['Lab']['signal']=df2.iloc[:,0:].to_dict(orient="list")
-                dataDic[hid]['Lab']['val']=val.iloc[:,0:].to_dict(orient="list")
+            #Save temporal data to csv
+            dyn_csv.to_csv('./data/csv/'+str(hid)+'/dynamic.csv',index=False)
             
             ##########COND#########
             if(self.feat_cond):
+                feat=self.cond['new_icd_code'].unique()
                 grp=self.cond[self.cond['hadm_id']==hid]
                 if(grp.shape[0]==0):
                     dataDic[hid]['Cond']={'fids':list(['<PAD>'])}
+                    feat_df=pd.DataFrame(np.zeros([1,len(feat)]),columns=feat)
+                    grp=feat_df.fillna(0)
+                    grp.columns=pd.MultiIndex.from_product([["COND"], grp.columns])
                 else:
                     dataDic[hid]['Cond']={'fids':list(grp['new_icd_code'])}
+                    grp['val']=1
+                    grp=grp.drop_duplicates()
+                    grp=grp.pivot(index='hadm_id',columns='new_icd_code',values='val').reset_index(drop=True)
+                    feat_df=pd.DataFrame(columns=list(set(feat)-set(grp.columns)))
+                    grp=pd.concat([grp,feat_df],axis=1)
+                    grp=grp.fillna(0)
+                    grp=grp[feat]
+                    grp.columns=pd.MultiIndex.from_product([["COND"], grp.columns])
+            grp.to_csv('./data/csv/'+str(hid)+'/static.csv',index=False)   
+            labels_csv.to_csv('./data/csv/labels.csv',index=False)    
                 
                 
         ######SAVE DICTIONARIES##############
@@ -383,7 +498,11 @@ class Generator():
             
         with open("./data/dict/ageVocab", 'wb') as fp:
             pickle.dump(list(self.data['Age'].unique()), fp)
-            self.eth_vocab = self.data['Age'].nunique()
+            self.age_vocab = self.data['Age'].nunique()
+            
+        with open("./data/dict/insVocab", 'wb') as fp:
+            pickle.dump(list(self.data['insurance'].unique()), fp)
+            self.ins_vocab = self.data['insurance'].nunique()
             
         if(self.feat_med):
             with open("./data/dict/medVocab", 'wb') as fp:
@@ -399,14 +518,14 @@ class Generator():
         
         if(self.feat_proc):    
             with open("./data/dict/procVocab", 'wb') as fp:
-                pickle.dump(list(self.proc['icd_code'].unique()), fp)
-            self.proc_vocab = self.proc['icd_code'].unique()
+                pickle.dump(list(proc['icd_code'].unique()), fp)
+            self.proc_vocab = proc['icd_code'].unique()
             metaDic['Proc']=self.proc_per_adm
             
         if(self.feat_lab):    
             with open("./data/dict/labsVocab", 'wb') as fp:
-                pickle.dump(list(self.labs['itemid'].unique()), fp)
-            self.lab_vocab = self.labs['itemid'].unique()
+                pickle.dump(list(labs['itemid'].unique()), fp)
+            self.lab_vocab = labs['itemid'].unique()
             metaDic['Lab']=self.labs_per_adm
             
         with open("./data/dict/metaDic", 'wb') as fp:

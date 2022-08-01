@@ -116,6 +116,7 @@ def preproc_meds(module_path:str, adm_cohort_path:str) -> pd.DataFrame:
     med['stop_hours_from_admit'] = med['endtime'] - med['intime']
     
     #print(med.isna().sum())
+    med=med.dropna()
     #med[['amount','rate']]=med[['amount','rate']].fillna(0)
     print("# of unique type of drug: ", med.itemid.nunique())
     print("# Admissions:  ", med.stay_id.nunique())

@@ -7,6 +7,19 @@ from utils.hosp_preprocess_util import *
 importlib.reload(utils.hosp_preprocess_util)
 import utils.hosp_preprocess_util
 from utils.hosp_preprocess_util import *
+
+import utils.outlier_removal
+from utils.outlier_removal import *  
+importlib.reload(utils.outlier_removal)
+import utils.outlier_removal
+from utils.outlier_removal import *
+
+import utils.uom_conversion
+from utils.uom_conversion import *  
+importlib.reload(utils.uom_conversion)
+import utils.uom_conversion
+from utils.uom_conversion import *
+
 # module of preprocessing functions
 if not os.path.exists("./data/features"):
     os.makedirs("./data/features")
@@ -39,12 +52,13 @@ def feature_nonicu(cohort_output, diag_flag=True,lab_flag=True,proc_flag=True,me
     if lab_flag:
         print("[EXTRACTING LABS DATA]")
         lab = preproc_labs("./mimic-iv-1.0/hosp/labevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz','charttime', 'base_anchor_year', dtypes=None, usecols=None)
+        lab = drop_wrong_uom(lab, 0.95)
         lab[['subject_id', 'hadm_id', 'charttime', 'itemid','admittime','lab_time_from_admit','valuenum']].to_csv('./data/features/preproc_labs.csv.gz', compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED LABS DATA]")
         
         
         
-def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_flag,group_diag,group_med,group_proc,clean_labs):
+def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_flag,group_diag,group_med,group_proc,clean_labs,impute_labs):
     if diag_flag:
         print("[PROCESSING DIAGNOSIS DATA]")
         diag = pd.read_csv("./data/features/preproc_diag.csv.gz", compression='gzip',header=0)
@@ -89,18 +103,21 @@ def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_fla
         
         
     if lab_flag:
+        
         if clean_labs:   
             print("[PROCESSING LABS DATA]")
             labs = pd.read_csv("./data/features/preproc_labs.csv.gz", compression='gzip',header=0)
-            labs=labs[(labs['valuenum'] >= 0) & (labs['valuenum'] < 99999)]
-            for i in [51249, 51282]:
-                try:
-                    maj = labs.loc[labs.itemid == i].valueuom.value_counts().index[0]
-                    labs = labs.loc[~((labs.itemid == i) & (labs.valueuom == maj))]
-                except IndexError:
-                    print(f"{idx} not found")
+            labs = outlier_imputation(labs, 'itemid', 'valuenum', 95,impute_labs)
+            
+
+#             for i in [51249, 51282]:
+#                 try:
+#                     maj = labs.loc[labs.itemid == i].valueuom.value_counts().index[0]
+#                     labs = labs.loc[~((labs.itemid == i) & (labs.valueuom == maj))]
+#                 except IndexError:
+#                     print(f"{idx} not found")
             print("Total number of rows",labs.shape[0])
-            del labs['valueuom']
+#             del labs['valueuom']
             labs.to_csv("./data/features/preproc_labs.csv.gz", compression='gzip', index=False)
             print("[SUCCESSFULLY SAVED LABS DATA]")
         
@@ -211,7 +228,7 @@ def features_selection_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_flag
                     labs=chunk
                 else:
                     labs=labs.append(chunk, ignore_index=True)
-            features=pd.read_csv("./data/summary/lab_features.csv",header=0)
+            features=pd.read_csv("./data/summary/labs_features.csv",header=0)
             labs=labs[labs['itemid'].isin(features['itemid'].unique())]
             print("Total number of rows",labs.shape[0])
             labs.to_csv("./data/features/preproc_labs.csv.gz", compression='gzip', index=False)

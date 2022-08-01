@@ -183,6 +183,7 @@ class Model_Train():
                     
                     if len(meds[0]):
                         meds=torch.tensor(meds)
+                        #print("meds",meds.shape)
                         meds=meds.type(torch.LongTensor)
 
                     if len(proc):
@@ -193,8 +194,8 @@ class Model_Train():
 
                     if len(conds):
                         conds=torch.tensor(conds)
-                        print("Cond",conds.shape)
-                        print(conds[10,:])
+                        #print("Cond",conds.shape)
+                        #print(conds[10,:])
                         conds=conds.type(torch.LongTensor)
 
                     if len(outs):
@@ -271,10 +272,11 @@ class Model_Train():
                 if len(meds[0]):
                     meds=torch.tensor(meds)
                     meds=meds.type(torch.LongTensor)
+                    print(meds.shape)
 
                 if len(proc):
                     proc=torch.tensor(proc)
-                    #print(proc.shape)
+                    print(proc.shape)
                     proc=proc.type(torch.LongTensor)
 
                 if len(conds):

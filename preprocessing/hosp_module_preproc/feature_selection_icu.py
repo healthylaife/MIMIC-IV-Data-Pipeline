@@ -10,6 +10,20 @@ from utils.icu_preprocess_util import *
 importlib.reload(utils.icu_preprocess_util)
 import utils.icu_preprocess_util
 from utils.icu_preprocess_util import *# module of preprocessing functions
+
+import utils.outlier_removal
+from utils.outlier_removal import *  
+importlib.reload(utils.outlier_removal)
+import utils.outlier_removal
+from utils.outlier_removal import *
+
+import utils.uom_conversion
+from utils.uom_conversion import *  
+importlib.reload(utils.uom_conversion)
+import utils.uom_conversion
+from utils.uom_conversion import *
+
+
 if not os.path.exists("./data/features"):
     os.makedirs("./data/features")
 if not os.path.exists("./data/features/chartevents"):
@@ -31,7 +45,8 @@ def feature_icu(cohort_output, diag_flag=True,out_flag=True,chart_flag=True,proc
     if chart_flag:
         print("[EXTRACTING CHART EVENTS DATA]")
         chart=preproc_chart("./mimic-iv-1.0/icu/chartevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', 'charttime', dtypes=None, usecols=['stay_id','charttime','itemid','valuenum','valueuom'])
-        chart[['stay_id', 'itemid','event_time_from_admit','valuenum','valueuom']].to_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', index=False)
+        chart = drop_wrong_uom(chart, 0.95)
+        chart[['stay_id', 'itemid','event_time_from_admit','valuenum']].to_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
     
     if proc_flag:
@@ -46,7 +61,7 @@ def feature_icu(cohort_output, diag_flag=True,out_flag=True,chart_flag=True,proc
         med[['subject_id', 'hadm_id', 'stay_id', 'itemid' ,'starttime','endtime', 'start_hours_from_admit', 'stop_hours_from_admit','rate','amount','orderid']].to_csv('./data/features/preproc_med_icu.csv.gz', compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
 
-def preprocess_features_icu(cohort_output, diag_flag, group_diag,chart_flag,clean_chart):
+def preprocess_features_icu(cohort_output, diag_flag, group_diag,chart_flag,clean_chart,impute_outlier_chart):
     if diag_flag:
         print("[PROCESSING DIAGNOSIS DATA]")
         diag = pd.read_csv("./data/features/preproc_diag_icu.csv.gz", compression='gzip',header=0)
@@ -66,16 +81,18 @@ def preprocess_features_icu(cohort_output, diag_flag, group_diag,chart_flag,clea
         if clean_chart:   
             print("[PROCESSING CHART EVENTS DATA]")
             chart = pd.read_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip',header=0)
-            chart=chart[(chart['valuenum'] >= 0) & (chart['valuenum'] < 99999)]
-            for i in [227441, 229357, 229358, 229360]:
-                try:
-                    maj = chart.loc[chart.itemid == i].valueuom.value_counts().index[0]
-                    chart = chart.loc[~((chart.itemid == i) & (chart.valueuom == maj))]
-                except IndexError:
-                    print(f"{idx} not found")
+            chart = outlier_imputation(chart, 'itemid', 'valuenum', 98,impute_outlier_chart)
+            
+#             for i in [227441, 229357, 229358, 229360]:
+#                 try:
+#                     maj = chart.loc[chart.itemid == i].valueuom.value_counts().index[0]
+#                     chart = chart.loc[~((chart.itemid == i) & (chart.valueuom == maj))]
+#                 except IndexError:
+#                     print(f"{idx} not found")
             print("Total number of rows",chart.shape[0])
             chart.to_csv("./data/features/preproc_chart.csv.gz", compression='gzip', index=False)
             print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
+            
         
         
 def generate_summary_icu(diag_flag,proc_flag,med_flag,out_flag,chart_flag):
@@ -100,7 +117,7 @@ def generate_summary_icu(diag_flag,proc_flag,med_flag,out_flag,chart_flag):
         total=med.groupby('itemid').size().reset_index(name="total_count")
         summary=pd.merge(missing,total,on='itemid',how='right')
         summary=pd.merge(freq,summary,on='itemid',how='right')
-        summary['missing%']=100*(summary['missing_count']/summary['total_count'])
+        #summary['missing%']=100*(summary['missing_count']/summary['total_count'])
         summary=summary.fillna(0)
         summary.to_csv('./data/summary/med_summary.csv',index=False)
         summary['itemid'].to_csv('./data/summary/med_features.csv',index=False)
@@ -137,7 +154,7 @@ def generate_summary_icu(diag_flag,proc_flag,med_flag,out_flag,chart_flag):
         total=chart.groupby('itemid').size().reset_index(name="total_count")
         summary=pd.merge(missing,total,on='itemid',how='right')
         summary=pd.merge(freq,summary,on='itemid',how='right')
-        summary['missing_perc']=100*(summary['missing_count']/summary['total_count'])
+        #summary['missing_perc']=100*(summary['missing_count']/summary['total_count'])
         #summary=summary.fillna(0)
 
 #         final.groupby('itemid')['missing_count'].sum().reset_index()
@@ -158,7 +175,7 @@ def features_selection_icu(cohort_output, diag_flag,proc_flag,med_flag,out_flag,
             diag=diag[diag['new_icd_code'].isin(features['new_icd_code'].unique())]
         
             print("Total number of rows",diag.shape[0])
-            diag.to_csv("./data/features/preproc_diag.csv.gz", compression='gzip', index=False)
+            diag.to_csv("./data/features/preproc_diag_icu.csv.gz", compression='gzip', index=False)
             print("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
     
     if med_flag:       
@@ -168,7 +185,7 @@ def features_selection_icu(cohort_output, diag_flag,proc_flag,med_flag,out_flag,
             features=pd.read_csv("./data/summary/med_features.csv",header=0)
             med=med[med['itemid'].isin(features['itemid'].unique())]
             print("Total number of rows",med.shape[0])
-            med.to_csv('./data/features/preproc_med.csv.gz', compression='gzip', index=False)
+            med.to_csv('./data/features/preproc_med_icu.csv.gz', compression='gzip', index=False)
             print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
     
     
@@ -179,7 +196,7 @@ def features_selection_icu(cohort_output, diag_flag,proc_flag,med_flag,out_flag,
             features=pd.read_csv("./data/summary/proc_features.csv",header=0)
             proc=proc[proc['itemid'].isin(features['itemid'].unique())]
             print("Total number of rows",proc.shape[0])
-            proc.to_csv("./data/features/preproc_proc.csv.gz", compression='gzip', index=False)
+            proc.to_csv("./data/features/preproc_proc_icu.csv.gz", compression='gzip', index=False)
             print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
         
         
@@ -190,7 +207,7 @@ def features_selection_icu(cohort_output, diag_flag,proc_flag,med_flag,out_flag,
             features=pd.read_csv("./data/summary/out_features.csv",header=0)
             out=out[out['itemid'].isin(features['itemid'].unique())]
             print("Total number of rows",out.shape[0])
-            out.to_csv("./data/features/preproc_out.csv.gz", compression='gzip', index=False)
+            out.to_csv("./data/features/preproc_out_icu.csv.gz", compression='gzip', index=False)
             print("[SUCCESSFULLY SAVED OUTPUT EVENTS DATA]")
             
     if chart_flag:
@@ -202,5 +219,5 @@ def features_selection_icu(cohort_output, diag_flag,proc_flag,med_flag,out_flag,
             features=pd.read_csv("./data/summary/chart_features.csv",header=0)
             chart=chart[chart['itemid'].isin(features['itemid'].unique())]
             print("Total number of rows",chart.shape[0])
-            chart.to_csv("./data/features/preproc_chart.csv.gz", compression='gzip', index=False)
+            chart.to_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', index=False)
             print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
