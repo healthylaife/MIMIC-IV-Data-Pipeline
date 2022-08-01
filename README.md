@@ -26,7 +26,7 @@ If you use MIMIC-IV Data Pipeline in a scientific publication, we would apprecia
 ## Table of Contents:
 - [Steps to download MIMIC-IV dataset for the pipeline](#Steps-to-download-MIMIC-IV-dataset-for-the-pipeline)
 - [Repository Structure](#Repository-Structure)
-- [Output Dictionary Structure for all features after time-series representation](#Output-Dictionary-Structure-for-all-features-after-time-series-representation)
+- [How to use the pipeline?](#How to use the pipeline?)
 ### Steps to download MIMIC-IV dataset for the pipeline
 
 Go to https://physionet.org/content/mimiciv/1.0/
