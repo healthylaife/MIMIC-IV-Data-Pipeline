@@ -80,3 +80,4 @@ Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-pa
 		consists of code to calibrate model output.
 		It can also be used as standalone module.
 
+### How to use the pipeline?
