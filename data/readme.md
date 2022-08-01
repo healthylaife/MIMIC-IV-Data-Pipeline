@@ -1,6 +1,6 @@
 ### Files in the folder
 
-    This folder will contain following folders -
+This folder will contain following folders -
     
     - **/cohort**
       consist of cohort extracted in csv files which is output of **Block 1** in **mainPipeline.ipynb**
