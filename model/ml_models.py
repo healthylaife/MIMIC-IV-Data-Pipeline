@@ -49,6 +49,8 @@ class ML_models():
             k_fold=self.k_fold
         hids=labels.iloc[:,0]
         y=labels.iloc[:,1]
+        print("Total Samples",len(hids))
+        print("Positive Samples",y.sum())
         #print(len(hids))
         if self.oversampling:
             print("=============OVERSAMPLING===============")
@@ -57,7 +59,8 @@ class ML_models():
             hids, y = oversample.fit_resample(hids, y)
             #print(hids.shape)
             hids=hids[:,0]
-            print(len(hids))
+            print("Total Samples",len(hids))
+            print("Positive Samples",y.sum())
         
         ids=range(0,len(hids))
         batch_size=int(len(ids)/k_fold)
@@ -138,7 +141,7 @@ class ML_models():
             self.loss(prob[:,1],np.asarray(Y_test),logits,False,True)
             self.save_output(Y_test,prob[:,1],logits)
         
-        elif self.model_type=='Logistic Regressin':
+        elif self.model_type=='Logistic Regression':
             X_train=pd.get_dummies(X_train,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
             X_test=pd.get_dummies(X_test,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
             
