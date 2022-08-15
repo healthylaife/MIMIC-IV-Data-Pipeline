@@ -96,6 +96,8 @@ class DL_models():
             k_fold=self.k_fold
         hids=labels.iloc[:,0]
         y=labels.iloc[:,1]
+        print("Total Samples",len(hids))
+        print("Positive Samples",y.sum())
         #print(len(hids))
         if self.oversampling:
             print("=============OVERSAMPLING===============")
@@ -104,7 +106,8 @@ class DL_models():
             hids, y = oversample.fit_resample(hids, y)
             #print(hids.shape)
             hids=hids[:,0]
-            print(len(hids))
+            print("Total Samples",len(hids))
+            print("Positive Samples",y.sum())
         
         ids=range(0,len(hids))
         batch_size=int(len(ids)/k_fold)
@@ -380,13 +383,14 @@ class DL_models():
                                batch_size=args.batch_size) 
         elif model_type=='Time-series CNN':
             self.net = model.CNNBase(self.device,
-                               self.cond_vocab_size,self.cond_seq_len, 
-                               self.proc_vocab_size,self.proc_seq_len,
-                               self.med_vocab_size,self.med_seq_len,
-                               self.out_vocab_size,self.out_seq_len,
-                               self.chart_vocab_size,self.chart_seq_len,
-                               self.lab_vocab_size,self.lab_seq_len,
-                               self.med_signal,self.lab_signal,
+                               self.cond_vocab_size,
+                               self.proc_vocab_size,
+                               self.med_vocab_size,
+                               self.out_vocab_size,
+                               self.chart_vocab_size,
+                               self.lab_vocab_size,
+                               self.eth_vocab_size,self.gender_vocab_size,self.age_vocab_size,self.ins_vocab_size,
+                               self.modalities,
                                embed_size=args.embedding_size,rnn_size=args.rnn_size,
                                batch_size=args.batch_size) 
         elif model_type=='Hybrid LSTM':
@@ -403,28 +407,16 @@ class DL_models():
                                batch_size=args.batch_size) 
         elif model_type=='Hybrid CNN':
             self.net = model.CNNBaseH(self.device,
-                               self.cond_vocab_size,self.cond_seq_len, 
-                               self.proc_vocab_size,self.proc_seq_len,
-                               self.med_vocab_size,self.med_seq_len,
-                               self.out_vocab_size,self.out_seq_len,
-                               self.chart_vocab_size,self.chart_seq_len,
-                               self.lab_vocab_size,self.lab_seq_len,
-                               self.eth_vocab_size,self.gender_vocab_size,self.age_vocab_size,
-                               self.med_signal,self.lab_signal,
-                               embed_size=args.embedding_size,rnn_size=args.rnn_size, 
+                               self.cond_vocab_size,
+                               self.proc_vocab_size,
+                               self.med_vocab_size,
+                               self.out_vocab_size,
+                               self.chart_vocab_size,
+                               self.lab_vocab_size,
+                               self.eth_vocab_size,self.gender_vocab_size,self.age_vocab_size,self.ins_vocab_size,
+                               self.modalities,
+                               embed_size=args.embedding_size,rnn_size=args.rnn_size,
                                batch_size=args.batch_size) 
-        elif model_type=='LSTM with Attention':
-            self.net = model.LSTMAttn(self.device,
-                                   self.cond_vocab_size,self.cond_seq_len, 
-                                   self.proc_vocab_size,self.proc_seq_len,
-                                   self.med_vocab_size,self.med_seq_len,
-                                   self.out_vocab_size,self.out_seq_len,
-                                   self.chart_vocab_size,self.chart_seq_len,
-                                   self.lab_vocab_size,self.lab_seq_len,
-                                   self.eth_vocab_size,self.gender_vocab_size,self.age_vocab_size,
-                                   self.med_signal,self.lab_signal,
-                                   embed_size=args.embedding_size,rnn_size=args.rnn_size,
-                                   batch_size=args.batch_size) 
         self.optimizer = optim.Adam(self.net.parameters(), lr=args.lrn_rate)
         #criterion = nn.CrossEntropyLoss()
         self.net.to(self.device)
