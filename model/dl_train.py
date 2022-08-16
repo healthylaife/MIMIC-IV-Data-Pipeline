@@ -233,7 +233,7 @@ class DL_models():
             meds,chart,out,proc,lab,stat,demo,y=self.getXY(test_hids[nbatch*args.batch_size:(nbatch+1)*args.batch_size],labels)
             
             output,logits = self.net(meds,chart,out,proc,lab,stat,demo)
-            self.model_interpret([meds,chart,out,proc,lab,stat,demo])
+            #self.model_interpret([meds,chart,out,proc,lab,stat,demo])
             output=output.squeeze()
             logits=logits.squeeze()
 #             print(demo.shape)
@@ -250,10 +250,10 @@ class DL_models():
         #print(self.eth)
         self.loss(torch.tensor(self.prob),torch.tensor(self.truth),torch.tensor(self.logits),False,False)
     
-    def model_interpret(self,X):
-        print("======= INTERPRETING ========")
-        deep_lift=IntegratedGradients(self.net)
-        attr=deep_lift.attribute(X,target=1)
+    #def model_interpret(self,X):
+     #   print("======= INTERPRETING ========")
+     #   deep_lift=IntegratedGradients(self.net)
+     #   attr=deep_lift.attribute(X,target=1)
         
         
     def getXY(self,ids,labels):
