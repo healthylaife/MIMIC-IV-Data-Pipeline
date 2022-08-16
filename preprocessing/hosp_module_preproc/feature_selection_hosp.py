@@ -58,7 +58,8 @@ def feature_nonicu(cohort_output, diag_flag=True,lab_flag=True,proc_flag=True,me
         
         
         
-def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_flag,group_diag,group_med,group_proc,clean_labs,impute_labs):
+def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_flag,group_diag,group_med,group_proc,clean_labs,impute_labs,thresh):
+    #print(thresh)
     if diag_flag:
         print("[PROCESSING DIAGNOSIS DATA]")
         diag = pd.read_csv("./data/features/preproc_diag.csv.gz", compression='gzip',header=0)
@@ -107,7 +108,7 @@ def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_fla
         if clean_labs:   
             print("[PROCESSING LABS DATA]")
             labs = pd.read_csv("./data/features/preproc_labs.csv.gz", compression='gzip',header=0)
-            labs = outlier_imputation(labs, 'itemid', 'valuenum', 95,impute_labs)
+            labs = outlier_imputation(labs, 'itemid', 'valuenum', thresh,impute_labs)
             
 
 #             for i in [51249, 51282]:
