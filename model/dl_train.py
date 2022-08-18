@@ -56,8 +56,9 @@ import evaluation
 
 
 class DL_models():
-    def __init__(self,diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag,model_type,k_fold,oversampling,model_name,train):
+    def __init__(self,data_icu,diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag,model_type,k_fold,oversampling,model_name,train):
         self.save_path="saved_models/"+model_name+".tar"
+        self.data_icu=data_icu
         self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag=diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag
         self.modalities=self.diag_flag+self.proc_flag+self.out_flag+self.chart_flag+self.med_flag+self.lab_flag
         self.k_fold=k_fold
@@ -92,6 +93,7 @@ class DL_models():
         
         if (self.k_fold==0):
             k_fold=5
+            self.k_fold=1
         else:
             k_fold=self.k_fold
         hids=labels.iloc[:,0]
@@ -273,7 +275,10 @@ class DL_models():
             dyn_df.append(torch.zeros(size=(1,0)))
 #         print(len(dyn_df))
         for sample in ids:
-            y=labels[labels['stay_id']==sample]['label']
+            if self.data_icu:
+                y=labels[labels['stay_id']==sample]['label']
+            else:
+                y=labels[labels['hadm_id']==sample]['label']
             y_df.append(int(y))
             #print(sample)
             dyn=pd.read_csv('./data/csv/'+str(sample)+'/dynamic.csv',header=[0,1])
