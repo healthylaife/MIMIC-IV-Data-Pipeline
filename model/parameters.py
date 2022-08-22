@@ -13,7 +13,7 @@ ARG_PARSER.add_argument('--test_size', default=0.2, type=int)
 ARG_PARSER.add_argument('--val_size', default=0.1, type=int)
 
 ARG_PARSER.add_argument('--num_epochs', default=20, type=int)
-ARG_PARSER.add_argument('--patience', default=5, type=int)
+ARG_PARSER.add_argument('--patience', default=2, type=int)
 
 
 # ARG_PARSER.add_argument('--cond_seq_len', default=39, type=int)#473

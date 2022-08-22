@@ -175,7 +175,7 @@ class Generator():
         
         self.los=include_time
         
-    def los_length(self,include_time,predW):
+    def los_length(self,include_time):
         self.los=include_time
         self.data=self.data[(self.data['los']>=include_time)]
         self.hids=self.data['hadm_id'].unique()
@@ -202,7 +202,7 @@ class Generator():
             self.labs=self.labs[self.labs['start_time']<=include_time]
             
         
-        self.los=include_time    
+        #self.los=include_time    
     
     def readmission_length(self,include_time):
         self.los=include_time
