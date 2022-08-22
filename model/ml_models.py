@@ -45,6 +45,7 @@ class ML_models():
         
         if (self.k_fold==0):
             k_fold=5
+            self.k_fold=1
         else:
             k_fold=self.k_fold
         hids=labels.iloc[:,0]

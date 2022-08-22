@@ -28,6 +28,8 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder, MinMaxScaler
 from imblearn.over_sampling import RandomOverSampler
 from pickle import dump,load
 from sklearn.model_selection import train_test_split
+import captum
+from captum.attr import IntegratedGradients, Occlusion, LayerGradCam, LayerAttribution
 
 #import torchvision.utils as utils
 import argparse
@@ -56,8 +58,9 @@ import evaluation
 
 
 class DL_models():
-    def __init__(self,diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag,model_type,k_fold,oversampling,model_name,train):
+    def __init__(self,data_icu,diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag,model_type,k_fold,oversampling,model_name,train):
         self.save_path="saved_models/"+model_name+".tar"
+        self.data_icu=data_icu
         self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag=diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag
         self.modalities=self.diag_flag+self.proc_flag+self.out_flag+self.chart_flag+self.med_flag+self.lab_flag
         self.k_fold=k_fold
@@ -92,6 +95,7 @@ class DL_models():
         
         if (self.k_fold==0):
             k_fold=5
+            self.k_fold=1
         else:
             k_fold=self.k_fold
         hids=labels.iloc[:,0]
@@ -199,7 +203,7 @@ class DL_models():
         for nbatch in range(int(len(val_hids)/(args.batch_size))):
             meds,chart,out,proc,lab,stat_train,demo_train,y=self.getXY(val_hids[nbatch*args.batch_size:(nbatch+1)*args.batch_size],labels)
             
-            output,logits = self.net(meds,chart,out,proc,lab,stat_train,demo_train)
+            output,logits = self.net(tuple([meds,chart,out,proc,lab,stat_train,demo_train]))
             output=output.squeeze()
             logits=logits.squeeze()
             
@@ -209,7 +213,7 @@ class DL_models():
             val_prob.extend(output.data.cpu().numpy())
             val_truth.extend(y.data.cpu().numpy())
             val_logits.extend(logits.data.cpu().numpy())
-
+#             self.model_interpret(meds,chart,out,proc,lab,stat_train,demo_train)
         self.loss(torch.tensor(val_prob),torch.tensor(val_truth),torch.tensor(val_logits),False,False)
         val_loss=self.loss(torch.tensor(val_prob),torch.tensor(val_truth),torch.tensor(val_logits),True,False)
         return val_loss.item()
@@ -232,8 +236,8 @@ class DL_models():
             #print(test_hids[nbatch*args.batch_size:(nbatch+1)*args.batch_size])
             meds,chart,out,proc,lab,stat,demo,y=self.getXY(test_hids[nbatch*args.batch_size:(nbatch+1)*args.batch_size],labels)
             
-            output,logits = self.net(meds,chart,out,proc,lab,stat,demo)
-            #self.model_interpret([meds,chart,out,proc,lab,stat,demo])
+            output,logits = self.net(tuple([meds,chart,out,proc,lab,stat,demo]))
+#             self.model_interpret([meds,chart,out,proc,lab,stat,demo])
             output=output.squeeze()
             logits=logits.squeeze()
 #             print(demo.shape)
@@ -250,10 +254,13 @@ class DL_models():
         #print(self.eth)
         self.loss(torch.tensor(self.prob),torch.tensor(self.truth),torch.tensor(self.logits),False,False)
     
-    #def model_interpret(self,X):
-     #   print("======= INTERPRETING ========")
-     #   deep_lift=IntegratedGradients(self.net)
-     #   attr=deep_lift.attribute(X,target=1)
+#     def model_interpret(self,meds,chart,out,proc,lab,stat,demo):
+#         X=tuple([torch.tensor(meds).float(),torch.tensor(chart).float(),torch.tensor(out).float(),torch.tensor(proc).float(),torch.tensor(lab).float(),torch.tensor(stat).float(),torch.tensor(demo).float()])
+#         print("======= INTERPRETING ========")
+#         deep_lift=IntegratedGradients(self.net)
+#         attr=deep_lift.attribute(X)
+#         print(attr)
+#         print(attr.shape)
         
         
     def getXY(self,ids,labels):
@@ -273,7 +280,10 @@ class DL_models():
             dyn_df.append(torch.zeros(size=(1,0)))
 #         print(len(dyn_df))
         for sample in ids:
-            y=labels[labels['stay_id']==sample]['label']
+            if self.data_icu:
+                y=labels[labels['stay_id']==sample]['label']
+            else:
+                y=labels[labels['hadm_id']==sample]['label']
             y_df.append(int(y))
             #print(sample)
             dyn=pd.read_csv('./data/csv/'+str(sample)+'/dynamic.csv',header=[0,1])
@@ -358,7 +368,7 @@ class DL_models():
         
         self.optimizer.zero_grad()
         # get the output sequence from the input and the initial hidden and cell states
-        output,logits = self.net(meds,chart,out,proc,lab,stat_train,demo_train)
+        output,logits = self.net(tuple([meds,chart,out,proc,lab,stat_train,demo_train]))
         output=output.squeeze()
         logits=logits.squeeze()
 #         print(output.shape)

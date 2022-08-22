@@ -12,7 +12,8 @@ import sys
 import parameters
 from parameters import *
 import argparse
-
+import captum
+from captum.attr import IntegratedGradients, Occlusion, LayerGradCam, LayerAttribution
 from argparse import ArgumentParser
 
 importlib.reload(parameters)
@@ -72,8 +73,8 @@ class LSTMBase(nn.Module):
         
         #self.sig = nn.Sigmoid()
         
-    def forward(self,meds,chart,out,proc,lab,conds,demo):        
-        
+    def forward(self,X):        
+        meds,chart,out,proc,lab,conds,demo=X[0],X[1],X[2],X[3],X[4],X[5],X[6]
         out1=torch.zeros(size=(0,0))
         
         if meds.shape[0]:
@@ -263,8 +264,20 @@ class LSTMBaseH(nn.Module):
         self.fc2=nn.Linear(self.rnn_size, 1, False)
         
         #self.sig = nn.Sigmoid()
+    
+#     def model_interpret(self,net,X):
         
-    def forward(self,meds,chart,out,proc,lab,conds,demo):        
+#         print("======= INTERPRETING ========")
+#         deep_lift=IntegratedGradients(net)
+#         attr=deep_lift.attribute(torch.tensor(X).float(),target=0.)
+#         print(attr)
+#         print(attr.shape)
+        
+        
+    def forward(self,X):   
+        #print(len(X))
+        #print(X[4].shape)
+        meds,chart,out,proc,lab,conds,demo=X[0],X[1],X[2],X[3],X[4],X[5],X[6] 
         
         out1=torch.zeros(size=(0,0))
         
@@ -286,7 +299,7 @@ class LSTMBaseH(nn.Module):
                 out1=procEmbedded
         if lab.shape[0]:
             labEmbedded=self.lab(lab)
-            
+            #self.model_interpret(self.lab,lab)
             if out1.nelement():
                 out1=torch.cat((out1,labEmbedded),2)
             else:
@@ -611,7 +624,8 @@ class LSTMAttn(nn.Module):
         
         #self.sig = nn.Sigmoid()
         
-    def forward(self,meds,procs,outs,charts,labs,conds,demo,contrib):        
+    def forward(self,X):        
+        meds,chart,out,proc,lab,conds,demo=X[0],X[1],X[2],X[3],X[4],X[5],X[6]    
         
         out1 = torch.zeros(size=(1,0))
         
@@ -885,7 +899,8 @@ class CNNBase(nn.Module):
         
         #self.sig = nn.Sigmoid()
         
-    def forward(self,meds,chart,out,proc,lab,conds,demo):        
+    def forward(self,X):        
+        meds,chart,out,proc,lab,conds,demo=X[0],X[1],X[2],X[3],X[4],X[5],X[6]   
         
         out1=torch.zeros(size=(0,0))
         
@@ -1075,7 +1090,8 @@ class CNNBaseH(nn.Module):
         
         #self.sig = nn.Sigmoid()
         
-    def forward(self,meds,chart,out,proc,lab,conds,demo):        
+    def forward(self,X):        
+        meds,chart,out,proc,lab,conds,demo=X[0],X[1],X[2],X[3],X[4],X[5],X[6]
         
         out1=torch.zeros(size=(0,0))
         
