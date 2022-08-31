@@ -29,7 +29,7 @@ ARG_PARSER.add_argument('--patience', default=2, type=int)
 # ARG_PARSER.add_argument('--chart_vocab_size', default=76, type=int)#74,75
 
 ARG_PARSER.add_argument('--rnnLayers', default=2, type=float)
-ARG_PARSER.add_argument('--embedding_size', default=12, type=float)
+ARG_PARSER.add_argument('--embedding_size', default=52, type=float)
 ARG_PARSER.add_argument('--latent_size', default=152, type=float)
 ARG_PARSER.add_argument('--rnn_size', default=256, type=float)
 ARG_PARSER.add_argument('--lrn_rate', default=0.001, type=float)

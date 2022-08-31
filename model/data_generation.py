@@ -143,6 +143,7 @@ class Generator():
         
         meds['dose_val_rx']=meds['dose_val_rx'].apply(pd.to_numeric, errors='coerce')
         
+        
         self.meds=meds
         
     
