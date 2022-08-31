@@ -26,10 +26,10 @@ if not os.path.exists("./data/features"):
 if not os.path.exists("./data/summary"):
     os.makedirs("./data/summary")
 
-def feature_nonicu(cohort_output, diag_flag=True,lab_flag=True,proc_flag=True,med_flag=True):
+def feature_nonicu(cohort_output,version_path, diag_flag=True,lab_flag=True,proc_flag=True,med_flag=True):
     if diag_flag:
         print("[EXTRACTING DIAGNOSIS DATA]")
-        diag = preproc_icd_module("./mimic-iv-1.0/hosp/diagnoses_icd.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', './utils/mappings/ICD9_to_ICD10_mapping.txt', map_code_colname='diagnosis_code')
+        diag = preproc_icd_module("./"+version_path+"/hosp/diagnoses_icd.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', './utils/mappings/ICD9_to_ICD10_mapping.txt', map_code_colname='diagnosis_code')
         diag[['subject_id', 'hadm_id', 'icd_code','root_icd10_convert','root']].to_csv("./data/features/preproc_diag.csv.gz", compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
 
@@ -39,19 +39,19 @@ def feature_nonicu(cohort_output, diag_flag=True,lab_flag=True,proc_flag=True,me
     
     if proc_flag:
         print("[EXTRACTING PROCEDURES DATA]")
-        proc = preproc_proc("./mimic-iv-1.0/hosp/procedures_icd.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', 'chartdate', 'base_anchor_year', dtypes=None, usecols=None)
+        proc = preproc_proc("./"+version_path+"/hosp/procedures_icd.csv.gz",'./data/cohort/'+cohort_output+'.csv.gz', 'chartdate', 'base_anchor_year', dtypes=None, usecols=None)
         proc[['subject_id', 'hadm_id', 'icd_code','icd_version', 'chartdate', 'admittime', 'proc_time_from_admit']].to_csv("./data/features/preproc_proc.csv.gz", compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
     
     if med_flag:
         print("[EXTRACTING MEDICATIONS DATA]")
-        med = preproc_meds("./mimic-iv-1.0/hosp/prescriptions.csv.gz", './data/cohort/'+cohort_output+'.csv.gz','./utils/mappings/ndc_product.txt')
+        med = preproc_meds("./"+version_path+"/hosp/prescriptions.csv.gz", './data/cohort/'+cohort_output+'.csv.gz','./utils/mappings/ndc_product.txt')
         med[['subject_id', 'hadm_id', 'starttime','stoptime','drug','nonproprietaryname', 'start_hours_from_admit', 'stop_hours_from_admit','dose_val_rx']].to_csv('./data/features/preproc_med.csv.gz', compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
         
     if lab_flag:
         print("[EXTRACTING LABS DATA]")
-        lab = preproc_labs("./mimic-iv-1.0/hosp/labevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz','charttime', 'base_anchor_year', dtypes=None, usecols=None)
+        lab = preproc_labs("./"+version_path+"/hosp/labevents.csv.gz", version_path,'./data/cohort/'+cohort_output+'.csv.gz','charttime', 'base_anchor_year', dtypes=None, usecols=None)
         lab = drop_wrong_uom(lab, 0.95)
         lab[['subject_id', 'hadm_id', 'charttime', 'itemid','admittime','lab_time_from_admit','valuenum']].to_csv('./data/features/preproc_labs.csv.gz', compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED LABS DATA]")

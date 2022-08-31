@@ -272,7 +272,7 @@ def ndc_meds(med, mapping:str) -> pd.DataFrame:
     
     return med
 
-def preproc_labs(dataset_path: str, cohort_path:str, time_col:str, anchor_col:str, dtypes: dict, usecols: list) -> pd.DataFrame:
+def preproc_labs(dataset_path: str, version_path:str, cohort_path:str, time_col:str, anchor_col:str, dtypes: dict, usecols: list) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
     
     usecols = ['itemid','subject_id','hadm_id','charttime','valuenum','valueuom']
@@ -288,7 +288,11 @@ def preproc_labs(dataset_path: str, cohort_path:str, time_col:str, anchor_col:st
     }
     df_cohort=pd.DataFrame()
     cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['admittime'])
-    adm = pd.read_csv("./mimic-iv-1.0/core/admissions.csv.gz", header=0, index_col=None, compression='gzip', usecols=['subject_id', 'hadm_id', 'admittime', 'dischtime'], parse_dates=['admittime', 'dischtime'])
+    if version_path=="mimiciv/1.0":
+        adm = pd.read_csv("./"+version_path+"/core/admissions.csv.gz", header=0, index_col=None, compression='gzip', usecols=['subject_id', 'hadm_id', 'admittime', 'dischtime'], parse_dates=['admittime', 'dischtime'])
+    elif version_path=="mimiciv/2.0":
+        adm = pd.read_csv("./"+version_path+"/hosp/admissions.csv.gz", header=0, index_col=None, compression='gzip', usecols=['subject_id', 'hadm_id', 'admittime', 'dischtime'], parse_dates=['admittime', 'dischtime'])
+        
     # read module w/ custom params
     chunksize = 10000000
     for chunk in tqdm(pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col],chunksize=chunksize)):

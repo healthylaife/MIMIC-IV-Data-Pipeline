@@ -29,7 +29,7 @@ from imblearn.over_sampling import RandomOverSampler
 from pickle import dump,load
 from sklearn.model_selection import train_test_split
 import captum
-from captum.attr import IntegratedGradients, Occlusion, LayerGradCam, LayerAttribution
+from captum.attr import IntegratedGradients, Occlusion, LayerGradCam, LayerAttribution,LayerDeepLift,DeepLift
 
 #import torchvision.utils as utils
 import argparse
@@ -203,7 +203,7 @@ class DL_models():
         for nbatch in range(int(len(val_hids)/(args.batch_size))):
             meds,chart,out,proc,lab,stat_train,demo_train,y=self.getXY(val_hids[nbatch*args.batch_size:(nbatch+1)*args.batch_size],labels)
             
-            output,logits = self.net(tuple([meds,chart,out,proc,lab,stat_train,demo_train]))
+            output,logits = self.net(meds,chart,out,proc,lab,stat_train,demo_train)
             output=output.squeeze()
             logits=logits.squeeze()
             
@@ -213,7 +213,7 @@ class DL_models():
             val_prob.extend(output.data.cpu().numpy())
             val_truth.extend(y.data.cpu().numpy())
             val_logits.extend(logits.data.cpu().numpy())
-#             self.model_interpret(meds,chart,out,proc,lab,stat_train,demo_train)
+            #self.model_interpret(meds,chart,out,proc,lab,stat_train,demo_train)
         self.loss(torch.tensor(val_prob),torch.tensor(val_truth),torch.tensor(val_logits),False,False)
         val_loss=self.loss(torch.tensor(val_prob),torch.tensor(val_truth),torch.tensor(val_logits),True,False)
         return val_loss.item()
@@ -236,7 +236,7 @@ class DL_models():
             #print(test_hids[nbatch*args.batch_size:(nbatch+1)*args.batch_size])
             meds,chart,out,proc,lab,stat,demo,y=self.getXY(test_hids[nbatch*args.batch_size:(nbatch+1)*args.batch_size],labels)
             
-            output,logits = self.net(tuple([meds,chart,out,proc,lab,stat,demo]))
+            output,logits = self.net(meds,chart,out,proc,lab,stat,demo)
 #             self.model_interpret([meds,chart,out,proc,lab,stat,demo])
             output=output.squeeze()
             logits=logits.squeeze()
@@ -254,13 +254,23 @@ class DL_models():
         #print(self.eth)
         self.loss(torch.tensor(self.prob),torch.tensor(self.truth),torch.tensor(self.logits),False,False)
     
-#     def model_interpret(self,meds,chart,out,proc,lab,stat,demo):
-#         X=tuple([torch.tensor(meds).float(),torch.tensor(chart).float(),torch.tensor(out).float(),torch.tensor(proc).float(),torch.tensor(lab).float(),torch.tensor(stat).float(),torch.tensor(demo).float()])
-#         print("======= INTERPRETING ========")
-#         deep_lift=IntegratedGradients(self.net)
-#         attr=deep_lift.attribute(X)
-#         print(attr)
-#         print(attr.shape)
+    def model_interpret(self,meds,chart,out,proc,lab,stat,demo):
+        meds=torch.tensor(meds).float()
+        chart=torch.tensor(chart).float()
+        out=torch.tensor(out).float()
+        proc=torch.tensor(proc).float()
+        lab=torch.tensor(lab).float()
+        stat=torch.tensor(stat).float()
+        demo=torch.tensor(demo).float()
+        #print("lab",lab.shape)
+        #print("meds",meds.shape)
+        print("======= INTERPRETING ========")
+        torch.backends.cudnn.enabled=False
+        deep_lift=DeepLift(self.net)
+        attr=deep_lift.attribute(tuple([meds,chart,out,proc,lab,stat,demo]))
+        #print(attr)
+        #print(attr.shape)
+        torch.backends.cudnn.enabled=True
         
         
     def getXY(self,ids,labels):
@@ -368,7 +378,7 @@ class DL_models():
         
         self.optimizer.zero_grad()
         # get the output sequence from the input and the initial hidden and cell states
-        output,logits = self.net(tuple([meds,chart,out,proc,lab,stat_train,demo_train]))
+        output,logits = self.net(meds,chart,out,proc,lab,stat_train,demo_train)
         output=output.squeeze()
         logits=logits.squeeze()
 #         print(output.shape)

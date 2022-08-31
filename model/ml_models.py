@@ -128,7 +128,8 @@ class ML_models():
             
             print(X_test.shape)
             print(Y_test.shape)
-            
+            #print("just before training")
+            #print(X_test.head())
             self.train_model(X_train,Y_train,X_test,Y_test)
     
     def train_model(self,X_train,Y_train,X_test,Y_test):
@@ -150,7 +151,7 @@ class ML_models():
             logits=model.predict_log_proba(X_test)
             prob=model.predict_proba(X_test)
             self.loss(prob[:,1],np.asarray(Y_test),logits[:,1],False,True)
-            self.save_output(Y_test,prob[:,1],logits[:,1])
+            self.save_outputImp(Y_test,prob[:,1],logits[:,1],model.coef_[0],X_train.columns)
         
         elif self.model_type=='Random Forest':
             X_train=pd.get_dummies(X_train,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
@@ -159,7 +160,7 @@ class ML_models():
             logits=model.predict_log_proba(X_test)
             prob=model.predict_proba(X_test)
             self.loss(prob[:,1],np.asarray(Y_test),logits[:,1],False,True)
-            self.save_output(Y_test,prob[:,1],logits[:,1])
+            self.save_outputImp(Y_test,prob[:,1],logits[:,1],model.feature_importances_,X_train.columns)
         
         elif self.model_type=='Xgboost':
             X_train=pd.get_dummies(X_train,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
@@ -172,13 +173,14 @@ class ML_models():
             prob=model.predict_proba(X_test)
             logits=np.log2(prob[:,1]/prob[:,0])
             self.loss(prob[:,1],np.asarray(Y_test),logits,False,True)
-            self.save_output(Y_test,prob[:,1],logits)
+            self.save_outputImp(Y_test,prob[:,1],logits,model.feature_importances_,X_train.columns)
 
 
     
     def getXY(self,ids,labels,concat_cols):
         X_df=pd.DataFrame()   
         y_df=pd.DataFrame()   
+        features=[]
         #print(ids)
         for sample in ids:
             if self.data_icu:
@@ -196,6 +198,7 @@ class ML_models():
                 #print(dyn.shape)
                 #print(len(concat_cols))
                 dyn_df=pd.DataFrame(data=dyn,columns=concat_cols)
+                features=concat_cols
             else:
                 dyn_df=pd.DataFrame()
                 for key in dyn.columns.levels[0]:
@@ -251,4 +254,26 @@ class ML_models():
         
         with open('./data/output/'+'outputDict', 'wb') as fp:
                pickle.dump(output_df, fp)
+        
+    
+    def save_outputImp(self,labels,prob,logits,importance,features):
+        
+        output_df=pd.DataFrame()
+        output_df['Labels']=labels.values
+        output_df['Prob']=prob
+        output_df['Logits']=np.asarray(logits)
+        output_df['ethnicity']=list(self.test_data['ethnicity'])
+        output_df['gender']=list(self.test_data['gender'])
+        output_df['age']=list(self.test_data['Age'])
+        output_df['insurance']=list(self.test_data['insurance'])
+        
+        with open('./data/output/'+'outputDict', 'wb') as fp:
+               pickle.dump(output_df, fp)
+        
+        imp_df=pd.DataFrame()
+        imp_df['imp']=importance
+        imp_df['feature']=features
+        imp_df.to_csv('./data/output/'+'feature_importance.csv', index=False)
+                
+                
 
