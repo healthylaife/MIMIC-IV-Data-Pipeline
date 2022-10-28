@@ -61,7 +61,7 @@ def feature_icu(cohort_output, version_path, diag_flag=True,out_flag=True,chart_
         med[['subject_id', 'hadm_id', 'stay_id', 'itemid' ,'starttime','endtime', 'start_hours_from_admit', 'stop_hours_from_admit','rate','amount','orderid']].to_csv('./data/features/preproc_med_icu.csv.gz', compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
 
-def preprocess_features_icu(cohort_output, diag_flag, group_diag,chart_flag,clean_chart,impute_outlier_chart,thresh):
+def preprocess_features_icu(cohort_output, diag_flag, group_diag,chart_flag,clean_chart,impute_outlier_chart,thresh,left_thresh):
     if diag_flag:
         print("[PROCESSING DIAGNOSIS DATA]")
         diag = pd.read_csv("./data/features/preproc_diag_icu.csv.gz", compression='gzip',header=0)
@@ -81,7 +81,7 @@ def preprocess_features_icu(cohort_output, diag_flag, group_diag,chart_flag,clea
         if clean_chart:   
             print("[PROCESSING CHART EVENTS DATA]")
             chart = pd.read_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip',header=0)
-            chart = outlier_imputation(chart, 'itemid', 'valuenum', thresh,impute_outlier_chart)
+            chart = outlier_imputation(chart, 'itemid', 'valuenum', thresh,left_thresh,impute_outlier_chart)
             
 #             for i in [227441, 229357, 229358, 229360]:
 #                 try:
@@ -90,7 +90,7 @@ def preprocess_features_icu(cohort_output, diag_flag, group_diag,chart_flag,clea
 #                 except IndexError:
 #                     print(f"{idx} not found")
             print("Total number of rows",chart.shape[0])
-            chart.to_csv("./data/features/preproc_chart.csv.gz", compression='gzip', index=False)
+            chart.to_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', index=False)
             print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
             
         
