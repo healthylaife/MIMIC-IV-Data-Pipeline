@@ -433,10 +433,14 @@ class Generator():
 
                     val=pd.concat([val, add_df])
                     val=val.sort_index()
-                    if self.impute:
+                    if self.impute=='Mean':
                         val=val.ffill()
                         val=val.bfill()
                         val=val.fillna(val.mean())
+                    elif self.impute=='Median':
+                        val=val.ffill()
+                        val=val.bfill()
+                        val=val.fillna(val.median())
                     val=val.fillna(0)
 
                     df2[df2>0]=1
