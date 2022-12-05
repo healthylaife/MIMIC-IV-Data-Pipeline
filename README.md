@@ -11,15 +11,22 @@ The evaluation module offers a series of standard methods for evaluating the per
 This module also includes options for reporting individual and group fairness measures.
 
 ##### Citing MIMIC-IV Data Pipeline:
-MIMIC-IV Data Pipeline is available on [arxiv](https://arxiv.org/abs/2204.13841).
+MIMIC-IV Data Pipeline is available on [ML4H](https://proceedings.mlr.press/v193/gupta22a/gupta22a.pdf).
 If you use MIMIC-IV Data Pipeline in a scientific publication, we would appreciate citations to the following paper.
 
 ```
-@article{gupta2022extensive,
-  title={An Extensive Data Processing Pipeline for MIMIC-IV},
-  author={Gupta, Mehak and Gallamoza, Brennan and Cutrona, Nicolas and Dhakal, Pranjal and Poulain, Raphael and Beheshti, Rahmatollah},
-  journal={arXiv preprint arXiv:2204.13841},
- year={2022}
+@InProceedings{gupta2022extensive,
+  title = 	 {{An Extensive Data Processing Pipeline for MIMIC-IV}},
+  author =       {Gupta, Mehak and Gallamoza, Brennan and Cutrona, Nicolas and Dhakal, Pranjal and Poulain, Raphael and Beheshti, Rahmatollah},
+  booktitle = 	 {Proceedings of the 2nd Machine Learning for Health symposium},
+  pages = 	 {311--325},
+  year = 	 {2022},
+  volume = 	 {193},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {28 Nov},
+  publisher =    {PMLR},
+  pdf = 	 {https://proceedings.mlr.press/v193/gupta22a/gupta22a.pdf},
+  url = 	 {https://proceedings.mlr.press/v193/gupta22a.html}
 }
 ```
 
