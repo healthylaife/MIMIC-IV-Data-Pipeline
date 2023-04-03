@@ -11,10 +11,14 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './../..')
 class BEHRT_models():
     def __init__(self,data_icu,diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag):
         self.data_icu=data_icu
+        if self.data_icu:
+            self.id='stay_id'
+        else:
+            self.id='hadm_id'
         self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag=diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag
         self.tokenization()
         
-    def tokenize_dataset(labs_input, cond_input, demo_input, labels, vocab, demo_vocab, ins_vocab, gender_vocab):
+    def tokenize_dataset(self,labs_input, cond_input, demo_input, labels, vocab, demo_vocab, ins_vocab, gender_vocab):
         tokenized_src = []
         tokenized_gender = []
         tokenized_ethni = []
@@ -25,10 +29,10 @@ class BEHRT_models():
 
         print("STARTING TOKENIZATION.")
 
-        for patient, group in tqdm.tqdm(labs_input.groupby("hadm_id")):
+        for patient, group in tqdm.tqdm(labs_input.groupby(self.id)):
             tokenized_src.append([])
             tokenized_src[idx].append(vocab["token2idx"]['CLS'])
-            for row in cond_input[cond_input['hadm_id'] == patient].itertuples(index=None):
+            for row in cond_input[cond_input[self.id] == patient].itertuples(index=None):
                 for key, value in row._asdict().items():
                     if value == '1':
                         tokenized_src[idx].append(vocab["token2idx"][key])
@@ -42,22 +46,22 @@ class BEHRT_models():
             if len(tokenized_src[idx]) >= 512:
                 tokenized_src.pop()
             else:
-                gender = gender_vocab[demo_input[demo_input['hadm_id'] == patient].iloc[0, 1]]
-                ethnicity = demo_vocab[demo_input[demo_input['hadm_id'] == patient].iloc[0, 2]]
-                insurance = ins_vocab[demo_input[demo_input['hadm_id'] == patient].iloc[0, 3]]
-                age = demo_input[demo_input['hadm_id'] == patient].iloc[0, 0]
+                gender = gender_vocab[demo_input[demo_input[self.id] == patient].iloc[0, 1]]
+                ethnicity = demo_vocab[demo_input[demo_input[self.id] == patient].iloc[0, 2]]
+                insurance = ins_vocab[demo_input[demo_input[self.id] == patient].iloc[0, 3]]
+                age = demo_input[demo_input[self.id] == patient].iloc[0, 0]
                 tokenized_gender.append([gender] * len(tokenized_src[idx]))
                 tokenized_ethni.append([ethnicity] * len(tokenized_src[idx]))
                 tokenized_ins.append([insurance] * len(tokenized_src[idx]))
                 tokenized_age.append([age] * len(tokenized_src[idx]))
-                tokenized_labels.append(labels[labels['hadm_id'] == patient].iloc[0, 1])
+                tokenized_labels.append(labels[labels[self.id] == patient].iloc[0, 1])
                 idx += 1
 
         print("FINISHED TOKENIZATION. \n")
         return pd.DataFrame(tokenized_src), pd.DataFrame(tokenized_gender), pd.DataFrame(tokenized_ethni), pd.DataFrame(tokenized_ins), pd.DataFrame(tokenized_age), pd.DataFrame(tokenized_labels)
 
 
-    def tokenization():
+    def tokenization(self):
         labs_list = []
         demo_list = []
         cond_list = []
@@ -66,18 +70,18 @@ class BEHRT_models():
         #labels = labels.iloc[:1, :]
         print("STARTING READING FILES.")
         for hadm in tqdm.tqdm(labels.itertuples(), total = labels.shape[0]):
-            labs = pd.read_csv('./data/csv/' + str(hadm.hadm_id) + '/dynamic.csv')
-            demo = pd.read_csv('./data/csv/' + str(hadm.hadm_id) + '/demo.csv')
-            cond = pd.read_csv('./data/csv/' + str(hadm.hadm_id) + '/static.csv')
+            labs = pd.read_csv('./data/csv/' + str(hadm[1]) + '/dynamic.csv')
+            demo = pd.read_csv('./data/csv/' + str(hadm[1]) + '/demo.csv')
+            cond = pd.read_csv('./data/csv/' + str(hadm[1]) + '/static.csv')
             if first:
                 condVocab_l = cond.iloc[0: , :].values.tolist()[0]
                 first = False
             labs = labs.iloc[1: , :]
             cond = cond.iloc[1: , :]
 
-            labs['hadm_id'] = hadm.hadm_id
-            demo['hadm_id'] = hadm.hadm_id
-            cond['hadm_id'] = hadm.hadm_id
+            labs[self.id] = hadm[1]
+            demo[self.id] = hadm[1]
+            cond[self.id] = hadm[1]
 
             labs_list += labs.values.tolist()
             demo_list += demo.values.tolist()
@@ -86,16 +90,16 @@ class BEHRT_models():
         print("FINISHED READING FILES. \n")
         labs_list = pd.DataFrame(labs_list)
         demo_list = pd.DataFrame(demo_list)
-        cond_list = pd.DataFrame(cond_list, columns=condVocab_l + ['hadm_id'])
-        labs_list = labs_list.rename(columns={labs_list.columns.to_list()[-1]: "hadm_id"})
-        demo_list = demo_list.rename(columns={demo_list.columns.to_list()[-1]: "hadm_id"})
+        cond_list = pd.DataFrame(cond_list, columns=condVocab_l + [self.id])
+        labs_list = labs_list.rename(columns={labs_list.columns.to_list()[-1]: self.id})
+        demo_list = demo_list.rename(columns={demo_list.columns.to_list()[-1]: self.id})
 
         labs_list = pd.DataFrame(labs_list)
         demo_list = pd.DataFrame(demo_list)
-        cond_list = pd.DataFrame(cond_list, columns=condVocab_l + ['hadm_id'])
+        cond_list = pd.DataFrame(cond_list, columns=condVocab_l + [self.id])
 
-        labs_list = labs_list.rename(columns={labs_list.columns.to_list()[-1]: "hadm_id"})
-        demo_list = demo_list.rename(columns={demo_list.columns.to_list()[-1]: "hadm_id"})
+        labs_list = labs_list.rename(columns={labs_list.columns.to_list()[-1]: self.id})
+        demo_list = demo_list.rename(columns={demo_list.columns.to_list()[-1]: self.id})
 
         labs_list.replace(0, np.nan, inplace=True)
 
@@ -136,11 +140,11 @@ class BEHRT_models():
 
         condVocab['idx2token'][max(condVocab['idx2token']) + 1] = 'UNK'
         condVocab['token2idx'] = {v: k for k, v in condVocab['idx2token'].items()}
-        cond_list = cond_list.sort_values(by='hadm_id')
+        cond_list = cond_list.sort_values(by=self.id)
         labs_list = labs_list.reset_index()
-        labs_list = labs_list.sort_values(by=['hadm_id', 'index'])
+        labs_list = labs_list.sort_values(by=[self.id, 'index'])
         labs_list = labs_list.drop(columns=['index'])
-        demo_list = demo_list.sort_values(by='hadm_id')
+        demo_list = demo_list.sort_values(by=self.id)
 
         tokenized_src, tokenized_gender, tokenized_ethni, tokenized_ins, tokenized_age, tokenized_labels = tokenize_dataset(
             labs_list, cond_list, demo_list, labels, condVocab, ethVocab, insVocab, genderVocab)
