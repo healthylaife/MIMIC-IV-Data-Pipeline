@@ -12,7 +12,7 @@ This module also includes options for reporting individual and group fairness me
 
 ##### Citing MIMIC-IV Data Pipeline:
 MIMIC-IV Data Pipeline is available on [ML4H](https://proceedings.mlr.press/v193/gupta22a/gupta22a.pdf).
-If you use MIMIC-IV Data Pipeline in a scientific publication, we would appreciate citations to the following paper.
+If you use MIMIC-IV Data Pipeline, we would appreciate citations to the following paper.
 
 ```
 @InProceedings{gupta2022extensive,
@@ -25,7 +25,6 @@ If you use MIMIC-IV Data Pipeline in a scientific publication, we would apprecia
   series = 	 {Proceedings of Machine Learning Research},
   month = 	 {28 Nov},
   publisher =    {PMLR},
-  pdf = 	 {https://proceedings.mlr.press/v193/gupta22a/gupta22a.pdf},
   url = 	 {https://proceedings.mlr.press/v193/gupta22a.html}
 }
 ```
