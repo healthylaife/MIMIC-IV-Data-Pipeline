@@ -99,7 +99,7 @@ class ML_models():
                     cols_t = [x + "_"+str(t) for x in cols]
 
                     concat_cols.extend(cols_t)
-
+            print('train_hids',len(train_hids))
             X_train,Y_train=self.getXY(train_hids,labels,concat_cols)
             #encoding categorical
             gen_encoder = LabelEncoder()
@@ -117,7 +117,7 @@ class ML_models():
 
             print(X_train.shape)
             print(Y_train.shape)
-            
+            print('test_hids',len(test_hids))
             X_test,Y_test=self.getXY(test_hids,labels,concat_cols)
             self.test_data=X_test.copy(deep=True)
             X_test['gender']=gen_encoder.transform(X_test['gender'])
@@ -201,34 +201,45 @@ class ML_models():
                 features=concat_cols
             else:
                 dyn_df=pd.DataFrame()
+                #print(dyn)
                 for key in dyn.columns.levels[0]:
-                    dyn=dyn[key]
+                    #print(sample)                    
+                    dyn_temp=dyn[key]
                     if self.data_icu:
                         if ((key=="CHART") or (key=="MEDS")):
-                            agg=dyn.aggregate("mean")
+                            agg=dyn_temp.aggregate("mean")
                             agg=agg.reset_index()
                         else:
-                            agg=dyn.aggregate("max")
+                            agg=dyn_temp.aggregate("max")
                             agg=agg.reset_index()
                     else:
                         if ((key=="LAB") or (key=="MEDS")):
-                            agg=dyn.aggregate("mean")
+                            agg=dyn_temp.aggregate("mean")
                             agg=agg.reset_index()
                         else:
-                            agg=dyn.aggregate("max")
+                            agg=dyn_temp.aggregate("max")
                             agg=agg.reset_index()
                     if dyn_df.empty:
                         dyn_df=agg
                     else:
                         dyn_df=pd.concat([dyn_df,agg],axis=0)
+                #dyn_df=dyn_df.drop(index=(0))
+#                 print(dyn_df.shape)
+#                 print(dyn_df.head())
+                dyn_df=dyn_df.T
+                dyn_df.columns = dyn_df.iloc[0]
+                dyn_df=dyn_df.iloc[1:,:]
                         
-            #print(dyn.shape)
-            #print(dyn.head())
+#             print(dyn.shape)
+#             print(dyn_df.shape)
+#             print(dyn_df.head())
             stat=pd.read_csv('./data/csv/'+str(sample)+'/static.csv',header=[0,1])
             stat=stat['COND']
-            #print(stat.shape)
+#             print(stat.shape)
+#             print(stat.head())
             demo=pd.read_csv('./data/csv/'+str(sample)+'/demo.csv',header=0)
-            #print(demo.shape)
+#             print(demo.shape)
+#             print(demo.head())
             if X_df.empty:
                 X_df=pd.concat([dyn_df,stat],axis=1)
                 X_df=pd.concat([X_df,demo],axis=1)
@@ -238,7 +249,10 @@ class ML_models():
                 y_df=y
             else:
                 y_df=pd.concat([y_df,y],axis=0)
-            #print(X_df.head())
+#             print("X_df",X_df.shape)
+#             print("y_df",y_df.shape)
+        print("X_df",X_df.shape)
+        print("y_df",y_df.shape)
         return X_df ,y_df
     
     def save_output(self,labels,prob,logits):

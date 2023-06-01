@@ -92,9 +92,9 @@ class LSTMBase(nn.Module):
 #         if demo.shape[0]>self.batch_size:
 #             print(demo[0],demo[200],demo[400],demo[600],demo[800])
         if meds.shape[0]:
-            if med.shape[0]>self.batch_size:
-                med=med[-self.batch_size:]
-            medEmbedded=self.med(med)
+            if meds.shape[0]>self.batch_size:
+                meds=meds[-self.batch_size:]
+            medEmbedded=self.med(meds)
             
             if out1.nelement():
                 out1=torch.cat((out1,medEmbedded),2)
