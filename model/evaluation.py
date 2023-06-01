@@ -93,6 +93,8 @@ class Loss(nn.Module):
         labels = labels.data.cpu().numpy()
         prob = prob.data.cpu().numpy()
         if(self.auroc):
+#             print(labels)
+#             print(prob)
             fpr, tpr, threshholds = metrics.roc_curve(labels, prob)
             auc = metrics.auc(fpr, tpr)
         if(self.aurocPlot):
