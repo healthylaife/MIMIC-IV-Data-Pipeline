@@ -458,7 +458,7 @@ class Generator():
         for hid in tqdm(self.hids):
             grp=self.data[self.data['stay_id']==hid]
             demo_csv=grp[['Age','gender','ethnicity','insurance']]
-            if not os.path.exists("./data/csv"+str(hid)):
+            if not os.path.exists("./data/csv/"+str(hid)):
                 os.makedirs("./data/csv/"+str(hid))
             demo_csv.to_csv('./data/csv/'+str(hid)+'/demo.csv',index=False)
             
