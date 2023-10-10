@@ -121,12 +121,12 @@ class BEHRT_models():
         ethVocab = {}
         insVocab = {}
         condVocab = {'token2idx': {}, 'idx2token': {0: 'PAD', 1: 'CLS', 2: 'SEP'}}
-        with open('ethVocab', 'rb') as fp:
+        with open('./data/dict/ethVocab', 'rb') as fp:
             ethVocab_l = pickle.load(fp)
             for i in range(len(ethVocab_l)):
                 ethVocab[ethVocab_l[i]] = i
 
-        with open('insVocab', 'rb') as fp:
+        with open('./data/dict/insVocab', 'rb') as fp:
             insVocab_l = pickle.load(fp)
             for i in range(len(insVocab_l)):
                 insVocab[insVocab_l[i]] = i
@@ -146,7 +146,7 @@ class BEHRT_models():
         labs_list = labs_list.drop(columns=['index'])
         demo_list = demo_list.sort_values(by=self.id)
 
-        tokenized_src, tokenized_gender, tokenized_ethni, tokenized_ins, tokenized_age, tokenized_labels = tokenize_dataset(
+        tokenized_src, tokenized_gender, tokenized_ethni, tokenized_ins, tokenized_age, tokenized_labels = self.tokenize_dataset(
             labs_list, cond_list, demo_list, labels, condVocab, ethVocab, insVocab, genderVocab)
 
         print("FINAL COHORT STATISTICS: ")
