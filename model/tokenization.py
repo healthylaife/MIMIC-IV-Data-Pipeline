@@ -16,7 +16,7 @@ class BEHRT_models():
         else:
             self.id='hadm_id'
         self.diag_flag,self.proc_flag,self.out_flag,self.chart_flag,self.med_flag,self.lab_flag=diag_flag,proc_flag,out_flag,chart_flag,med_flag,lab_flag
-        self.tokenization()
+        #self.tokenization()
         
     def tokenize_dataset(self,labs_input, cond_input, demo_input, labels, vocab, demo_vocab, ins_vocab, gender_vocab):
         tokenized_src = []
@@ -61,7 +61,7 @@ class BEHRT_models():
         return pd.DataFrame(tokenized_src), pd.DataFrame(tokenized_gender), pd.DataFrame(tokenized_ethni), pd.DataFrame(tokenized_ins), pd.DataFrame(tokenized_age), pd.DataFrame(tokenized_labels)
 
 
-    def tokenization(self):
+    def tokenize(self):
         labs_list = []
         demo_list = []
         cond_list = []
