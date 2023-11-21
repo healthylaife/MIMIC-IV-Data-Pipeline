@@ -4,3 +4,6 @@ scrap
 *.csv.gz
 *summary*.txt
 mlenv
+__pycache__
+raw_data
+*.csv
