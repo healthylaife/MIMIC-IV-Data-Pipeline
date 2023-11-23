@@ -3,7 +3,7 @@ scrap
 *.gzip
 *.csv.gz
 *summary*.txt
-mlenv
+venv
 __pycache__
 raw_data
 *.csv
