@@ -617,7 +617,9 @@ def extract_data(
 
     if use_disease:
         hids = disease_cohort.extract_diag_cohort(
-            cohort["hadm_id"], icd_code, root_dir + "/mimiciv/2.0/"
+            cohort["hadm_id"],
+            icd_code,
+            root_dir + "\\raw_data\\mimiciv_2_0\\",
         )
         # print(hids.shape)
         # print(cohort.shape)

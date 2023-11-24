@@ -25,6 +25,7 @@ from my_preprocessing.raw_data_loader import RawDataLoader, RAW_PATH
         ("Non-ICU", "Readmission", 30, "I25", "No Disease Filter", 68, 32, 13),  # CAD
         ("Non-ICU", "Readmission", 30, "N18", "No Disease Filter", 63, 22, 10),  # CKD
         ("Non-ICU", "Readmission", 30, "J44", "No Disease Filter", 26, 12, 7),  # COPD
+        ("ICU", "Mortality", 0, "", "I50", 32, 22, 5),
     ],
 )
 def test_extract_icu_mortality(

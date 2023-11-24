@@ -3,17 +3,20 @@
 
 # In[ ]:
 
-
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + './../..')
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "./../..")
+MAP_PATH = Path("utils") / "mappings" / "ICD9_to_ICD10_mapping.txt"
+
 
 def read_icd_mapping(map_path: str) -> pd.DataFrame:
     """Reads in mapping table for converting ICD9 to ICD10 codes"""
 
-    mapping = pd.read_csv(map_path, header=0, delimiter="\t")
+    mapping = pd.read_csv(MAP_PATH, header=0, delimiter="\t")
     mapping.diagnosis_description = mapping.diagnosis_description.apply(str.lower)
     return mapping
 
@@ -22,7 +25,7 @@ def get_diagnosis_icd(module_path: str) -> pd.DataFrame:
     """Reads in diagnosis_icd table"""
 
     return pd.read_csv(
-        module_path + "/hosp/diagnoses_icd.csv.gz", compression="gzip", header=0
+        module_path + "hosp\\diagnoses_icd.csv.gz", compression="gzip", header=0
     )
 
 
@@ -67,15 +70,14 @@ def standardize_icd(
             diag.at[idx, col_name] = new_code
 
         count += group.shape[0]
-        #print(f"{count}/{diag.shape[0]} rows processed")
+        # print(f"{count}/{diag.shape[0]} rows processed")
 
     # Column for just the roots of the converted ICD10 column
     diag["root"] = diag[col_name].apply(lambda x: x[:3] if type(x) is str else np.nan)
 
 
-
-def preproc_icd_module(h_ids,
-    module_path: str, ICD10_code: str, icd_map_path: str
+def preproc_icd_module(
+    h_ids, module_path: str, ICD10_code: str, icd_map_path: str
 ) -> tuple:
     """Takes an module dataset with ICD codes and puts it in long_format,
     mapping ICD-codes by a mapping table path"""
@@ -89,7 +91,7 @@ def preproc_icd_module(h_ids,
     diag.dropna(subset=["root"], inplace=True)
     pos_ids = pd.DataFrame(
         diag.loc[diag.root.str.contains(ICD10_code)].hadm_id.unique(),
-        columns=["hadm_id"]
+        columns=["hadm_id"],
     )
     return pos_ids
 
@@ -98,15 +100,11 @@ def extract_diag_cohort(
     h_ids,
     label: str,
     module_path,
-    icd_map_path="./utils/mappings/ICD9_to_ICD10_mapping.txt"
+    icd_map_path="./utils/mappings/ICD9_to_ICD10_mapping.txt",
 ) -> str:
     """Takes UserInterface parameters, then creates and saves a labelled cohort
     summary, and error file"""
 
-    cohort = preproc_icd_module(h_ids,
-        module_path, label, icd_map_path
-    )
+    cohort = preproc_icd_module(h_ids, module_path, label, icd_map_path)
 
     return cohort
-
-

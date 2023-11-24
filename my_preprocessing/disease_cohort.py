@@ -7,11 +7,13 @@ from pathlib import Path
 
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "./../..")
 
+MAP_PATH = Path("utils") / "mappings" / "ICD9_to_ICD10_mapping.txt"
+
 
 def read_icd_mapping(map_path: Path) -> pd.DataFrame:
     """Reads in mapping table for converting ICD9 to ICD10 codes"""
 
-    mapping = pd.read_csv(map_path, header=0, delimiter="\t")
+    mapping = pd.read_csv(MAP_PATH, header=0, delimiter="\t")
     mapping.diagnosis_description = mapping.diagnosis_description.apply(str.lower)
     return mapping
 
@@ -76,7 +78,6 @@ def preproc_icd_module(
 ) -> tuple:
     """Takes an module dataset with ICD codes and puts it in long_format,
     mapping ICD-codes by a mapping table path"""
-
     diag = get_diagnosis_icd(module_path)
     icd_map = read_icd_mapping(icd_map_path)
 
@@ -99,7 +100,6 @@ def extract_diag_cohort(
 ) -> str:
     """Takes UserInterface parameters, then creates and saves a labelled cohort
     summary, and error file"""
-
     cohort = preproc_icd_module(h_ids, module_path, label, icd_map_path)
 
     return cohort
