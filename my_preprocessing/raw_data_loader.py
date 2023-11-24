@@ -13,6 +13,8 @@ RAW_PATH = Path("raw_data") / "mimiciv_2_0"
 
 # TODO
 # use_icu: bool
+# CLARIFY LOG
+# simplify diseases cohort
 
 
 class RawDataLoader:
@@ -38,7 +40,7 @@ class RawDataLoader:
         self.cohort_output = cohort_output
         self.summary_output = summary_output
 
-    def output_suffix(self) -> str:
+    def genrate_output_suffix(self) -> str:
         return (
             self.use_icu.lower()
             + "_"
@@ -51,12 +53,33 @@ class RawDataLoader:
 
     def fill_outputs(self) -> None:
         if not self.cohort_output:
-            self.cohort_output = "cohort_" + self.output_suffix()
+            self.cohort_output = "cohort_" + self.genrate_output_suffix()
         if not self.summary_output:
-            self.summary_output = "summary_" + self.output_suffix()
+            self.summary_output = "summary_" + self.genrate_output_suffix()
 
-    # TODO: CLARIFY LOG
-    def log_extracting_for(self) -> str:
+    def get_visits_columns(self) -> list:
+        # Return the list of columns to be used for visits data
+        if self.use_icu == "ICU":
+            return ["subject_id", "stay_id", "hadm_id", "intime", "outtime", "los"]
+        return ["subject_id", "hadm_id", "admittime", "dischtime", "los"]
+
+    def get_patients_columns(self) -> list:
+        # Return the list of columns to be used for patients data
+        return [
+            "subject_id",
+            "anchor_year",
+            "anchor_age",
+            "yob",
+            "min_valid_year",
+            "dod",
+            "gender",
+        ]
+
+    def get_eth_columns(self) -> list:
+        # Return the list of columns to be used for patients data
+        return ["hadm_id", "insurance", "race"]
+
+    def genrate_extract_log(self) -> str:
         if self.icd_code == "No Disease Filter":
             if len(self.disease_label):
                 return f"EXTRACTING FOR: | {self.use_icu.upper()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | {str(self.time)} | "
@@ -70,7 +93,6 @@ class RawDataLoader:
         patients = pd.read_csv(
             self.raw_dir / "hosp" / "patients.csv.gz",
             compression="gzip",
-            header=0,
             parse_dates=["dod"],
         )
         return patients
@@ -79,8 +101,6 @@ class RawDataLoader:
         hosp_admissions = pd.read_csv(
             self.raw_dir / "hosp" / "admissions.csv.gz",
             compression="gzip",
-            header=0,
-            index_col=None,
             parse_dates=["admittime", "dischtime"],
         )
         return hosp_admissions
@@ -89,7 +109,6 @@ class RawDataLoader:
         visits = pd.read_csv(
             self.raw_dir / "icu" / "icustays.csv.gz",
             compression="gzip",
-            header=0,
             parse_dates=["intime", "outtime"],
         )
         return visits
@@ -174,10 +193,8 @@ class RawDataLoader:
         df: pd.DataFrame,
         los: int,
         group_col: str,
-        visit_col: str,
         admit_col: str,
         disch_col: str,
-        valid_col: str,
     ):
         invalid = df.loc[
             (df[admit_col].isna()) | (df[disch_col].isna()) | (df["los"].isna())
@@ -186,7 +203,6 @@ class RawDataLoader:
             (~df[admit_col].isna()) & (~df[disch_col].isna()) & (~df["los"].isna())
         ]
 
-        # cohort=cohort.fillna(0)
         pos_cohort = cohort[cohort["los"] > los]
         neg_cohort = cohort[cohort["los"] <= los]
         neg_cohort = neg_cohort.fillna(0)
@@ -197,7 +213,6 @@ class RawDataLoader:
 
         cohort = pd.concat([pos_cohort, neg_cohort], axis=0)
         cohort = cohort.sort_values(by=[group_col, admit_col])
-        # print("cohort",cohort.shape)
         print("[ LOS LABELS FINISHED ]")
         return cohort, invalid
 
@@ -206,10 +221,8 @@ class RawDataLoader:
         df: pd.DataFrame,
         gap: datetime.timedelta,
         group_col: str,
-        visit_col: str,
         admit_col: str,
         disch_col: str,
-        valid_col: str,
     ):
         """Applies labels to individual visits according to whether or not a readmission has occurred within the specified `gap` days.
         For a given visit, another visit must occur within the gap window for a positive readmission label.
@@ -225,10 +238,7 @@ class RawDataLoader:
         # grouped= df[[group_col, visit_col, admit_col, disch_col, valid_col]].sort_values(by=[group_col, admit_col]).groupby(group_col)
         grouped = df.sort_values(by=[group_col, admit_col]).groupby(group_col)
         for subject, group in tqdm(grouped):
-            max_year = group.max()[disch_col].year
-
             if group.shape[0] <= 1:
-                # ctrl, invalid = validate_row(group.iloc[0], ctrl, invalid, max_year, disch_col, valid_col, gap)   # A group with 1 row has no readmission; goes to ctrl
                 ctrl = pd.concat(
                     [ctrl, pd.DataFrame([group.iloc[0]])], ignore_index=True
                 )
@@ -259,11 +269,9 @@ class RawDataLoader:
                             [ctrl, pd.DataFrame([group.iloc[idx]])], ignore_index=True
                         )
 
-                # ctrl, invalid = validate_row(group.iloc[-1], ctrl, invalid, max_year, disch_col, valid_col, gap)  # The last hadm_id datewise is guaranteed to have no readmission logically
                 ctrl = pd.concat(
                     [ctrl, pd.DataFrame([group.iloc[-1]])], ignore_index=True
                 )
-                # print(f"[ {gap.days} DAYS ] {case.shape[0] + ctrl.shape[0]}/{df.shape[0]} {visit_col}s processed")
 
         print("[ READMISSION LABELS FINISHED ]")
         return case, ctrl, invalid
@@ -272,7 +280,6 @@ class RawDataLoader:
         self,
         df: pd.DataFrame,
         group_col: str,
-        visit_col: str,
         admit_col: str,
         disch_col: str,
         death_col: str,
@@ -285,7 +292,6 @@ class RawDataLoader:
         cohort = df.loc[(~df[admit_col].isna()) & (~df[disch_col].isna())]
 
         cohort["label"] = 0
-        # cohort=cohort.fillna(0)
         pos_cohort = cohort[~cohort[death_col].isna()]
         neg_cohort = cohort[cohort[death_col].isna()]
         neg_cohort = neg_cohort.fillna(0)
@@ -302,7 +308,6 @@ class RawDataLoader:
         pos_cohort["label"] = pos_cohort["label"].astype("Int32")
         cohort = pd.concat([pos_cohort, neg_cohort], axis=0)
         cohort = cohort.sort_values(by=[group_col, admit_col])
-        # print("cohort",cohort.shape)
         print("[ MORTALITY LABELS FINISHED ]")
         return cohort, invalid
 
@@ -311,14 +316,9 @@ class RawDataLoader:
         df: pd.DataFrame,
         gap: int,
         group_col: str,
-        visit_col: str,
         admit_col: str,
         disch_col: str,
-        valid_col: str,
         death_col: str,
-        use_mort=False,
-        use_admn=False,
-        use_los=False,
     ) -> pd.DataFrame:
         """Handles logic for creating the labelled cohort based on arguments passed to extract().
 
@@ -336,15 +336,15 @@ class RawDataLoader:
         case = None  # hadm_ids with readmission within the gap period
         ctrl = None  # hadm_ids without readmission within the gap period
         invalid = None  # hadm_ids that are not considered in the cohort
-        if use_mort:
+        if self.label == "Mortality":
             return self.partition_by_mort(
-                df, group_col, visit_col, admit_col, disch_col, death_col
+                df, group_col, admit_col, disch_col, death_col
             )
-        elif use_admn:
+        elif self.label == "Readmission":
             gap = datetime.timedelta(days=gap)
             # transform gap into a timedelta to compare with datetime columns
             case, ctrl, invalid = self.partition_by_readmit(
-                df, gap, group_col, visit_col, admit_col, disch_col, valid_col
+                df, gap, group_col, admit_col, disch_col
             )
 
             # case hadm_ids are labelled 1 for readmission, ctrls have a 0 label
@@ -352,71 +352,43 @@ class RawDataLoader:
             ctrl["label"] = np.zeros(ctrl.shape[0]).astype(int)
 
             return pd.concat([case, ctrl], axis=0), invalid
-        elif use_los:
-            return self.partition_by_los(
-                df, gap, group_col, visit_col, admit_col, disch_col, death_col
-            )
+        elif self.label == "Length of Stay":
+            return self.partition_by_los(df, gap, group_col, admit_col, disch_col)
+
+    def save_cohort(self, cohort: pd.DataFrame) -> None:
+        # Save the processed cohort data
+        # cohort[cols].to_csv(
+        #     root_dir + "/data/cohort/" + cohort_output + ".csv.gz",
+        #     index=False,
+        #     compression="gzip",
+        # )
+        print("not saved yet")
 
     def extract(self) -> None:
-        if self.use_icu == "ICU":
-            visit_col = "stay_id"
-            admit_col = "intime"
-            disch_col = "outtime"
-            # adm_visit_col = "hadm_id"
-        else:
-            visit_col = "hadm_id"
-            admit_col = "admittime"
-            disch_col = "dischtime"
-
+        visit_col = "stay_id" if self.use_icu == "ICU" else "hadm_id"
+        admit_col = "intime" if self.use_icu == "ICU" else "admittime"
+        disch_col = "outtime" if self.use_icu == "ICU" else "dischtime"
         logger.info("===========MIMIC-IV v2.0============")
         self.fill_outputs()
-        logger.info(self.log_extracting_for())
-        visits = self.load_visits()
+        logger.info(self.genrate_extract_log())
+        visits = self.load_visits()[self.get_visits_columns()]
+        patients = self.load_patients()[self.get_patients_columns()]
 
-        visits_cols = []
-        if self.use_icu == "ICU":
-            visits_cols = [
-                "subject_id",
-                "stay_id",
-                "hadm_id",
-                "intime",
-                "outtime",
-                "los",
-            ]
-        else:
-            visits_cols = ["subject_id", "hadm_id", "admittime", "dischtime", "los"]
-        visits = visits[visits_cols]
-
-        patients = self.load_patients()
-        patients_cols = [
-            "subject_id",
-            "anchor_year",
-            "anchor_age",
-            "yob",
-            "min_valid_year",
-            "dod",
-            "gender",
-        ]
-        patients = patients[patients_cols]
-        visits_patients = visits.merge(
-            patients, how="inner", left_on="subject_id", right_on="subject_id"
-        )
+        visits_patients = visits.merge(patients, how="inner", on="subject_id")
         visits_patients["Age"] = visits_patients["anchor_age"]
         visits_patients = visits_patients.loc[visits_patients["Age"] >= 18]
         ##Add Demo data
-        eth = self.load_hosp_admissions()[["hadm_id", "insurance", "race"]]
-        visits_patients = visits_patients.merge(
-            eth, how="inner", left_on="hadm_id", right_on="hadm_id"
-        )
+        eth = self.load_hosp_admissions()[self.get_eth_columns()]
+        visits_patients = visits_patients.merge(eth, how="inner", on="hadm_id")
 
         if self.use_icu == "ICU":
             visits_patients = visits_patients[
                 [
                     "subject_id",
-                    visit_col,
+                    "stay_id",
                     "hadm_id",
-                    admit_col,
-                    disch_col,
+                    "intime",
+                    "outtime",
                     "los",
                     "min_valid_year",
                     "dod",
@@ -430,9 +402,9 @@ class RawDataLoader:
             visits_patients = visits_patients.dropna(subset=["min_valid_year"])[
                 [
                     "subject_id",
-                    visit_col,
-                    admit_col,
-                    disch_col,
+                    "hadm_id",
+                    "admittime",
+                    "dischtime",
                     "los",
                     "min_valid_year",
                     "dod",
@@ -443,49 +415,15 @@ class RawDataLoader:
                 ]
             ]
 
-        if self.label == "Mortality":
-            cohort, invalid = self.get_case_ctrls(
-                visits_patients,
-                None,
-                "subject_id",
-                visit_col,
-                admit_col,
-                disch_col,
-                "min_valid_year",
-                "dod",
-                use_mort=True,
-                use_admn=False,
-                use_los=False,
-            )
-        elif self.label == "Readmission":
-            interval = self.time
-            cohort, invalid = self.get_case_ctrls(
-                visits_patients,
-                interval,
-                "subject_id",
-                visit_col,
-                admit_col,
-                disch_col,
-                "min_valid_year",
-                "dod",
-                use_mort=False,
-                use_admn=True,
-                use_los=False,
-            )
-        elif self.label == "Length of Stay":
-            cohort, invalid = self.get_case_ctrls(
-                visits_patients,
-                self.time,
-                "subject_id",
-                visit_col,
-                admit_col,
-                disch_col,
-                "min_valid_year",
-                "dod",
-                use_mort=False,
-                use_admn=False,
-                use_los=True,
-            )
+        cohort, invalid = self.get_case_ctrls(
+            visits_patients,
+            self.time,
+            "subject_id",
+            admit_col,
+            disch_col,
+            "dod",
+        )
+
         if self.icd_code != "No Disease Filter":
             hids = disease_cohort.extract_diag_cohort(
                 cohort["hadm_id"], self.icd_code, self.raw_dir
@@ -493,14 +431,8 @@ class RawDataLoader:
             cohort = cohort[cohort["hadm_id"].isin(hids["hadm_id"])]
             self.cohort_output = self.cohort_output + "_" + self.icd_code
             self.summary_output = self.summary_output + "_" + self.icd_code
-        # save output
         cohort = cohort.rename(columns={"race": "ethnicity"})
-
-        # cohort[cols].to_csv(
-        #     root_dir + "/data/cohort/" + cohort_output + ".csv.gz",
-        #     index=False,
-        #     compression="gzip",
-        # )
+        self.save_cohort(cohort)
         logger.info("[ COHORT SUCCESSFULLY SAVED ]")
         logger.info(self.cohort_output)
         return cohort
