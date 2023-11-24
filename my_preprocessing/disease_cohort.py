@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from my_preprocessing.raw_header import MAP_PATH as MAP_PATH
+from my_preprocessing.raw_files import MAP_PATH as MAP_PATH
 
 
 def read_icd_mapping() -> pd.DataFrame:

@@ -5,7 +5,7 @@ import datetime
 import logging
 import numpy as np
 from tqdm import tqdm
-from my_preprocessing.raw_header import (
+from my_preprocessing.raw_files import (
     RAW_PATH,
     load_hosp_patients,
     load_hosp_admissions,
@@ -13,13 +13,6 @@ from my_preprocessing.raw_header import (
 )
 
 logger = logging.getLogger()
-
-
-# TODO
-# CLARIFY LOG
-# EXPLICIT OPTION CONSEQUENCE ICU... option =-> get columns...
-# TRANSFORM  AND ENRICH
-# simplify diseases cohort
 
 
 class RawDataLoader:

@@ -7,8 +7,11 @@
 # module extract
 
 - implementer options pour l extract
-- tdd test extraction data avec sample
 
 - prediction task enum
+
+- CLARIFY LOG
+
+- EXPLICIT OPTION CONSEQUENCE ICU... option =-> get columns...
 
 # module preprocessing
