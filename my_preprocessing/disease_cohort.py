@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from my_preprocessing.raw_header import MAP_PATH as MAP_PATH
 
-MAP_PATH = Path("utils") / "mappings" / "ICD9_to_ICD10_mapping.txt"
 
-
-def read_icd_mapping(map_path: Path) -> pd.DataFrame:
+def read_icd_mapping() -> pd.DataFrame:
     """Reads in mapping table for converting ICD9 to ICD10 codes"""
 
     mapping = pd.read_csv(MAP_PATH, header=0, delimiter="\t")
@@ -13,7 +12,7 @@ def read_icd_mapping(map_path: Path) -> pd.DataFrame:
     return mapping
 
 
-def get_diagnosis_icd(module_path: Path) -> pd.DataFrame:
+def read_diagnosis_icd(module_path: Path) -> pd.DataFrame:
     """Reads in diagnosis_icd table"""
 
     return pd.read_csv(
@@ -68,13 +67,11 @@ def standardize_icd(
     diag["root"] = diag[col_name].apply(lambda x: x[:3] if type(x) is str else np.nan)
 
 
-def preproc_icd_module(
-    h_ids, module_path: Path, ICD10_code: str, icd_map_path: Path
-) -> tuple:
+def preproc_icd_module(module_path: Path, ICD10_code: str) -> tuple:
     """Takes an module dataset with ICD codes and puts it in long_format,
     mapping ICD-codes by a mapping table path"""
-    diag = get_diagnosis_icd(module_path)
-    icd_map = read_icd_mapping(icd_map_path)
+    diag = read_diagnosis_icd(module_path)
+    icd_map = read_icd_mapping()
 
     standardize_icd(icd_map, diag, root=True)
 
@@ -88,13 +85,7 @@ def preproc_icd_module(
 
 
 def extract_diag_cohort(
-    h_ids,
     label: str,
     module_path,
-    icd_map_path="./utils/mappings/ICD9_to_ICD10_mapping.txt",
 ) -> str:
-    """Takes UserInterface parameters, then creates and saves a labelled cohort
-    summary, and error file"""
-    cohort = preproc_icd_module(h_ids, module_path, label, icd_map_path)
-
-    return cohort
+    return preproc_icd_module(module_path, label)

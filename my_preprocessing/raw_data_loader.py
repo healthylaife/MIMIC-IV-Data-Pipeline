@@ -5,14 +5,20 @@ import datetime
 import logging
 import numpy as np
 from tqdm import tqdm
+from my_preprocessing.raw_header import (
+    RAW_PATH,
+    load_hosp_patients,
+    load_hosp_admissions,
+    load_icu_icustays,
+)
 
 logger = logging.getLogger()
 
 
-RAW_PATH = Path("raw_data") / "mimiciv_2_0"
-
 # TODO
 # CLARIFY LOG
+# EXPLICIT OPTION CONSEQUENCE ICU... option =-> get columns...
+# TRANSFORM  AND ENRICH
 # simplify diseases cohort
 
 
@@ -23,7 +29,6 @@ class RawDataLoader:
         label: str,
         time: int,
         icd_code: str,
-        raw_dir: Path,
         preproc_dir: Path,
         disease_label: str,
         cohort_output: Path,
@@ -33,7 +38,6 @@ class RawDataLoader:
         self.label = label
         self.time = time
         self.icd_code = icd_code
-        self.raw_dir = raw_dir
         self.preproc_dir = preproc_dir
         self.disease_label = disease_label
         self.cohort_output = cohort_output
@@ -41,6 +45,18 @@ class RawDataLoader:
 
     def generate_icu_log(self) -> str:
         return "ICU" if self.use_icu else "Non-ICU"
+
+    # LOG
+
+    def generate_extract_log(self) -> str:
+        if self.icd_code == "No Disease Filter":
+            if len(self.disease_label):
+                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | {str(self.time)} | "
+            return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} | {str(self.time)} |"
+        else:
+            if len(self.disease_label):
+                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
+        return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
 
     def generate_output_suffix(self) -> str:
         return (
@@ -59,6 +75,8 @@ class RawDataLoader:
         if not self.summary_output:
             self.summary_output = "summary_" + self.generate_output_suffix()
 
+    # COLUMNS
+
     def get_visits_columns(self) -> list:
         # Return the list of columns to be used for visits data
         if self.use_icu:
@@ -71,7 +89,6 @@ class RawDataLoader:
             "subject_id",
             "anchor_year",
             "anchor_age",
-            "yob",
             "min_valid_year",
             "dod",
             "gender",
@@ -81,42 +98,12 @@ class RawDataLoader:
         # Return the list of columns to be used for patients data
         return ["hadm_id", "insurance", "race"]
 
-    def genrate_extract_log(self) -> str:
-        if self.icd_code == "No Disease Filter":
-            if len(self.disease_label):
-                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | {str(self.time)} | "
-            return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} | {str(self.time)} |"
-        else:
-            if len(self.disease_label):
-                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
-        return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
+    # RAW EXTRACT
 
-    def load_hosp_patients(self):
-        patients = pd.read_csv(
-            self.raw_dir / "hosp" / "patients.csv.gz",
-            compression="gzip",
-            parse_dates=["dod"],
-        )
-        return patients
-
-    def load_hosp_admissions(self):
-        hosp_admissions = pd.read_csv(
-            self.raw_dir / "hosp" / "admissions.csv.gz",
-            compression="gzip",
-            parse_dates=["admittime", "dischtime"],
-        )
-        return hosp_admissions
-
-    def load_icu_icustays(self):
-        visits = pd.read_csv(
-            self.raw_dir / "icu" / "icustays.csv.gz",
-            compression="gzip",
-            parse_dates=["intime", "outtime"],
-        )
-        return visits
+    # VISITS AND PATIENTS
 
     def load_no_icu_visits(self) -> pd.DataFrame:
-        hosp_admissions = self.load_hosp_admissions()
+        hosp_admissions = load_hosp_admissions()
         dischtimes = hosp_admissions["dischtime"]
         admittimes = hosp_admissions["admittime"]
         hosp_admissions["los"] = dischtimes - admittimes
@@ -135,9 +122,7 @@ class RawDataLoader:
                 hosp_admissions.hospital_expire_flag == 0
             ]
         if len(self.disease_label):
-            hids = disease_cohort.extract_diag_cohort(
-                hosp_admissions["hadm_id"], self.disease_label, self.raw_dir
-            )
+            hids = disease_cohort.extract_diag_cohort(self.disease_label, RAW_PATH)
             hosp_admissions = hosp_admissions[
                 hosp_admissions["hadm_id"].isin(hids["hadm_id"])
             ]
@@ -145,31 +130,25 @@ class RawDataLoader:
         return hosp_admissions
 
     def load_icu_visits(self) -> pd.DataFrame:
-        icu_icustays = self.load_icu_icustays()
+        icu_icustays = load_icu_icustays()
         if self.label != "Readmission":
             return icu_icustays
         # icustays doesn't have a way to identify if patient died during visit; must
         # use core/patients to remove such stay_ids for readmission labels
-        hosp_patient = self.load_hosp_patients()[["subject_id", "dod"]]
-        visits = icu_icustays.merge(
-            hosp_patient, how="inner", left_on="subject_id", right_on="subject_id"
-        )
-        visits = visits.loc[(visits.dod.isna()) | (visits.dod >= visits["outtime"])]
+        hosp_patient = load_hosp_patients()[["subject_id", "dod"]]
+        visits = icu_icustays.merge(hosp_patient, how="inner", on="subject_id")
+        visits = visits.loc[(visits.dod.isna()) | (visits["dod"] >= visits["outtime"])]
         if len(self.disease_label):
-            hids = disease_cohort.extract_diag_cohort(
-                visits["hadm_id"], self.disease_label, self.raw_dir
-            )
+            hids = disease_cohort.extract_diag_cohort(self.disease_label, RAW_PATH)
             visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
             print("[ READMISSION DUE TO " + self.disease_label + " ]")
         return visits
 
     def load_visits(self) -> pd.DataFrame:
-        if self.use_icu:
-            return self.load_icu_visits()
-        return self.load_no_icu_visits()
+        return self.load_icu_visits() if self.use_icu else self.load_no_icu_visits()
 
     def load_patients(self) -> pd.DataFrame:
-        hosp_patients = self.load_hosp_patients()[
+        hosp_patients = load_hosp_patients()[
             [
                 "subject_id",
                 "anchor_year",
@@ -179,9 +158,6 @@ class RawDataLoader:
                 "gender",
             ]
         ]
-        hosp_patients["yob"] = (
-            hosp_patients["anchor_year"] - hosp_patients["anchor_age"]
-        )  # get yob to ensure a given visit is from an adult
         hosp_patients["min_valid_year"] = hosp_patients["anchor_year"] + (
             2019 - hosp_patients["anchor_year_group"].str.slice(start=-4).astype(int)
         )
@@ -189,6 +165,8 @@ class RawDataLoader:
         # Define anchor_year corresponding to the anchor_year_group 2017-2019. This is later used to prevent consideration
         # of visits with prediction windows outside the dataset's time range (2008-2019)
         return hosp_patients
+
+    # PARTITION BY TARGET
 
     def partition_by_los(
         self,
@@ -357,6 +335,7 @@ class RawDataLoader:
         elif self.label == "Length of Stay":
             return self.partition_by_los(df, gap, group_col, admit_col, disch_col)
 
+    # TODO: SAVE
     def save_cohort(self, cohort: pd.DataFrame) -> None:
         # Save the processed cohort data
         # cohort[cols].to_csv(
@@ -367,12 +346,9 @@ class RawDataLoader:
         print("not saved yet")
 
     def extract(self) -> None:
-        visit_col = "stay_id" if self.use_icu else "hadm_id"
-        admit_col = "intime" if self.use_icu else "admittime"
-        disch_col = "outtime" if self.use_icu else "dischtime"
         logger.info("===========MIMIC-IV v2.0============")
         self.fill_outputs()
-        logger.info(self.genrate_extract_log())
+        logger.info(self.generate_extract_log())
         visits = self.load_visits()[self.get_visits_columns()]
         patients = self.load_patients()[self.get_patients_columns()]
 
@@ -380,7 +356,7 @@ class RawDataLoader:
         visits_patients["Age"] = visits_patients["anchor_age"]
         visits_patients = visits_patients.loc[visits_patients["Age"] >= 18]
         ##Add Demo data
-        eth = self.load_hosp_admissions()[self.get_eth_columns()]
+        eth = load_hosp_admissions()[self.get_eth_columns()]
         visits_patients = visits_patients.merge(eth, how="inner", on="hadm_id")
 
         if self.use_icu:
@@ -417,6 +393,8 @@ class RawDataLoader:
                 ]
             ]
 
+        admit_col = "intime" if self.use_icu else "admittime"
+        disch_col = "outtime" if self.use_icu else "dischtime"
         cohort, invalid = self.get_case_ctrls(
             visits_patients,
             self.time,
@@ -427,9 +405,7 @@ class RawDataLoader:
         )
 
         if self.icd_code != "No Disease Filter":
-            hids = disease_cohort.extract_diag_cohort(
-                cohort["hadm_id"], self.icd_code, self.raw_dir
-            )
+            hids = disease_cohort.extract_diag_cohort(self.icd_code, RAW_PATH)
             cohort = cohort[cohort["hadm_id"].isin(hids["hadm_id"])]
             self.cohort_output = self.cohort_output + "_" + self.icd_code
             self.summary_output = self.summary_output + "_" + self.icd_code

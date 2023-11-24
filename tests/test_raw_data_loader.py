@@ -1,5 +1,5 @@
 import pytest
-from my_preprocessing.raw_data_loader import RawDataLoader, RAW_PATH
+from my_preprocessing.raw_data_loader import RawDataLoader
 
 
 @pytest.mark.parametrize(
@@ -43,7 +43,6 @@ def test_extract_icu_mortality(
         label=target,
         time=target_time,
         icd_code=icd_code_filter,
-        raw_dir=RAW_PATH,
         preproc_dir="",
         disease_label=disease_label,
         cohort_output="",
