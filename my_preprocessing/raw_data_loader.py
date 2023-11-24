@@ -12,7 +12,6 @@ logger = logging.getLogger()
 RAW_PATH = Path("raw_data") / "mimiciv_2_0"
 
 # TODO
-# use_icu: bool
 # CLARIFY LOG
 # simplify diseases cohort
 
@@ -20,7 +19,7 @@ RAW_PATH = Path("raw_data") / "mimiciv_2_0"
 class RawDataLoader:
     def __init__(
         self,
-        use_icu: str,
+        use_icu: bool,
         label: str,
         time: int,
         icd_code: str,
@@ -40,9 +39,12 @@ class RawDataLoader:
         self.cohort_output = cohort_output
         self.summary_output = summary_output
 
-    def genrate_output_suffix(self) -> str:
+    def generate_icu_log(self) -> str:
+        return "ICU" if self.use_icu else "Non-ICU"
+
+    def generate_output_suffix(self) -> str:
         return (
-            self.use_icu.lower()
+            self.generate_icu_log()
             + "_"
             + self.label.lower().replace(" ", "_")
             + "_"
@@ -53,13 +55,13 @@ class RawDataLoader:
 
     def fill_outputs(self) -> None:
         if not self.cohort_output:
-            self.cohort_output = "cohort_" + self.genrate_output_suffix()
+            self.cohort_output = "cohort_" + self.generate_output_suffix()
         if not self.summary_output:
-            self.summary_output = "summary_" + self.genrate_output_suffix()
+            self.summary_output = "summary_" + self.generate_output_suffix()
 
     def get_visits_columns(self) -> list:
         # Return the list of columns to be used for visits data
-        if self.use_icu == "ICU":
+        if self.use_icu:
             return ["subject_id", "stay_id", "hadm_id", "intime", "outtime", "los"]
         return ["subject_id", "hadm_id", "admittime", "dischtime", "los"]
 
@@ -82,12 +84,12 @@ class RawDataLoader:
     def genrate_extract_log(self) -> str:
         if self.icd_code == "No Disease Filter":
             if len(self.disease_label):
-                return f"EXTRACTING FOR: | {self.use_icu.upper()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | {str(self.time)} | "
-            return f"EXTRACTING FOR: | {self.use_icu.upper()} | {self.label.upper()} | {str(self.time)} |"
+                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | {str(self.time)} | "
+            return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} | {str(self.time)} |"
         else:
             if len(self.disease_label):
-                return f"EXTRACTING FOR: | {self.use_icu.upper()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
-        return f"EXTRACTING FOR: | {self.use_icu.upper()} | {self.label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
+                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
+        return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
 
     def load_hosp_patients(self):
         patients = pd.read_csv(
@@ -162,7 +164,7 @@ class RawDataLoader:
         return visits
 
     def load_visits(self) -> pd.DataFrame:
-        if self.use_icu == "ICU":
+        if self.use_icu:
             return self.load_icu_visits()
         return self.load_no_icu_visits()
 
@@ -365,9 +367,9 @@ class RawDataLoader:
         print("not saved yet")
 
     def extract(self) -> None:
-        visit_col = "stay_id" if self.use_icu == "ICU" else "hadm_id"
-        admit_col = "intime" if self.use_icu == "ICU" else "admittime"
-        disch_col = "outtime" if self.use_icu == "ICU" else "dischtime"
+        visit_col = "stay_id" if self.use_icu else "hadm_id"
+        admit_col = "intime" if self.use_icu else "admittime"
+        disch_col = "outtime" if self.use_icu else "dischtime"
         logger.info("===========MIMIC-IV v2.0============")
         self.fill_outputs()
         logger.info(self.genrate_extract_log())
@@ -381,7 +383,7 @@ class RawDataLoader:
         eth = self.load_hosp_admissions()[self.get_eth_columns()]
         visits_patients = visits_patients.merge(eth, how="inner", on="hadm_id")
 
-        if self.use_icu == "ICU":
+        if self.use_icu:
             visits_patients = visits_patients[
                 [
                     "subject_id",
