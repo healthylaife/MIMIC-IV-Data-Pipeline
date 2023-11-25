@@ -35,6 +35,12 @@ class RawDataLoader:
         self.cohort_output = cohort_output
         self.summary_output = summary_output
 
+        self.visit_col = "stay_id" if use_icu else "hadm_id"
+        self.admit_col = "intime" if use_icu else "admittime"
+        self.dish_col = "outtime" if use_icu else "hadm_id"
+        self.admit_col = "intime" if use_icu else "dischtime"
+        self.adm_visit_col = "hadm_id" if use_icu else ""
+
     def generate_icu_log(self) -> str:
         return "ICU" if self.use_icu else "Non-ICU"
 
@@ -111,11 +117,7 @@ class RawDataLoader:
             hosp_admissions = hosp_admissions.loc[
                 hosp_admissions.hospital_expire_flag == 0
             ]
-        if len(self.disease_label):
-            hids = disease_cohort.preproc_icd_module(self.disease_label)
-            hosp_admissions = hosp_admissions[
-                hosp_admissions["hadm_id"].isin(hids["hadm_id"])
-            ]
+
             print("[ READMISSION DUE TO " + self.disease_label + " ]")
         return hosp_admissions
 
@@ -128,10 +130,6 @@ class RawDataLoader:
         hosp_patient = load_hosp_patients()[["subject_id", "dod"]]
         visits = icu_icustays.merge(hosp_patient, how="inner", on="subject_id")
         visits = visits.loc[(visits.dod.isna()) | (visits["dod"] >= visits["outtime"])]
-        if len(self.disease_label):
-            hids = disease_cohort.preproc_icd_module(self.disease_label)
-            visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
-            print("[ READMISSION DUE TO " + self.disease_label + " ]")
         return visits
 
     def load_visits(self) -> pd.DataFrame:
@@ -166,120 +164,68 @@ class RawDataLoader:
         admit_col: str,
         disch_col: str,
     ):
-        invalid = df.loc[
-            (df[admit_col].isna()) | (df[disch_col].isna()) | (df["los"].isna())
+        valid_cohort = df.loc[
+            ~df[admit_col].isna() & ~df[disch_col].isna() & ~df["los"].isna()
         ]
-        cohort = df.loc[
-            (~df[admit_col].isna()) & (~df[disch_col].isna()) & (~df["los"].isna())
-        ]
-
-        pos_cohort = cohort[cohort["los"] > los]
-        neg_cohort = cohort[cohort["los"] <= los]
-        neg_cohort = neg_cohort.fillna(0)
-        pos_cohort = pos_cohort.fillna(0)
-
-        pos_cohort["label"] = 1
-        neg_cohort["label"] = 0
-
-        cohort = pd.concat([pos_cohort, neg_cohort], axis=0)
-        cohort = cohort.sort_values(by=[group_col, admit_col])
-        print("[ LOS LABELS FINISHED ]")
-        return cohort, invalid
+        valid_cohort["label"] = (valid_cohort["los"] > los).astype(int)
+        sorted_cohort = valid_cohort.sort_values(by=[group_col, admit_col])
+        logger.info("[ LOS LABELS FINISHED ]")
+        return sorted_cohort
 
     def partition_by_readmit(
         self,
         df: pd.DataFrame,
-        gap: datetime.timedelta,
+        gap: pd.Timedelta,
         group_col: str,
         admit_col: str,
         disch_col: str,
     ):
-        """Applies labels to individual visits according to whether or not a readmission has occurred within the specified `gap` days.
-        For a given visit, another visit must occur within the gap window for a positive readmission label.
-        The gap window starts from the disch_col time and the admit_col of subsequent visits are considered.
-        """
+        """Applies labels to individual visits according to whether or not a readmission has occurred within the specified `gap` days."""
 
-        case = pd.DataFrame()  # hadm_ids with readmission within the gap period
-        ctrl = pd.DataFrame()  # hadm_ids without readmission within the gap period
-        invalid = pd.DataFrame()  # hadm_ids that are not considered in the cohort
+        df_sorted = df.sort_values(by=[group_col, admit_col])
 
-        # Iterate through groupbys based on group_col (subject_id). Data is sorted by subject_id and admit_col (admittime)
-        # to ensure that the most current hadm_id is last in a group.
-        # grouped= df[[group_col, visit_col, admit_col, disch_col, valid_col]].sort_values(by=[group_col, admit_col]).groupby(group_col)
-        grouped = df.sort_values(by=[group_col, admit_col]).groupby(group_col)
-        for subject, group in tqdm(grouped):
-            if group.shape[0] <= 1:
-                ctrl = pd.concat(
-                    [ctrl, pd.DataFrame([group.iloc[0]])], ignore_index=True
-                )
-            else:
-                for idx in range(group.shape[0] - 1):
-                    visit_time = group.iloc[idx][
-                        disch_col
-                    ]  # For each index (a unique hadm_id), get its timestamp
-                    if (
-                        group.loc[
-                            (group[admit_col] > visit_time)
-                            & (  # Readmissions must come AFTER the current timestamp
-                                group[admit_col] - visit_time <= gap
-                            )  # Distance between a timestamp and readmission must be within gap
-                        ].shape[0]
-                        >= 1
-                    ):  # If ANY rows meet above requirements, a readmission has occurred after that visit
-                        case = pd.concat(
-                            [case, pd.DataFrame([group.iloc[idx]])], ignore_index=True
-                        )
-                    else:
-                        # If no readmission is found, only add to ctrl if prediction window is guaranteed to be within the
-                        # time range of the dataset (2008-2019). Visits with prediction windows existing in potentially out-of-range
-                        # dates (like 2018-2020) are excluded UNLESS the prediction window takes place the same year as the visit,
-                        # in which case it is guaranteed to be within 2008-2019
+        # Calculate the time difference between consecutive visits for each patient
+        df_sorted["next_admit"] = df_sorted.groupby(group_col)[admit_col].shift(-1)
+        df_sorted["time_to_next"] = df_sorted["next_admit"] - df_sorted[disch_col]
 
-                        ctrl = pd.concat(
-                            [ctrl, pd.DataFrame([group.iloc[idx]])], ignore_index=True
-                        )
+        # Identify readmission cases
+        df_sorted["readmit"] = df_sorted["time_to_next"].notnull() & (
+            df_sorted["time_to_next"] <= gap
+        )
 
-                ctrl = pd.concat(
-                    [ctrl, pd.DataFrame([group.iloc[-1]])], ignore_index=True
-                )
+        # Séparer en deux groupes: cas de réadmission et contrôles
+        case = df_sorted[df_sorted["readmit"]]
+        ctrl = df_sorted[~df_sorted["readmit"]]
 
         print("[ READMISSION LABELS FINISHED ]")
-        return case, ctrl, invalid
+        return case.drop(columns=["next_admit", "time_to_next", "readmit"]), ctrl.drop(
+            columns=["next_admit", "time_to_next", "readmit"]
+        )
 
     def partition_by_mort(
         self,
-        df: pd.DataFrame,
+        dataframe: pd.DataFrame,
         group_col: str,
         admit_col: str,
-        disch_col: str,
+        discharge_col: str,
         death_col: str,
     ):
-        """Applies labels to individual visits according to whether or not a death has occurred within
-        the times of the specified admit_col and disch_col"""
-
-        invalid = df.loc[(df[admit_col].isna()) | (df[disch_col].isna())]
-
-        cohort = df.loc[(~df[admit_col].isna()) & (~df[disch_col].isna())]
-
-        cohort["label"] = 0
-        pos_cohort = cohort[~cohort[death_col].isna()]
-        neg_cohort = cohort[cohort[death_col].isna()]
-        neg_cohort = neg_cohort.fillna(0)
-        pos_cohort = pos_cohort.fillna(0)
-        pos_cohort[death_col] = pd.to_datetime(pos_cohort[death_col])
-
-        pos_cohort["label"] = np.where(
-            (pos_cohort[death_col] >= pos_cohort[admit_col])
-            & (pos_cohort[death_col] <= pos_cohort[disch_col]),
+        """Applies labels to individual visits according to whether a death has occurred
+        between the specified admit_col and disch_col times."""
+        valid_entries = dataframe.loc[
+            ~dataframe[admit_col].isna() & ~dataframe[discharge_col].isna()
+        ]
+        valid_entries[death_col] = pd.to_datetime(valid_entries[death_col])
+        valid_entries["label"] = np.where(
+            (valid_entries[death_col] >= valid_entries[admit_col])
+            & (valid_entries[death_col] <= valid_entries[discharge_col])
+            & (~valid_entries[death_col].isna()),
             1,
             0,
         )
-
-        pos_cohort["label"] = pos_cohort["label"].astype("Int32")
-        cohort = pd.concat([pos_cohort, neg_cohort], axis=0)
-        cohort = cohort.sort_values(by=[group_col, admit_col])
-        print("[ MORTALITY LABELS FINISHED ]")
-        return cohort, invalid
+        sorted_cohort = valid_entries.sort_values(by=[group_col, admit_col])
+        logger.info("[ MORTALITY LABELS FINISHED ]")
+        return sorted_cohort
 
     def get_case_ctrls(
         self,
@@ -302,18 +248,15 @@ class RawDataLoader:
         valid_col: generated column containing a patient's year that corresponds to the 2017-2019 anchor time range
         dod_col: Date of death column
         """
-
-        case = None  # hadm_ids with readmission within the gap period
-        ctrl = None  # hadm_ids without readmission within the gap period
-        invalid = None  # hadm_ids that are not considered in the cohort
+        # breakpoint()
         if self.label == "Mortality":
             return self.partition_by_mort(
                 df, group_col, admit_col, disch_col, death_col
             )
-        elif self.label == "Readmission":
+        if self.label == "Readmission":
             gap = datetime.timedelta(days=gap)
             # transform gap into a timedelta to compare with datetime columns
-            case, ctrl, invalid = self.partition_by_readmit(
+            case, ctrl = self.partition_by_readmit(
                 df, gap, group_col, admit_col, disch_col
             )
 
@@ -321,8 +264,8 @@ class RawDataLoader:
             case["label"] = np.ones(case.shape[0]).astype(int)
             ctrl["label"] = np.zeros(ctrl.shape[0]).astype(int)
 
-            return pd.concat([case, ctrl], axis=0), invalid
-        elif self.label == "Length of Stay":
+            return pd.concat([case, ctrl], axis=0)
+        if self.label == "Length of Stay":
             return self.partition_by_los(df, gap, group_col, admit_col, disch_col)
 
     # TODO: SAVE
@@ -335,71 +278,61 @@ class RawDataLoader:
         # )
         print("not saved yet")
 
+    def filter_visits(self, visits):
+        if len(self.disease_label):
+            hids = disease_cohort.preproc_icd_module(self.disease_label)
+            visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
+            print("[ READMISSION DUE TO " + self.disease_label + " ]")
+
+        if self.icd_code != "No Disease Filter":
+            hids = disease_cohort.preproc_icd_module(self.icd_code)
+            visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
+            self.cohort_output = self.cohort_output + "_" + self.icd_code
+            self.summary_output = self.summary_output + "_" + self.icd_code
+        return visits
+
     def extract(self) -> None:
         logger.info("===========MIMIC-IV v2.0============")
         self.fill_outputs()
         logger.info(self.generate_extract_log())
 
         visits = self.load_visits()[self.get_visits_columns()]
-        patients = self.load_patients()[self.get_patients_columns()]
+        visits = self.filter_visits(visits)
 
+        patients = self.load_patients()[self.get_patients_columns()]
+        patients["age"] = patients["anchor_age"]
+        patients = patients.loc[patients["age"] >= 18]
         visits_patients = visits.merge(patients, how="inner", on="subject_id")
-        visits_patients["Age"] = visits_patients["anchor_age"]
-        visits_patients = visits_patients.loc[visits_patients["Age"] >= 18]
-        ##Add Demo data
+
         eth = load_hosp_admissions()[self.get_eth_columns()]
         visits_patients = visits_patients.merge(eth, how="inner", on="hadm_id")
 
-        if self.use_icu:
-            visits_patients = visits_patients[
-                [
-                    "subject_id",
-                    "stay_id",
-                    "hadm_id",
-                    "intime",
-                    "outtime",
-                    "los",
-                    "min_valid_year",
-                    "dod",
-                    "Age",
-                    "gender",
-                    "race",
-                    "insurance",
-                ]
-            ]
-        else:
-            visits_patients = visits_patients.dropna(subset=["min_valid_year"])[
-                [
-                    "subject_id",
-                    "hadm_id",
-                    "admittime",
-                    "dischtime",
-                    "los",
-                    "min_valid_year",
-                    "dod",
-                    "Age",
-                    "gender",
-                    "race",
-                    "insurance",
-                ]
-            ]
-
-        admit_col = "intime" if self.use_icu else "admittime"
-        disch_col = "outtime" if self.use_icu else "dischtime"
-        cohort, invalid = self.get_case_ctrls(
-            visits_patients,
-            self.time,
+        cols_to_keep = [
             "subject_id",
-            admit_col,
-            disch_col,
+            "hadm_id",
+            "los",
+            "min_valid_year",
             "dod",
+            "age",
+            "gender",
+            "race",
+            "insurance",
+        ]
+        if self.use_icu:
+            cols_to_keep = cols_to_keep + ["stay_id", "intime", "outtime"]
+        else:
+            cols_to_keep = cols_to_keep + ["admittime", "dischtime"]
+        visits_patients = visits_patients[cols_to_keep]
+
+        cohort = self.get_case_ctrls(
+            df=visits_patients,
+            gap=self.time,
+            group_col="subject_id",
+            admit_col="intime" if self.use_icu else "admittime",
+            disch_col="outtime" if self.use_icu else "dischtime",
+            death_col="dod",
         )
 
-        if self.icd_code != "No Disease Filter":
-            hids = disease_cohort.preproc_icd_module(self.icd_code)
-            cohort = cohort[cohort["hadm_id"].isin(hids["hadm_id"])]
-            self.cohort_output = self.cohort_output + "_" + self.icd_code
-            self.summary_output = self.summary_output + "_" + self.icd_code
         cohort = cohort.rename(columns={"race": "ethnicity"})
 
         self.save_cohort(cohort)
