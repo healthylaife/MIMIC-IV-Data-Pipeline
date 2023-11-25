@@ -35,12 +35,6 @@ class RawDataLoader:
         self.cohort_output = cohort_output
         self.summary_output = summary_output
 
-        self.visit_col = "stay_id" if use_icu else "hadm_id"
-        self.admit_col = "intime" if use_icu else "admittime"
-        self.dish_col = "outtime" if use_icu else "hadm_id"
-        self.admit_col = "intime" if use_icu else "dischtime"
-        self.adm_visit_col = "hadm_id" if use_icu else ""
-
     def generate_icu_log(self) -> str:
         return "ICU" if self.use_icu else "Non-ICU"
 
