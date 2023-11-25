@@ -6,7 +6,6 @@ import logging
 import numpy as np
 from tqdm import tqdm
 from my_preprocessing.raw_files import (
-    RAW_PATH,
     load_hosp_patients,
     load_hosp_admissions,
     load_icu_icustays,
@@ -91,8 +90,6 @@ class RawDataLoader:
         # Return the list of columns to be used for patients data
         return ["hadm_id", "insurance", "race"]
 
-    # RAW EXTRACT
-
     # VISITS AND PATIENTS
 
     def load_no_icu_visits(self) -> pd.DataFrame:
@@ -115,7 +112,7 @@ class RawDataLoader:
                 hosp_admissions.hospital_expire_flag == 0
             ]
         if len(self.disease_label):
-            hids = disease_cohort.extract_diag_cohort(self.disease_label, RAW_PATH)
+            hids = disease_cohort.preproc_icd_module(self.disease_label)
             hosp_admissions = hosp_admissions[
                 hosp_admissions["hadm_id"].isin(hids["hadm_id"])
             ]
@@ -132,7 +129,7 @@ class RawDataLoader:
         visits = icu_icustays.merge(hosp_patient, how="inner", on="subject_id")
         visits = visits.loc[(visits.dod.isna()) | (visits["dod"] >= visits["outtime"])]
         if len(self.disease_label):
-            hids = disease_cohort.extract_diag_cohort(self.disease_label, RAW_PATH)
+            hids = disease_cohort.preproc_icd_module(self.disease_label)
             visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
             print("[ READMISSION DUE TO " + self.disease_label + " ]")
         return visits
@@ -342,6 +339,7 @@ class RawDataLoader:
         logger.info("===========MIMIC-IV v2.0============")
         self.fill_outputs()
         logger.info(self.generate_extract_log())
+
         visits = self.load_visits()[self.get_visits_columns()]
         patients = self.load_patients()[self.get_patients_columns()]
 
@@ -398,11 +396,12 @@ class RawDataLoader:
         )
 
         if self.icd_code != "No Disease Filter":
-            hids = disease_cohort.extract_diag_cohort(self.icd_code, RAW_PATH)
+            hids = disease_cohort.preproc_icd_module(self.icd_code)
             cohort = cohort[cohort["hadm_id"].isin(hids["hadm_id"])]
             self.cohort_output = self.cohort_output + "_" + self.icd_code
             self.summary_output = self.summary_output + "_" + self.icd_code
         cohort = cohort.rename(columns={"race": "ethnicity"})
+
         self.save_cohort(cohort)
         logger.info("[ COHORT SUCCESSFULLY SAVED ]")
         logger.info(self.cohort_output)
