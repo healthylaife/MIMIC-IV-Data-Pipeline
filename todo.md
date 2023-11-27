@@ -29,7 +29,7 @@
 
 
 # finalize preprocessing
--  cleaning 
+- cleaning 
 - other preprocessing transformation
 - output files
 - features summary

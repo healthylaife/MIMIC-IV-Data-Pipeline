@@ -9,32 +9,24 @@ MAP_PATH = Path("utils") / "mappings" / "ICD9_to_ICD10_mapping.txt"
 HOSP_DIAGNOSES_ICD_PATH = RAW_PATH / "hosp" / "diagnoses_icd.csv.gz"
 
 
-def load_icd_map() -> pd.DataFrame:
+def load_static_icd_map() -> pd.DataFrame:
     return pd.read_csv(MAP_PATH, header=0, delimiter="\t")
 
 
-def extract_dictionary(df) -> dict:
-    """
-    Extracts a dictionary from the given dataframe where keys are values from column 'a' with length 3,
-    and the values are the first occurrence of corresponding values in column 'b'.
+def extract_dictionary(icd_map_df) -> dict:
+    # Filter rows where the length of diagnosis_code is 3
+    filtered_df = icd_map_df[icd_map_df["diagnosis_code"].str.len() == 3]
 
-    :param dataframe: pandas DataFrame with columns 'a' and 'b'.
-    :return: Dictionary with specified keys and values.
-    """
-    # Filter rows where the length of values in column 'a' is 3
-    filtered_df = df[df["diagnosis_code"].str.len() == 3]
-
-    # Drop duplicates in 'a' to keep only the first occurrence
+    # Drop duplicated diagnosis_code to keep only the first occurrence
     filtered_df = filtered_df.drop_duplicates(subset="diagnosis_code")
 
+    # Replace bad formatted icd10cm with nan
     filtered_df["icd10cm"] = filtered_df["icd10cm"].apply(
         lambda x: x[:3] if isinstance(x, str) else np.nan
     )
 
     # Convert the filtered dataframe to a dictionary
-    result_dict = dict(zip(filtered_df["diagnosis_code"], filtered_df["icd10cm"]))
-
-    return result_dict
+    return dict(zip(filtered_df["diagnosis_code"], filtered_df["icd10cm"]))
 
 
 def load_hosp_patients() -> pd.DataFrame:
@@ -61,7 +53,7 @@ def load_icu_icustays() -> pd.DataFrame:
     )
 
 
-def load_diagnosis_icd() -> pd.DataFrame:
+def load_hosp_diagnosis_icd() -> pd.DataFrame:
     return pd.read_csv(RAW_PATH / "hosp" / "diagnoses_icd.csv.gz", compression="gzip")
 
 

@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 from my_preprocessing.raw_files import (
-    load_icd_map,
-    load_diagnosis_icd,
+    load_static_icd_map,
+    load_hosp_diagnosis_icd,
     extract_dictionary,
 )
 
@@ -10,13 +10,12 @@ from my_preprocessing.raw_files import (
 def preproc_icd_module(ICD10_code: str) -> tuple:
     """Takes an module dataset with ICD codes and puts it in long_format,
     mapping ICD-codes by a mapping table path"""
-    diag = load_diagnosis_icd()
+    diag = load_hosp_diagnosis_icd()[["icd_code", "icd_version", "hadm_id"]]
     """Takes an ICD9 -> ICD10 mapping table and a diagnosis dataframe;
     adds column with converted ICD10 column"""
 
-    # Create new column with original codes as default
-    diag["root_icd10_convert"] = diag["icd_code"].values
-    mapping = load_icd_map()
+    # Create mapping dictionary  ICD9 -> ICD10
+    mapping = load_static_icd_map()
     mapping_dico = extract_dictionary(mapping)
     # convert all ICD9 codes to ICD10
     diag["root"] = diag.apply(
