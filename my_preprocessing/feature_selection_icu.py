@@ -19,6 +19,8 @@ def feature_icu(
     proc_flag=True,
     med_flag=True,
 ):
+    result = pd.DataFrame()
+
     if diag_flag:
         print("[EXTRACTING DIAGNOSIS DATA]")
         diag = preproc_icd_module(
@@ -77,7 +79,8 @@ def feature_icu(
             usecols=["stay_id", "charttime", "itemid", "valuenum", "valueuom"],
         )
         chart = drop_wrong_uom(chart, 0.95)
-        chart[["stay_id", "itemid", "event_time_from_admit", "valuenum"]].to_csv(
+        result = chart[["stay_id", "itemid", "event_time_from_admit", "valuenum"]]
+        result.to_csv(
             "./data/features/preproc_chart_icu.csv.gz", compression="gzip", index=False
         )
         print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
@@ -91,7 +94,7 @@ def feature_icu(
             dtypes=None,
             usecols=["stay_id", "starttime", "itemid"],
         )
-        proc[
+        result = proc[
             [
                 "subject_id",
                 "hadm_id",
@@ -101,7 +104,8 @@ def feature_icu(
                 "intime",
                 "event_time_from_admit",
             ]
-        ].to_csv(
+        ]
+        result.to_csv(
             "./data/features/preproc_proc_icu.csv.gz", compression="gzip", index=False
         )
         print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
@@ -112,7 +116,7 @@ def feature_icu(
             "d:\\Work\\Repos\\MIMIC-IV-Data-Pipeline\\raw_data\\mimiciv_2_0\\icu\\inputevents.csv.gz",
             "./data/cohort/" + cohort_output + ".csv.gz",
         )
-        med[
+        result = med[
             [
                 "subject_id",
                 "hadm_id",
@@ -126,10 +130,12 @@ def feature_icu(
                 "amount",
                 "orderid",
             ]
-        ].to_csv(
+        ]
+        result.to_csv(
             "./data/features/preproc_med_icu.csv.gz", compression="gzip", index=False
         )
         print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
+    return result
 
 
 def preprocess_features_icu(
