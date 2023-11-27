@@ -6,6 +6,8 @@ import numpy as np
 RAW_PATH = Path("raw_data") / "mimiciv_2_0"
 MAP_PATH = Path("utils") / "mappings" / "ICD9_to_ICD10_mapping.txt"
 
+HOSP_DIAGNOSES_ICD_PATH = RAW_PATH / "hosp" / "diagnoses_icd.csv.gz"
+
 
 def load_icd_map() -> pd.DataFrame:
     return pd.read_csv(MAP_PATH, header=0, delimiter="\t")
