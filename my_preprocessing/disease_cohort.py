@@ -18,7 +18,6 @@ def preproc_icd_module(ICD10_code: str) -> tuple:
     mapping = load_static_icd_map()
     mapping_dico = extract_dictionary(mapping)
     # convert all ICD9 codes to ICD10
-    breakpoint()
     diag["root"] = diag.apply(
         lambda row: mapping_dico.get(row["icd_code"][:3], np.nan)
         if row["icd_version"] == 9

@@ -451,7 +451,6 @@ def extract_data(
     label: Can either be '{day} day Readmission' or 'Mortality', decides what binary data label signifies
     """
     print("===========MIMIC-IV v2.0============")
-    breakpoint()
     if not cohort_output:
         cohort_output = (
             "cohort_"

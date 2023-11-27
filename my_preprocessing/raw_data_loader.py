@@ -67,64 +67,34 @@ class RawDataLoader:
         if not self.summary_output:
             self.summary_output = "summary_" + self.generate_output_suffix()
 
-    # COLUMNS
-
-    def get_visits_columns(self) -> list:
-        # Return the list of columns to be used for visits data
-        if self.use_icu:
-            return ["subject_id", "stay_id", "hadm_id", "intime", "outtime", "los"]
-        return ["subject_id", "hadm_id", "admittime", "dischtime", "los"]
-
-    def get_patients_columns(self) -> list:
-        # Return the list of columns to be used for patients data
-        return [
-            "subject_id",
-            "anchor_year",
-            "anchor_age",
-            "min_valid_year",
-            "dod",
-            "gender",
-        ]
-
-    def get_eth_columns(self) -> list:
-        # Return the list of columns to be used for patients data
-        return ["hadm_id", "insurance", "race"]
-
     # VISITS AND PATIENTS
 
     def load_no_icu_visits(self) -> pd.DataFrame:
         hosp_admissions = load_hosp_admissions()
-        dischtimes = hosp_admissions["dischtime"]
-        admittimes = hosp_admissions["admittime"]
-        hosp_admissions["los"] = dischtimes - admittimes
-        hosp_admissions["admittime"] = pd.to_datetime(admittimes)
-        hosp_admissions["dischtime"] = pd.to_datetime(dischtimes)
+        hosp_admissions["los"] = (
+            hosp_admissions["dischtime"] - hosp_admissions["admittime"]
+        ).dt.days
 
-        # simplify....
-        hosp_admissions["los"] = pd.to_timedelta(dischtimes - admittimes, unit="h")
-        hosp_admissions["los"] = hosp_admissions["los"].astype(str)
-        hosp_admissions["los"] = pd.to_numeric(
-            hosp_admissions["los"].str.split(expand=True)[0]
-        )
         if self.label == "Readmission":
-            # remove hospitalizations with a death; impossible for readmission for such visits
-            hosp_admissions = hosp_admissions.loc[
-                hosp_admissions.hospital_expire_flag == 0
+            # remove hospitalizations with a death
+            hosp_admissions = hosp_admissions[
+                hosp_admissions["hospital_expire_flag"] == 0
             ]
 
             print("[ READMISSION DUE TO " + self.disease_label + " ]")
-        return hosp_admissions
+        return hosp_admissions[
+            ["subject_id", "hadm_id", "admittime", "dischtime", "los"]
+        ]
 
     def load_icu_visits(self) -> pd.DataFrame:
         icu_icustays = load_icu_icustays()
         if self.label != "Readmission":
             return icu_icustays
-        # icustays doesn't have a way to identify if patient died during visit; must
-        # use core/patients to remove such stay_ids for readmission labels
+        # remove such stay_ids with a death for readmission labels
         hosp_patient = load_hosp_patients()[["subject_id", "dod"]]
         visits = icu_icustays.merge(hosp_patient, how="inner", on="subject_id")
         visits = visits.loc[(visits.dod.isna()) | (visits["dod"] >= visits["outtime"])]
-        return visits
+        return visits[["subject_id", "stay_id", "hadm_id", "intime", "outtime", "los"]]
 
     def load_visits(self) -> pd.DataFrame:
         return self.load_icu_visits() if self.use_icu else self.load_no_icu_visits()
@@ -144,9 +114,18 @@ class RawDataLoader:
             2019 - hosp_patients["anchor_year_group"].str.slice(start=-4).astype(int)
         )
 
-        # Define anchor_year corresponding to the anchor_year_group 2017-2019. This is later used to prevent consideration
-        # of visits with prediction windows outside the dataset's time range (2008-2019)
-        return hosp_patients
+        # Define anchor_year corresponding to the anchor_year_group 2017-2019.
+        # To identify visits with prediction windows outside the range 2008-2019.
+        return hosp_patients[
+            [
+                "subject_id",
+                "anchor_year",
+                "anchor_age",
+                "min_valid_year",
+                "dod",
+                "gender",
+            ]
+        ]
 
     # PARTITION BY TARGET
 
@@ -242,7 +221,6 @@ class RawDataLoader:
         valid_col: generated column containing a patient's year that corresponds to the 2017-2019 anchor time range
         dod_col: Date of death column
         """
-        # breakpoint()
         if self.label == "Mortality":
             return self.partition_by_mort(
                 df, group_col, admit_col, disch_col, death_col
@@ -290,16 +268,16 @@ class RawDataLoader:
         self.fill_outputs()
         logger.info(self.generate_extract_log())
 
-        visits = self.load_visits()[self.get_visits_columns()]
+        visits = self.load_visits()
         visits = self.filter_visits(visits)
 
-        patients = self.load_patients()[self.get_patients_columns()]
+        patients = self.load_patients()
         patients["age"] = patients["anchor_age"]
         patients = patients.loc[patients["age"] >= 18]
-        visits_patients = visits.merge(patients, how="inner", on="subject_id")
+        visits = visits.merge(patients, how="inner", on="subject_id")
 
-        eth = load_hosp_admissions()[self.get_eth_columns()]
-        visits_patients = visits_patients.merge(eth, how="inner", on="hadm_id")
+        eth = load_hosp_admissions()[["hadm_id", "insurance", "race"]]
+        visits = visits.merge(eth, how="inner", on="hadm_id")
 
         cols_to_keep = [
             "subject_id",
@@ -316,10 +294,10 @@ class RawDataLoader:
             cols_to_keep = cols_to_keep + ["stay_id", "intime", "outtime"]
         else:
             cols_to_keep = cols_to_keep + ["admittime", "dischtime"]
-        visits_patients = visits_patients[cols_to_keep]
+        visits = visits[cols_to_keep]
 
         cohort = self.get_case_ctrls(
-            df=visits_patients,
+            df=visits,
             gap=self.time,
             group_col="subject_id",
             admit_col="intime" if self.use_icu else "admittime",

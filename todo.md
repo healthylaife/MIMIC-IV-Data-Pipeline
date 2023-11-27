@@ -1,5 +1,7 @@
 # module my preprocessing
 
+- define min_valid_year in raw data loader?
+
 - rename extract?
 
 - implementer options pour l extract
