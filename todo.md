@@ -1,5 +1,3 @@
-
-
 # module my preprocessing
 
 - rename extract?
@@ -30,7 +28,27 @@
 
 
 
+# finalize preprocessing
+-  cleaning 
+- other preprocessing transformation
+- output files
+- features summary
 
+
+# data_generation
+
+
+# ML_models
+
+# DL_models
+
+# tokenization.BEHRT_model
+
+# evaluation
+
+# calibraation
+
+callibrate_output.callibrate
 
 # project
 - requirements.txt
