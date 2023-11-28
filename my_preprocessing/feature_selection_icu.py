@@ -1,9 +1,12 @@
 from my_preprocessing.icd_conversion import standardize_icd
-
 from my_preprocessing.uom_conversion import drop_wrong_uom
 import pandas as pd
 from my_preprocessing.raw_files import (
     load_hosp_diagnosis_icd,
+    FEATURE_PATH,
+    COHORT_PATH,
+)
+from my_preprocessing.preprocessing import (
     preproc_output_events,
     preproc_chartevents,
     preproc_icu_procedure_events,
@@ -11,8 +14,6 @@ from my_preprocessing.raw_files import (
     preproc_labs_events_features,
     preprocess_hosp_prescriptions,
     preproc_hosp_procedures_icd,
-    FEATURE_PATH,
-    COHORT_PATH,
 )
 
 DIAGNOSIS_ICU_COLUMNS = [
@@ -97,6 +98,7 @@ INPUT_EVENTS_COLUMNS = [
     "amount",
     "orderid",
 ]
+
 CHART_EVENT_COLUMNS = ["stay_id", "itemid", "event_time_from_admit", "valuenum"]
 
 
@@ -226,6 +228,12 @@ def feature_icu(
 def feature_non_icu(
     cohort_output, diag_flag=True, lab_flag=True, proc_flag=True, med_flag=True
 ):
+    diag, lab, proc, med = (
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+    )
     if diag_flag:
         diag = save_diag_features(cohort_output, use_icu=False)
 
