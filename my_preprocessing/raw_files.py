@@ -7,6 +7,9 @@ RAW_PATH = Path("raw_data") / "mimiciv_2_0"
 MAP_PATH = Path("utils") / "mappings" / "ICD9_to_ICD10_mapping.txt"
 
 HOSP_DIAGNOSES_ICD_PATH = RAW_PATH / "hosp" / "diagnoses_icd.csv.gz"
+HOSP_PATIENTS_PATH = RAW_PATH / "hosp" / "patients.csv.gz"
+
+
 ICU_ICUSTAY_PATH = RAW_PATH / "icu" / "icustays.csv.gz"
 ICU_INPUT_EVENT_PATH = RAW_PATH / "icu" / "inputevents.csv.gz"
 ICU_OUTPUT_EVENT_PATH = RAW_PATH / "icu" / "outputevents.csv.gz"
@@ -14,45 +17,8 @@ HOSP_ADMISSIONS_PATH = RAW_PATH / "hosp" / "admissions.csv.gz"
 ICU_CHART_EVENTS_PATH = RAW_PATH / "icu" / "chartevents.csv.gz"
 ICU_PROCEDURE_EVENTS_PATH = RAW_PATH / "icu" / "procedureevents.csv.gz"
 
-
-def load_static_icd_map() -> pd.DataFrame:
-    return pd.read_csv(MAP_PATH, header=0, delimiter="\t")
-
-
-def load_hosp_patients() -> pd.DataFrame:
-    return pd.read_csv(
-        RAW_PATH / "hosp" / "patients.csv.gz",
-        compression="gzip",
-        parse_dates=["dod"],
-    )
-
-
-def load_hosp_admissions() -> pd.DataFrame:
-    return pd.read_csv(
-        HOSP_ADMISSIONS_PATH,
-        compression="gzip",
-        parse_dates=["admittime", "dischtime"],
-    )
-
-
-def load_icu_icustays() -> pd.DataFrame:
-    return pd.read_csv(
-        ICU_ICUSTAY_PATH,
-        compression="gzip",
-        parse_dates=["intime", "outtime"],
-    )
-
-
-def load_icu_outputevents() -> pd.DataFrame:
-    return pd.read_csv(
-        ICU_OUTPUT_EVENT_PATH,
-        compression="gzip",
-        parse_dates=[OuputputEvents.CHARTTIME.value],
-    ).drop_duplicates()
-
-
-def load_hosp_diagnosis_icd() -> pd.DataFrame:
-    return pd.read_csv(HOSP_DIAGNOSES_ICD_PATH, compression="gzip")
+PREPROC_PATH = Path("preproc_data")
+COHORT_PATH = PREPROC_PATH / "cohort"
 
 
 # icd mapping
@@ -63,6 +29,10 @@ class IcdMap(StrEnum):
     ICD9CM = "icd9cm"
     ICD10CM = "icd10cm"
     FLAGS = "flags"
+
+
+def load_static_icd_map() -> pd.DataFrame:
+    return pd.read_csv(MAP_PATH, delimiter="\t")
 
 
 # The Hosp module provides all data acquired from the hospital wide electronic health record
@@ -99,7 +69,27 @@ class HospDiagnosesIcd(StrEnum):
     ROOT = "root"
 
 
-# The ICU module contains information collected from the clinical information system used within the ICU
+def load_hosp_patients() -> pd.DataFrame:
+    return pd.read_csv(
+        HOSP_PATIENTS_PATH,
+        compression="gzip",
+        parse_dates=[HospPatients.DOD.value],
+    )
+
+
+def load_hosp_admissions() -> pd.DataFrame:
+    return pd.read_csv(
+        HOSP_ADMISSIONS_PATH,
+        compression="gzip",
+        parse_dates=[HospAdmissions.ADMITTIME.value, HospAdmissions.DISCHTIME.value],
+    )
+
+
+def load_hosp_diagnosis_icd() -> pd.DataFrame:
+    return pd.read_csv(HOSP_DIAGNOSES_ICD_PATH, compression="gzip")
+
+
+# The ICU module contains information collected from the clinical information system used within the ICU.
 
 
 # information regarding ICU stays
@@ -124,7 +114,27 @@ class OuputputEvents(StrEnum):
 
 
 class ChartEvents(StrEnum):
-    TOTO = "toto"
+    STAY_ID = "stay_id"
+    CHARTTIME = "charttime"
+    ITEMID = "itemid"
+    VALUENUM = "valuenum"
+    VALUEOM = "valueuom"
+
+
+def load_icu_icustays() -> pd.DataFrame:
+    return pd.read_csv(
+        ICU_ICUSTAY_PATH,
+        compression="gzip",
+        parse_dates=[IcuStays.INTIME.value, IcuStays.OUTTIME.value],
+    )
+
+
+def load_icu_outputevents() -> pd.DataFrame:
+    return pd.read_csv(
+        ICU_OUTPUT_EVENT_PATH,
+        compression="gzip",
+        parse_dates=[OuputputEvents.CHARTTIME.value],
+    ).drop_duplicates()
 
 
 def preproc_chartevents(cohort_path: str, chunksize=10000000) -> pd.DataFrame:
@@ -138,8 +148,14 @@ def preproc_chartevents(cohort_path: str, chunksize=10000000) -> pd.DataFrame:
         pd.read_csv(
             ICU_CHART_EVENTS_PATH,
             compression="gzip",
-            usecols=["stay_id", "charttime", "itemid", "valuenum", "valueuom"],
-            parse_dates=["charttime"],
+            usecols=[
+                ChartEvents.STAY_ID.value,
+                ChartEvents.CHARTTIME.value,
+                ChartEvents.ITEMID.value,
+                ChartEvents.VALUENUM.value,
+                ChartEvents.VALUEOM.value,
+            ],
+            parse_dates=[ChartEvents.CHARTTIME.value],
             chunksize=chunksize,
         )
     ):
