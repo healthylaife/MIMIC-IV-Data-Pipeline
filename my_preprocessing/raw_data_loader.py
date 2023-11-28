@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-import my_preprocessing.disease_cohort as disease_cohort
+import my_preprocessing.icd_conversion as icd_conversion
 import datetime
 import logging
 import numpy as np
@@ -113,14 +113,14 @@ class RawDataLoader:
         hosp_patients["min_valid_year"] = hosp_patients["anchor_year"] + (
             2019 - hosp_patients["anchor_year_group"].str.slice(start=-4).astype(int)
         )
-
+        hosp_patients["age"] = hosp_patients["anchor_age"]
         # Define anchor_year corresponding to the anchor_year_group 2017-2019.
         # To identify visits with prediction windows outside the range 2008-2019.
         return hosp_patients[
             [
                 "subject_id",
-                "anchor_year",
-                "anchor_age",
+                # "anchor_year",
+                "age",
                 "min_valid_year",
                 "dod",
                 "gender",
@@ -240,6 +240,21 @@ class RawDataLoader:
         if self.label == "Length of Stay":
             return self.partition_by_los(df, gap, group_col, admit_col, disch_col)
 
+    def filter_visits(self, visits):
+        diag = icd_conversion.preproc_icd_module()
+        if len(self.disease_label):
+            hids = icd_conversion.get_pos_ids(diag, self.disease_label)
+            visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
+            print("[ READMISSION DUE TO " + self.disease_label + " ]")
+
+        if self.icd_code != "No Disease Filter":
+            hids = icd_conversion.get_pos_ids(diag, self.icd_code)
+            visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
+
+            self.cohort_output = self.cohort_output + "_" + self.icd_code
+            self.summary_output = self.summary_output + "_" + self.icd_code
+        return visits
+
     # TODO: SAVE
     def save_cohort(self, cohort: pd.DataFrame) -> None:
         # Save the processed cohort data
@@ -250,19 +265,6 @@ class RawDataLoader:
         # )
         print("not saved yet")
 
-    def filter_visits(self, visits):
-        if len(self.disease_label):
-            hids = disease_cohort.preproc_icd_module(self.disease_label)
-            visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
-            print("[ READMISSION DUE TO " + self.disease_label + " ]")
-
-        if self.icd_code != "No Disease Filter":
-            hids = disease_cohort.preproc_icd_module(self.icd_code)
-            visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
-            self.cohort_output = self.cohort_output + "_" + self.icd_code
-            self.summary_output = self.summary_output + "_" + self.icd_code
-        return visits
-
     def extract(self) -> None:
         logger.info("===========MIMIC-IV v2.0============")
         self.fill_outputs()
@@ -270,31 +272,12 @@ class RawDataLoader:
 
         visits = self.load_visits()
         visits = self.filter_visits(visits)
-
         patients = self.load_patients()
-        patients["age"] = patients["anchor_age"]
         patients = patients.loc[patients["age"] >= 18]
+        admissions_info = load_hosp_admissions()[["hadm_id", "insurance", "race"]]
+
         visits = visits.merge(patients, how="inner", on="subject_id")
-
-        eth = load_hosp_admissions()[["hadm_id", "insurance", "race"]]
-        visits = visits.merge(eth, how="inner", on="hadm_id")
-
-        cols_to_keep = [
-            "subject_id",
-            "hadm_id",
-            "los",
-            "min_valid_year",
-            "dod",
-            "age",
-            "gender",
-            "race",
-            "insurance",
-        ]
-        if self.use_icu:
-            cols_to_keep = cols_to_keep + ["stay_id", "intime", "outtime"]
-        else:
-            cols_to_keep = cols_to_keep + ["admittime", "dischtime"]
-        visits = visits[cols_to_keep]
+        visits = visits.merge(admissions_info, how="inner", on="hadm_id")
 
         cohort = self.get_case_ctrls(
             df=visits,

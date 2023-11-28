@@ -2,6 +2,8 @@ from my_preprocessing.feature_selection_icu import feature_icu
 
 # rename tests...
 
+# add test for icd conversion
+
 
 def test_feature_icu_all_true():
     result = feature_icu("cohort_icu_mortality_0_", True, True, True, True, True)

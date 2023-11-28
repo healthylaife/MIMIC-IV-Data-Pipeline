@@ -1,14 +1,14 @@
-from utils.icu_preprocess_util import (
-    preproc_icd_module,
-    preproc_out,
-    preproc_chart,
-    preproc_proc,
-    preproc_meds,
-)
+from my_preprocessing.icd_conversion import standardize_icd
 from utils.outlier_removal import outlier_imputation
 from utils.uom_conversion import drop_wrong_uom
 import pandas as pd
-from my_preprocessing.raw_files import HOSP_DIAGNOSES_ICD_PATH
+from my_preprocessing.raw_files import (
+    load_hosp_diagnosis_icd,
+    preproc_output_events,
+    preproc_chartevents,
+    preproc_procedure_events,
+    preprocess_input_events,
+)
 
 
 def feature_icu(
@@ -23,12 +23,19 @@ def feature_icu(
 
     if diag_flag:
         print("[EXTRACTING DIAGNOSIS DATA]")
-        diag = preproc_icd_module(
-            HOSP_DIAGNOSES_ICD_PATH,
-            "./data/cohort/" + cohort_output + ".csv.gz",
-            "./utils/mappings/ICD9_to_ICD10_mapping.txt",
-            map_code_colname="diagnosis_code",
+        hosp_diagnose = load_hosp_diagnosis_icd()
+        admission_cohort = pd.read_csv(
+            "./data/cohort/" + cohort_output + ".csv.gz", compression="gzip", header=0
         )
+        diag = hosp_diagnose.merge(
+            admission_cohort[["hadm_id", "stay_id", "label"]],
+            how="inner",
+            left_on="hadm_id",
+            right_on="hadm_id",
+        )
+
+        diag = standardize_icd(diag)
+
         diag[
             [
                 "subject_id",
@@ -45,14 +52,8 @@ def feature_icu(
 
     if out_flag:
         print("[EXTRACTING OUPTPUT EVENTS DATA]")
-
-        # out = preproc_out("./"+version_path+"/icu/outputevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', 'charttime', dtypes=None, usecols=None)
-        out = preproc_out(
-            "d:\\Work\\Repos\\MIMIC-IV-Data-Pipeline\\raw_data\\mimiciv_2_0\\icu\\outputevents.csv.gz",
+        out = preproc_output_events(
             "./data/cohort/" + cohort_output + ".csv.gz",
-            "charttime",
-            dtypes=None,
-            usecols=None,
         )
         out[
             [
@@ -71,13 +72,7 @@ def feature_icu(
 
     if chart_flag:
         print("[EXTRACTING CHART EVENTS DATA]")
-        chart = preproc_chart(
-            "d:\\Work\\Repos\\MIMIC-IV-Data-Pipeline\\raw_data\\mimiciv_2_0\\icu\\chartevents.csv.gz",
-            "./data/cohort/" + cohort_output + ".csv.gz",
-            "charttime",
-            dtypes=None,
-            usecols=["stay_id", "charttime", "itemid", "valuenum", "valueuom"],
-        )
+        chart = preproc_chartevents("./data/cohort/" + cohort_output + ".csv.gz")
         chart = drop_wrong_uom(chart, 0.95)
         result = chart[["stay_id", "itemid", "event_time_from_admit", "valuenum"]]
         result.to_csv(
@@ -87,13 +82,7 @@ def feature_icu(
 
     if proc_flag:
         print("[EXTRACTING PROCEDURES DATA]")
-        proc = preproc_proc(
-            "d:\\Work\\Repos\\MIMIC-IV-Data-Pipeline\\raw_data\\mimiciv_2_0\\icu\\procedureevents.csv.gz",
-            "./data/cohort/" + cohort_output + ".csv.gz",
-            "starttime",
-            dtypes=None,
-            usecols=["stay_id", "starttime", "itemid"],
-        )
+        proc = preproc_procedure_events("./data/cohort/" + cohort_output + ".csv.gz")
         result = proc[
             [
                 "subject_id",
@@ -112,10 +101,7 @@ def feature_icu(
 
     if med_flag:
         print("[EXTRACTING MEDICATIONS DATA]")
-        med = preproc_meds(
-            "d:\\Work\\Repos\\MIMIC-IV-Data-Pipeline\\raw_data\\mimiciv_2_0\\icu\\inputevents.csv.gz",
-            "./data/cohort/" + cohort_output + ".csv.gz",
-        )
+        med = preprocess_input_events("./data/cohort/" + cohort_output + ".csv.gz")
         result = med[
             [
                 "subject_id",
