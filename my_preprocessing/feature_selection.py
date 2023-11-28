@@ -6,7 +6,7 @@ from my_preprocessing.raw_files import (
     FEATURE_PATH,
     COHORT_PATH,
 )
-from my_preprocessing.preprocessing import (
+from my_preprocessing.icu_features import (
     preproc_output_events,
     preproc_chartevents,
     preproc_icu_procedure_events,
