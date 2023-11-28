@@ -16,6 +16,12 @@ from my_preprocessing.raw_files import (
     HospAdmissions,
 )
 from my_preprocessing.admission_imputer import impute_hadm_ids
+from my_preprocessing.ndc import (
+    format_ndc_table,
+    read_ndc_mapping2,
+    ndc_to_str,
+    get_EPC,
+)
 
 
 def preproc_chartevents(cohort_path: str, chunksize=10000000) -> pd.DataFrame:
@@ -116,32 +122,6 @@ def ndc_meds(med, mapping: str) -> pd.DataFrame:
     # Ensures the decimal is removed from the ndc col
     med.ndc = med.ndc.astype("Int64")
 
-    # The NDC codes in the prescription dataset is the 11-digit NDC code, although codes are missing
-    # their leading 0's because the column was interpreted as a float then integer; this function restores
-    # the leading 0's, then obtains only the PRODUCT and MANUFACTUERER parts of the NDC code (first 9 digits)
-    def to_str(ndc):
-        if ndc < 0:  # dummy values are < 0
-            return np.nan
-        ndc = str(ndc)
-        return (("0" * (11 - len(ndc))) + ndc)[0:-2]
-
-    # The mapping table is ALSO incorrectly formatted for 11 digit NDC codes. An 11 digit NDC is in the
-    # form of xxxxx-xxxx-xx for manufactuerer-product-dosage. The hyphens are in the correct spots, but
-    # the number of digits within each section may not be 5-4-2, in which case we add leading 0's to each
-    # to restore the 11 digit format. However, we only take the 5-4 sections, just like the to_str function
-    def format_ndc_table(ndc):
-        parts = ndc.split("-")
-        return ("0" * (5 - len(parts[0])) + parts[0]) + (
-            "0" * (4 - len(parts[1])) + parts[1]
-        )
-
-    def read_ndc_mapping2(map_path):
-        ndc_map = pd.read_csv(map_path, header=0, delimiter="\t", encoding="latin1")
-        ndc_map.NONPROPRIETARYNAME = ndc_map.NONPROPRIETARYNAME.fillna("")
-        ndc_map.NONPROPRIETARYNAME = ndc_map.NONPROPRIETARYNAME.apply(str.lower)
-        ndc_map.columns = list(map(str.lower, ndc_map.columns))
-        return ndc_map
-
     # Read in NDC mapping table
     ndc_map = read_ndc_mapping2(mapping)[
         ["productndc", "nonproprietaryname", "pharm_classes"]
@@ -150,20 +130,10 @@ def ndc_meds(med, mapping: str) -> pd.DataFrame:
     # Normalize the NDC codes in the mapping table so that they can be merged
     ndc_map["new_ndc"] = ndc_map.productndc.apply(format_ndc_table)
     ndc_map.drop_duplicates(subset=["new_ndc", "nonproprietaryname"], inplace=True)
-    med["new_ndc"] = med.ndc.apply(to_str)
+    med["new_ndc"] = med.ndc.apply(ndc_to_str)
 
     # Left join the med dataset to the mapping information
     med = med.merge(ndc_map, how="inner", left_on="new_ndc", right_on="new_ndc")
-
-    # In NDC mapping table, the pharm_class col is structured as a text string, separating different pharm classes from eachother
-    # This can be [PE], [EPC], and others, but we're interested in EPC. Luckily, between each commas, it states if a phrase is [EPC]
-    # So, we just string split by commas and keep phrases containing "[EPC]"
-    def get_EPC(s):
-        """Gets the Established Pharmacologic Class (EPC) from the mapping table"""
-        if type(s) != str:
-            return np.nan
-        words = s.split(",")
-        return [x for x in words if "[EPC]" in x]
 
     # Function generates a list of EPCs, as a drug can have multiple EPCs
     med["EPC"] = med.pharm_classes.apply(get_EPC)

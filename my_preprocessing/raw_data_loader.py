@@ -52,7 +52,7 @@ class RawDataLoader:
 
     def generate_output_suffix(self) -> str:
         return (
-            self.generate_icu_log()
+            self.generate_icu_log()  # .lower()
             + "_"
             + self.label.lower().replace(" ", "_")
             + "_"
