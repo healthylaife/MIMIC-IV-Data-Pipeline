@@ -2,20 +2,6 @@ import pandas as pd
 import numpy as np
 
 
-# def drop_wrong_uom(data, cut_off):
-#     grouped = data.groupby(["itemid"])["valueuom"]
-#     for id_number, uom in grouped:
-#         value_counts = uom.value_counts()
-#         num_observations = len(uom)
-#         if value_counts.size > 1:
-#             most_frequent_measurement = value_counts.index[0]
-#             frequency = value_counts[0]
-#             if frequency / num_observations > cut_off:
-#                 values = uom
-#                 index_to_drop = values[values != most_frequent_measurement].index
-#                 data.drop(index_to_drop, axis=0, inplace=True)
-#     data = data.reset_index(drop=True)
-#     return data
 def drop_wrong_uom(data, cut_off):
     """Drop rows with uncommon units of measurement for each itemid, based on a cut-off frequency."""
 

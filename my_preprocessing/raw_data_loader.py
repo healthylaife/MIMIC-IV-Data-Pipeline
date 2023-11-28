@@ -4,7 +4,6 @@ import my_preprocessing.icd_conversion as icd_conversion
 import datetime
 import logging
 import numpy as np
-from tqdm import tqdm
 from my_preprocessing.raw_files import (
     load_hosp_patients,
     load_hosp_admissions,
