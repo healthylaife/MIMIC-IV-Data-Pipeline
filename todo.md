@@ -20,13 +20,15 @@
 
 - summary, more comments, clarification of the pipeline
 
+
+
+
+
 # module feature selection
 
 - define tests
 
-- summary, more comments, clarification of the pipeline
-
-- refact with my preprocessing
+- summary, more comments, clarification of the whole pipeline
 
 
 

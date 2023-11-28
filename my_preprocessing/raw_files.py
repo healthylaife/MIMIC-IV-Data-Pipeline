@@ -181,7 +181,7 @@ def load_icu_icustays() -> pd.DataFrame:
     )
 
 
-def load_icu_outputevents() -> pd.DataFrame:
+def load_icu_output_events() -> pd.DataFrame:
     return pd.read_csv(
         ICU_OUTPUT_EVENT_PATH,
         compression="gzip",
