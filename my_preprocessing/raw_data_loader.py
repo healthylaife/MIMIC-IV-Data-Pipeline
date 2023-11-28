@@ -9,6 +9,7 @@ from my_preprocessing.raw_files import (
     load_hosp_patients,
     load_hosp_admissions,
     load_icu_icustays,
+    COHORT_PATH,
 )
 
 logger = logging.getLogger()
@@ -136,14 +137,20 @@ class RawDataLoader:
         group_col: str,
         admit_col: str,
         disch_col: str,
-    ):
-        valid_cohort = df.loc[
-            ~df[admit_col].isna() & ~df[disch_col].isna() & ~df["los"].isna()
-        ]
+    ) -> pd.DataFrame:
+        """
+        Partition data based on length of stay (LOS).
+
+        Parameters:
+        df (pd.DataFrame): The dataframe to partition.
+        los (int): Length of stay threshold.
+        group_col (str): Column to group by.
+        admit_col (str): Admission date column.
+        disch_col (str): Discharge date column.
+        """
+        valid_cohort = df.dropna(subset=[admit_col, disch_col, "los"])
         valid_cohort["label"] = (valid_cohort["los"] > los).astype(int)
-        sorted_cohort = valid_cohort.sort_values(by=[group_col, admit_col])
-        logger.info("[ LOS LABELS FINISHED ]")
-        return sorted_cohort
+        return valid_cohort.sort_values(by=[group_col, admit_col])
 
     def partition_by_readmit(
         self,
@@ -153,46 +160,53 @@ class RawDataLoader:
         admit_col: str,
         disch_col: str,
     ):
-        """Applies labels to individual visits according to whether or not a readmission has occurred within the specified `gap` days."""
+        """
+        Partition data based on readmission within a specified gap.
+
+        Parameters:
+        df (pd.DataFrame): The dataframe to partition.
+        gap (pd.Timedelta): Time gap to consider for readmission.
+        group_col (str): Column to group by.
+        admit_col (str): Admission date column.
+        disch_col (str): Discharge date column.
+        """
 
         df_sorted = df.sort_values(by=[group_col, admit_col])
-
-        # Calculate the time difference between consecutive visits for each patient
         df_sorted["next_admit"] = df_sorted.groupby(group_col)[admit_col].shift(-1)
         df_sorted["time_to_next"] = df_sorted["next_admit"] - df_sorted[disch_col]
-
         # Identify readmission cases
         df_sorted["readmit"] = df_sorted["time_to_next"].notnull() & (
             df_sorted["time_to_next"] <= gap
         )
-
-        # Séparer en deux groupes: cas de réadmission et contrôles
-        case = df_sorted[df_sorted["readmit"]]
-        ctrl = df_sorted[~df_sorted["readmit"]]
-
-        print("[ READMISSION LABELS FINISHED ]")
-        return case.drop(columns=["next_admit", "time_to_next", "readmit"]), ctrl.drop(
-            columns=["next_admit", "time_to_next", "readmit"]
-        )
+        temp_columns = ["next_admit", "time_to_next", "readmit"]
+        case, ctrl = df_sorted[df_sorted["readmit"]], df_sorted[~df_sorted["readmit"]]
+        case, ctrl = case.drop(columns=temp_columns), ctrl.drop(columns=temp_columns)
+        case["label"], ctrl["label"] = np.ones(len(case)), np.zeros(len(ctrl))
+        return pd.concat([case, ctrl], axis=0)
 
     def partition_by_mort(
         self,
-        dataframe: pd.DataFrame,
+        df: pd.DataFrame,
         group_col: str,
         admit_col: str,
         discharge_col: str,
         death_col: str,
     ):
-        """Applies labels to individual visits according to whether a death has occurred
-        between the specified admit_col and disch_col times."""
-        valid_entries = dataframe.loc[
-            ~dataframe[admit_col].isna() & ~dataframe[discharge_col].isna()
-        ]
+        """
+        Partition data based on mortality events occurring between admission and discharge.
+
+        Parameters:
+        df (pd.DataFrame): The dataframe to partition.
+        group_col (str): Column to group by.
+        admit_col (str): Admission date column.
+        discharge_col (str): Discharge date column.
+        death_col (str): Death date column.
+        """
+        valid_entries = df.dropna(subset=[admit_col, discharge_col])
         valid_entries[death_col] = pd.to_datetime(valid_entries[death_col])
         valid_entries["label"] = np.where(
             (valid_entries[death_col] >= valid_entries[admit_col])
-            & (valid_entries[death_col] <= valid_entries[discharge_col])
-            & (~valid_entries[death_col].isna()),
+            & (valid_entries[death_col] <= valid_entries[discharge_col]),
             1,
             0,
         )
@@ -209,35 +223,22 @@ class RawDataLoader:
         disch_col: str,
         death_col: str,
     ) -> pd.DataFrame:
-        """Handles logic for creating the labelled cohort based on arguments passed to extract().
+        """Handles logic for creating the labelled cohort based on the specified target
 
         Parameters:
-        df: dataframe with patient data
-        gap: specified time interval gap for readmissions
-        group_col: patient identifier to group patients (normally subject_id)
-        visit_col: visit identifier for individual patient visits (normally hadm_id or stay_id)
-        admit_col: column for visit start date information (normally admittime or intime)
-        disch_col: column for visit end date information (normally dischtime or outtime)
-        valid_col: generated column containing a patient's year that corresponds to the 2017-2019 anchor time range
-        dod_col: Date of death column
+        df (pd.DataFrame): The dataframe to partition.
+        gap (int): Time gap for readmissions or LOS threshold.
+        group_col (str): Column to group by.
+        admit_col (str), disch_col (str), death_col (str): Relevant date columns.
         """
         if self.label == "Mortality":
             return self.partition_by_mort(
                 df, group_col, admit_col, disch_col, death_col
             )
-        if self.label == "Readmission":
+        elif self.label == "Readmission":
             gap = datetime.timedelta(days=gap)
-            # transform gap into a timedelta to compare with datetime columns
-            case, ctrl = self.partition_by_readmit(
-                df, gap, group_col, admit_col, disch_col
-            )
-
-            # case hadm_ids are labelled 1 for readmission, ctrls have a 0 label
-            case["label"] = np.ones(case.shape[0]).astype(int)
-            ctrl["label"] = np.zeros(ctrl.shape[0]).astype(int)
-
-            return pd.concat([case, ctrl], axis=0)
-        if self.label == "Length of Stay":
+            return self.partition_by_readmit(df, gap, group_col, admit_col, disch_col)
+        elif self.label == "Length of Stay":
             return self.partition_by_los(df, gap, group_col, admit_col, disch_col)
 
     def filter_visits(self, visits):
@@ -255,14 +256,12 @@ class RawDataLoader:
             self.summary_output = self.summary_output + "_" + self.icd_code
         return visits
 
-    # TODO: SAVE
     def save_cohort(self, cohort: pd.DataFrame) -> None:
-        # Save the processed cohort data
-        # cohort[cols].to_csv(
-        #     root_dir + "/data/cohort/" + cohort_output + ".csv.gz",
-        #     index=False,
-        #     compression="gzip",
-        # )
+        cohort.to_csv(
+            COHORT_PATH / (self.generate_output_suffix() + ".csv.gz"),
+            index=False,
+            compression="gzip",
+        )
         print("not saved yet")
 
     def extract(self) -> None:

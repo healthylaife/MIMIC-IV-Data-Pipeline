@@ -15,10 +15,6 @@ def get_conversions_icd_9_10() -> dict:  # to use in raw data loader?
     # Drop duplicated diagnosis_code to keep only the first occurrence
     filtered_df = filtered_df.drop_duplicates(subset="diagnosis_code")
 
-    # Replace bad formatted icd10cm with nan
-    # filtered_df["icd10cm"] = filtered_df["icd10cm"].apply(
-    #    lambda x: x[:3] if isinstance(x, str) else np.nan
-    # )
     return dict(zip(filtered_df["diagnosis_code"], filtered_df["icd10cm"]))
 
 

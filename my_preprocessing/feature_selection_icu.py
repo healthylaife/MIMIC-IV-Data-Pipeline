@@ -1,14 +1,194 @@
 from my_preprocessing.icd_conversion import standardize_icd
-from utils.outlier_removal import outlier_imputation
-from utils.uom_conversion import drop_wrong_uom
+
+from my_preprocessing.uom_conversion import drop_wrong_uom
 import pandas as pd
 from my_preprocessing.raw_files import (
     load_hosp_diagnosis_icd,
     preproc_output_events,
     preproc_chartevents,
-    preproc_procedure_events,
-    preprocess_input_events,
+    preproc_icu_procedure_events,
+    preprocess_icu_input_events,
+    preproc_labs_events_features,
+    preprocess_hosp_prescriptions,
+    preproc_hosp_procedures_icd,
+    FEATURE_PATH,
+    COHORT_PATH,
 )
+
+DIAGNOSIS_ICU_COLUMNS = [
+    "subject_id",
+    "hadm_id",
+    "stay_id",
+    "icd_code",
+    "root_icd10_convert",
+    "root",
+]
+
+DIAGNOSIS_NON_ICU_COLUMNS = [
+    "subject_id",
+    "hadm_id",
+    "icd_code",
+    "root_icd10_convert",
+    "root",
+]
+
+OUTPUT_ICU_COLUNMS = [
+    "subject_id",
+    "hadm_id",
+    "stay_id",
+    "itemid",
+    "charttime",
+    "intime",
+    "event_time_from_admit",
+]
+
+PROCEDURES_ICD_ICU_COLUMNS = [
+    "subject_id",
+    "hadm_id",
+    "stay_id",
+    "itemid",
+    "starttime",
+    "intime",
+    "event_time_from_admit",
+]
+
+PROCEDURES_ICD_NON_ICU_COLUMNS = [
+    "subject_id",
+    "hadm_id",
+    "icd_code",
+    "icd_version",
+    "chartdate",
+    "admittime",
+    "proc_time_from_admit",
+]
+
+LAB_EVENTS_COLUNMS = [
+    "subject_id",
+    "hadm_id",
+    "charttime",
+    "itemid",
+    "admittime",
+    "lab_time_from_admit",
+    "valuenum",
+]
+
+PRESCRIPTIONS_COLUMNS = [
+    "subject_id",
+    "hadm_id",
+    "starttime",
+    "stoptime",
+    "drug",
+    "nonproprietaryname",
+    "start_hours_from_admit",
+    "stop_hours_from_admit",
+    "dose_val_rx",
+]
+
+INPUT_EVENTS_COLUMNS = [
+    "subject_id",
+    "hadm_id",
+    "stay_id",
+    "itemid",
+    "starttime",
+    "endtime",
+    "start_hours_from_admit",
+    "stop_hours_from_admit",
+    "rate",
+    "amount",
+    "orderid",
+]
+CHART_EVENT_COLUMNS = ["stay_id", "itemid", "event_time_from_admit", "valuenum"]
+
+
+def save_diag_features(cohort_output: str, use_icu: bool) -> pd.DataFrame:
+    print("[EXTRACTING DIAGNOSIS DATA]")
+    hosp_diagnose = load_hosp_diagnosis_icd()
+    admission_cohort = pd.read_csv(
+        COHORT_PATH / (cohort_output + ".csv.gz"), compression="gzip"
+    )
+    admissions_cohort_cols = (
+        ["hadm_id", "stay_id", "label"] if use_icu else ["hadm_id", "label"]
+    )
+    diag = hosp_diagnose.merge(
+        admission_cohort[admissions_cohort_cols],
+        how="inner",
+        left_on="hadm_id",
+        right_on="hadm_id",
+    )
+    cols = DIAGNOSIS_ICU_COLUMNS if use_icu else DIAGNOSIS_NON_ICU_COLUMNS
+    diag = standardize_icd(diag)[cols]
+    diag.to_csv(FEATURE_PATH / "preproc_diag_icu.csv.gz", compression="gzip")
+    print("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
+    return diag
+
+
+def save_output_features(cohort_output: str) -> pd.DataFrame:
+    print("[EXTRACTING OUPTPUT EVENTS DATA]")
+    out = preproc_output_events(COHORT_PATH / (cohort_output + ".csv.gz"))
+    out = out[OUTPUT_ICU_COLUNMS]
+    out.to_csv(FEATURE_PATH / "preproc_out_icu.csv.gz", compression="gzip")
+    print("[SUCCESSFULLY SAVED OUPTPUT EVENTS DATA]")
+    return out
+
+
+def save_chart_events_features(cohort_output: str) -> pd.DataFrame:
+    print("[EXTRACTING CHART EVENTS DATA]")
+    chart = preproc_chartevents(COHORT_PATH / (cohort_output + ".csv.gz"))
+    chart = drop_wrong_uom(chart, 0.95)
+    chart = chart[CHART_EVENT_COLUMNS]
+    chart.to_csv(FEATURE_PATH / "preproc_chart_icu.csv.gz", compression="gzip")
+    print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
+    return chart
+
+
+def save_icu_procedures_features(cohort_output: str) -> pd.DataFrame:
+    print("[EXTRACTING PROCEDURES DATA]")
+    proc = preproc_icu_procedure_events(COHORT_PATH / (cohort_output + ".csv.gz"))
+    cols = PROCEDURES_ICD_ICU_COLUMNS
+    proc = proc[cols]
+    proc.to_csv(FEATURE_PATH / "preproc_proc_icu.csv.gz", compression="gzip")
+    print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
+    return proc
+
+
+def save_hosp_procedures_icd_features(cohort_output: str) -> pd.DataFrame:
+    print("[EXTRACTING PROCEDURES DATA]")
+    proc = preproc_hosp_procedures_icd(COHORT_PATH / (cohort_output + ".csv.gz"))
+    cols = PROCEDURES_ICD_NON_ICU_COLUMNS
+    proc = proc[cols]
+    proc.to_csv(FEATURE_PATH / "preproc_proc_icu.csv.gz", compression="gzip")
+    print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
+    return proc
+
+
+def save_icu_input_events_features(cohort_output: str) -> pd.DataFrame:
+    print("[EXTRACTING MEDICATIONS DATA]")
+    med = preprocess_icu_input_events(COHORT_PATH / (cohort_output + ".csv.gz"))
+    med = med[INPUT_EVENTS_COLUMNS]
+    med.to_csv(FEATURE_PATH / "preproc_med_icu.csv.gz", compression="gzip")
+    print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
+    return med
+
+
+def save_lab_events_features(cohort_output: str) -> pd.DataFrame:
+    print("[EXTRACTING LABS DATA]")
+    labevents = preproc_labs_events_features(COHORT_PATH / (cohort_output + ".csv.gz"))
+    labevents = drop_wrong_uom(labevents, 0.95)
+    labevents = labevents[LAB_EVENTS_COLUNMS]
+    labevents.to_csv(FEATURE_PATH / "preproc_labs.csv.gz", compression="gzip")
+    print("[SUCCESSFULLY SAVED LABS DATA]")
+    return labevents
+
+
+def save_hosp_prescriptions_features(cohort_output: str) -> pd.DataFrame:
+    print("[EXTRACTING MEDICATIONS DATA]")
+    prescriptions = preprocess_hosp_prescriptions(
+        COHORT_PATH / (cohort_output + ".csv.gz")
+    )
+    prescriptions = prescriptions[PRESCRIPTIONS_COLUMNS]
+    prescriptions.to_csv(FEATURE_PATH / "preproc_med.csv.gz", compression="gzip")
+    print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
+    return prescriptions
 
 
 def feature_icu(
@@ -19,351 +199,42 @@ def feature_icu(
     proc_flag=True,
     med_flag=True,
 ):
-    result = pd.DataFrame()
-
+    diag, out, chart, proc, med = (
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+    )
     if diag_flag:
-        print("[EXTRACTING DIAGNOSIS DATA]")
-        hosp_diagnose = load_hosp_diagnosis_icd()
-        admission_cohort = pd.read_csv(
-            "./data/cohort/" + cohort_output + ".csv.gz", compression="gzip", header=0
-        )
-        diag = hosp_diagnose.merge(
-            admission_cohort[["hadm_id", "stay_id", "label"]],
-            how="inner",
-            left_on="hadm_id",
-            right_on="hadm_id",
-        )
-
-        diag = standardize_icd(diag)
-
-        diag[
-            [
-                "subject_id",
-                "hadm_id",
-                "stay_id",
-                "icd_code",
-                "root_icd10_convert",
-                "root",
-            ]
-        ].to_csv(
-            "./data/features/preproc_diag_icu.csv.gz", compression="gzip", index=False
-        )
-        print("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
+        diag = save_diag_features(cohort_output, use_icu=True)
 
     if out_flag:
-        print("[EXTRACTING OUPTPUT EVENTS DATA]")
-        out = preproc_output_events(
-            "./data/cohort/" + cohort_output + ".csv.gz",
-        )
-        out[
-            [
-                "subject_id",
-                "hadm_id",
-                "stay_id",
-                "itemid",
-                "charttime",
-                "intime",
-                "event_time_from_admit",
-            ]
-        ].to_csv(
-            "./data/features/preproc_out_icu.csv.gz", compression="gzip", index=False
-        )
-        print("[SUCCESSFULLY SAVED OUPTPUT EVENTS DATA]")
+        out = save_output_features(cohort_output)
 
     if chart_flag:
-        print("[EXTRACTING CHART EVENTS DATA]")
-        chart = preproc_chartevents("./data/cohort/" + cohort_output + ".csv.gz")
-        chart = drop_wrong_uom(chart, 0.95)
-        result = chart[["stay_id", "itemid", "event_time_from_admit", "valuenum"]]
-        result.to_csv(
-            "./data/features/preproc_chart_icu.csv.gz", compression="gzip", index=False
-        )
-        print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
+        chart = save_chart_events_features(cohort_output)
 
     if proc_flag:
-        print("[EXTRACTING PROCEDURES DATA]")
-        proc = preproc_procedure_events("./data/cohort/" + cohort_output + ".csv.gz")
-        result = proc[
-            [
-                "subject_id",
-                "hadm_id",
-                "stay_id",
-                "itemid",
-                "starttime",
-                "intime",
-                "event_time_from_admit",
-            ]
-        ]
-        result.to_csv(
-            "./data/features/preproc_proc_icu.csv.gz", compression="gzip", index=False
-        )
-        print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
+        proc = save_icu_procedures_features(cohort_output)
 
     if med_flag:
-        print("[EXTRACTING MEDICATIONS DATA]")
-        med = preprocess_input_events("./data/cohort/" + cohort_output + ".csv.gz")
-        result = med[
-            [
-                "subject_id",
-                "hadm_id",
-                "stay_id",
-                "itemid",
-                "starttime",
-                "endtime",
-                "start_hours_from_admit",
-                "stop_hours_from_admit",
-                "rate",
-                "amount",
-                "orderid",
-            ]
-        ]
-        result.to_csv(
-            "./data/features/preproc_med_icu.csv.gz", compression="gzip", index=False
-        )
-        print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
-    return result
+        med = save_icu_input_events_features(cohort_output)
+    return diag, out, chart, proc, med
 
 
-def preprocess_features_icu(
-    cohort_output,
-    diag_flag,
-    group_diag,
-    chart_flag,
-    clean_chart,
-    impute_outlier_chart,
-    thresh,
-    left_thresh,
+def feature_non_icu(
+    cohort_output, diag_flag=True, lab_flag=True, proc_flag=True, med_flag=True
 ):
     if diag_flag:
-        print("[PROCESSING DIAGNOSIS DATA]")
-        diag = pd.read_csv(
-            "./data/features/preproc_diag_icu.csv.gz", compression="gzip", header=0
-        )
-        if group_diag == "Keep both ICD-9 and ICD-10 codes":
-            diag["new_icd_code"] = diag["icd_code"]
-        if group_diag == "Convert ICD-9 to ICD-10 codes":
-            diag["new_icd_code"] = diag["root_icd10_convert"]
-        if group_diag == "Convert ICD-9 to ICD-10 and group ICD-10 codes":
-            diag["new_icd_code"] = diag["root"]
+        diag = save_diag_features(cohort_output, use_icu=False)
 
-        diag = diag[["subject_id", "hadm_id", "stay_id", "new_icd_code"]].dropna()
-        print("Total number of rows", diag.shape[0])
-        diag.to_csv(
-            "./data/features/preproc_diag_icu.csv.gz", compression="gzip", index=False
-        )
-        print("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
-
-    if chart_flag:
-        if clean_chart:
-            print("[PROCESSING CHART EVENTS DATA]")
-            chart = pd.read_csv(
-                "./data/features/preproc_chart_icu.csv.gz", compression="gzip", header=0
-            )
-            chart = outlier_imputation(
-                chart, "itemid", "valuenum", thresh, left_thresh, impute_outlier_chart
-            )
-
-            print("Total number of rows", chart.shape[0])
-            chart.to_csv(
-                "./data/features/preproc_chart_icu.csv.gz",
-                compression="gzip",
-                index=False,
-            )
-            print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
-
-
-def generate_summary_icu(diag_flag, proc_flag, med_flag, out_flag, chart_flag):
-    print("[GENERATING FEATURE SUMMARY]")
-    if diag_flag:
-        diag = pd.read_csv(
-            "./data/features/preproc_diag_icu.csv.gz", compression="gzip", header=0
-        )
-        freq = (
-            diag.groupby(["stay_id", "new_icd_code"])
-            .size()
-            .reset_index(name="mean_frequency")
-        )
-        freq = freq.groupby(["new_icd_code"])["mean_frequency"].mean().reset_index()
-        total = diag.groupby("new_icd_code").size().reset_index(name="total_count")
-        summary = pd.merge(freq, total, on="new_icd_code", how="right")
-        summary = summary.fillna(0)
-        summary.to_csv("./data/summary/diag_summary.csv", index=False)
-        summary["new_icd_code"].to_csv("./data/summary/diag_features.csv", index=False)
-
-    if med_flag:
-        med = pd.read_csv(
-            "./data/features/preproc_med_icu.csv.gz", compression="gzip", header=0
-        )
-        freq = (
-            med.groupby(["stay_id", "itemid"]).size().reset_index(name="mean_frequency")
-        )
-        freq = freq.groupby(["itemid"])["mean_frequency"].mean().reset_index()
-
-        missing = (
-            med[med["amount"] == 0]
-            .groupby("itemid")
-            .size()
-            .reset_index(name="missing_count")
-        )
-        total = med.groupby("itemid").size().reset_index(name="total_count")
-        summary = pd.merge(missing, total, on="itemid", how="right")
-        summary = pd.merge(freq, summary, on="itemid", how="right")
-        summary = summary.fillna(0)
-        summary.to_csv("./data/summary/med_summary.csv", index=False)
-        summary["itemid"].to_csv("./data/summary/med_features.csv", index=False)
+    if lab_flag:
+        lab = save_lab_events_features(cohort_output)
 
     if proc_flag:
-        proc = pd.read_csv(
-            "./data/features/preproc_proc_icu.csv.gz", compression="gzip", header=0
-        )
-        freq = (
-            proc.groupby(["stay_id", "itemid"])
-            .size()
-            .reset_index(name="mean_frequency")
-        )
-        freq = freq.groupby(["itemid"])["mean_frequency"].mean().reset_index()
-        total = proc.groupby("itemid").size().reset_index(name="total_count")
-        summary = pd.merge(freq, total, on="itemid", how="right")
-        summary = summary.fillna(0)
-        summary.to_csv("./data/summary/proc_summary.csv", index=False)
-        summary["itemid"].to_csv("./data/summary/proc_features.csv", index=False)
-
-    if out_flag:
-        out = pd.read_csv(
-            "./data/features/preproc_out_icu.csv.gz", compression="gzip", header=0
-        )
-        freq = (
-            out.groupby(["stay_id", "itemid"]).size().reset_index(name="mean_frequency")
-        )
-        freq = freq.groupby(["itemid"])["mean_frequency"].mean().reset_index()
-        total = out.groupby("itemid").size().reset_index(name="total_count")
-        summary = pd.merge(freq, total, on="itemid", how="right")
-        summary = summary.fillna(0)
-        summary.to_csv("./data/summary/out_summary.csv", index=False)
-        summary["itemid"].to_csv("./data/summary/out_features.csv", index=False)
-
-    if chart_flag:
-        chart = pd.read_csv(
-            "./data/features/preproc_chart_icu.csv.gz", compression="gzip", header=0
-        )
-        freq = (
-            chart.groupby(["stay_id", "itemid"])
-            .size()
-            .reset_index(name="mean_frequency")
-        )
-        freq = freq.groupby(["itemid"])["mean_frequency"].mean().reset_index()
-
-        missing = (
-            chart[chart["valuenum"] == 0]
-            .groupby("itemid")
-            .size()
-            .reset_index(name="missing_count")
-        )
-        total = chart.groupby("itemid").size().reset_index(name="total_count")
-        summary = pd.merge(missing, total, on="itemid", how="right")
-        summary = pd.merge(freq, summary, on="itemid", how="right")
-        summary = summary.fillna(0)
-        summary.to_csv("./data/summary/chart_summary.csv", index=False)
-        summary["itemid"].to_csv("./data/summary/chart_features.csv", index=False)
-
-    print("[SUCCESSFULLY SAVED FEATURE SUMMARY]")
-
-
-def features_selection_icu(
-    cohort_output,
-    diag_flag,
-    proc_flag,
-    med_flag,
-    out_flag,
-    chart_flag,
-    group_diag,
-    group_med,
-    group_proc,
-    group_out,
-    group_chart,
-):
-    if diag_flag:
-        if group_diag:
-            print("[FEATURE SELECTION DIAGNOSIS DATA]")
-            diag = pd.read_csv(
-                "./data/features/preproc_diag_icu.csv.gz", compression="gzip", header=0
-            )
-            features = pd.read_csv("./data/summary/diag_features.csv", header=0)
-            diag = diag[diag["new_icd_code"].isin(features["new_icd_code"].unique())]
-
-            print("Total number of rows", diag.shape[0])
-            diag.to_csv(
-                "./data/features/preproc_diag_icu.csv.gz",
-                compression="gzip",
-                index=False,
-            )
-            print("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
+        proc = save_hosp_procedures_icd_features(cohort_output)
 
     if med_flag:
-        if group_med:
-            print("[FEATURE SELECTION MEDICATIONS DATA]")
-            med = pd.read_csv(
-                "./data/features/preproc_med_icu.csv.gz", compression="gzip", header=0
-            )
-            features = pd.read_csv("./data/summary/med_features.csv", header=0)
-            med = med[med["itemid"].isin(features["itemid"].unique())]
-            print("Total number of rows", med.shape[0])
-            med.to_csv(
-                "./data/features/preproc_med_icu.csv.gz",
-                compression="gzip",
-                index=False,
-            )
-            print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
-
-    if proc_flag:
-        if group_proc:
-            print("[FEATURE SELECTION PROCEDURES DATA]")
-            proc = pd.read_csv(
-                "./data/features/preproc_proc_icu.csv.gz", compression="gzip", header=0
-            )
-            features = pd.read_csv("./data/summary/proc_features.csv", header=0)
-            proc = proc[proc["itemid"].isin(features["itemid"].unique())]
-            print("Total number of rows", proc.shape[0])
-            proc.to_csv(
-                "./data/features/preproc_proc_icu.csv.gz",
-                compression="gzip",
-                index=False,
-            )
-            print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
-
-    if out_flag:
-        if group_out:
-            print("[FEATURE SELECTION OUTPUT EVENTS DATA]")
-            out = pd.read_csv(
-                "./data/features/preproc_out_icu.csv.gz", compression="gzip", header=0
-            )
-            features = pd.read_csv("./data/summary/out_features.csv", header=0)
-            out = out[out["itemid"].isin(features["itemid"].unique())]
-            print("Total number of rows", out.shape[0])
-            out.to_csv(
-                "./data/features/preproc_out_icu.csv.gz",
-                compression="gzip",
-                index=False,
-            )
-            print("[SUCCESSFULLY SAVED OUTPUT EVENTS DATA]")
-
-    if chart_flag:
-        if group_chart:
-            print("[FEATURE SELECTION CHART EVENTS DATA]")
-
-            chart = pd.read_csv(
-                "./data/features/preproc_chart_icu.csv.gz",
-                compression="gzip",
-                header=0,
-                index_col=None,
-            )
-
-            features = pd.read_csv("./data/summary/chart_features.csv", header=0)
-            chart = chart[chart["itemid"].isin(features["itemid"].unique())]
-            print("Total number of rows", chart.shape[0])
-            chart.to_csv(
-                "./data/features/preproc_chart_icu.csv.gz",
-                compression="gzip",
-                index=False,
-            )
-            print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
+        med = save_hosp_prescriptions_features(cohort_output)
+    return diag, lab, proc, med
