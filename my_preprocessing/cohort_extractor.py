@@ -15,7 +15,7 @@ from my_preprocessing.prediction_task import PredictionTask, TargetType
 logger = logging.getLogger()
 
 
-class RawDataLoader:
+class CohortExtractor:
     def __init__(
         self,
         prediction_task: PredictionTask,
@@ -124,7 +124,6 @@ class RawDataLoader:
         return hosp_patients[
             [
                 "subject_id",
-                # "anchor_year",
                 "age",
                 "min_valid_year",
                 "dod",
@@ -278,7 +277,7 @@ class RawDataLoader:
             index=False,
             compression="gzip",
         )
-        logger.info("COHORT SAVED")
+        logger.info("[ COHORT " + self.generate_output_suffix() + " SAVED ]")
 
     def extract(self) -> None:
         logger.info("===========MIMIC-IV v2.0============")
