@@ -31,8 +31,6 @@ class CohortExtractor:
     def generate_icu_log(self) -> str:
         return "ICU" if self.prediction_task.use_icu else "Non-ICU"
 
-    # LOG
-
     def generate_extract_log(self) -> str:
         if not (self.prediction_task.disease_selection):
             if self.prediction_task.disease_readmission:
@@ -64,7 +62,7 @@ class CohortExtractor:
 
     # VISITS AND PATIENTS
 
-    def load_no_icu_visits(self) -> pd.DataFrame:
+    def make_no_icu_visits(self) -> pd.DataFrame:
         hosp_admissions = load_hosp_admissions()
         hosp_admissions["los"] = (
             hosp_admissions["dischtime"] - hosp_admissions["admittime"]
@@ -87,7 +85,7 @@ class CohortExtractor:
             ["subject_id", "hadm_id", "admittime", "dischtime", "los"]
         ]
 
-    def load_icu_visits(self) -> pd.DataFrame:
+    def make_icu_visits(self) -> pd.DataFrame:
         icu_icustays = load_icu_icustays()
         if self.prediction_task.target_type != TargetType.READMISSION:
             return icu_icustays
@@ -97,11 +95,11 @@ class CohortExtractor:
         visits = visits.loc[(visits.dod.isna()) | (visits["dod"] >= visits["outtime"])]
         return visits[["subject_id", "stay_id", "hadm_id", "intime", "outtime", "los"]]
 
-    def load_visits(self) -> pd.DataFrame:
+    def make_visits(self) -> pd.DataFrame:
         return (
-            self.load_icu_visits()
+            self.make_icu_visits()
             if self.prediction_task.use_icu
-            else self.load_no_icu_visits()
+            else self.make_no_icu_visits()
         )
 
     def load_patients(self) -> pd.DataFrame:
@@ -273,18 +271,18 @@ class CohortExtractor:
 
     def save_cohort(self, cohort: pd.DataFrame) -> None:
         cohort.to_csv(
-            COHORT_PATH / (self.generate_output_suffix() + ".csv.gz"),
+            COHORT_PATH / (self.cohort_output + ".csv.gz"),
             index=False,
             compression="gzip",
         )
-        logger.info("[ COHORT " + self.generate_output_suffix() + " SAVED ]")
+        logger.info("[ COHORT " + self.cohort_output + " SAVED ]")
 
     def extract(self) -> None:
         logger.info("===========MIMIC-IV v2.0============")
         self.fill_outputs()
         logger.info(self.generate_extract_log())
 
-        visits = self.load_visits()
+        visits = self.make_visits()
         visits = self.filter_visits(visits)
         patients = self.load_patients()
         patients = patients.loc[patients["age"] >= 18]

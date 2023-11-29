@@ -6,8 +6,6 @@
 
 - implementer options pour l extract
 
-- prediction task enum
-
 - raw extract column csv
 
 - handle columns (fewarure selection?)

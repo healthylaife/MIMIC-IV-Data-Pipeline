@@ -11,5 +11,7 @@ def test_feature_icu_all_true():
 
 
 def test_feature_non_icu_all_true():
-    result = feature_non_icu("NON-ICU_mortality_0_", True, True, True, True)
+    result = feature_non_icu(
+        "cohort_NON-ICU_readmission_30_I25", True, True, True, True
+    )
     assert 0 == 0
