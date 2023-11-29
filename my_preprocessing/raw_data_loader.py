@@ -10,6 +10,7 @@ from my_preprocessing.raw_files import (
     load_icu_icustays,
     COHORT_PATH,
 )
+from my_preprocessing.prediction_task import PredictionTask, TargetType
 
 logger = logging.getLogger()
 
@@ -17,48 +18,42 @@ logger = logging.getLogger()
 class RawDataLoader:
     def __init__(
         self,
-        use_icu: bool,
-        label: str,
-        time: int,
-        icd_code: str,
+        prediction_task: PredictionTask,
         preproc_dir: Path,
-        disease_label: str,
         cohort_output: Path,
         summary_output: Path,
     ):
-        self.use_icu = use_icu
-        self.label = label
-        self.time = time
-        self.icd_code = icd_code
+        self.prediction_task = prediction_task
         self.preproc_dir = preproc_dir
-        self.disease_label = disease_label
         self.cohort_output = cohort_output
         self.summary_output = summary_output
 
     def generate_icu_log(self) -> str:
-        return "ICU" if self.use_icu else "Non-ICU"
+        return "ICU" if self.prediction_task.use_icu else "Non-ICU"
 
     # LOG
 
     def generate_extract_log(self) -> str:
-        if self.icd_code == "No Disease Filter":
-            if len(self.disease_label):
-                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | {str(self.time)} | "
-            return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} | {str(self.time)} |"
+        if not (self.prediction_task.disease_selection):
+            if self.prediction_task.disease_readmission:
+                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.prediction_task.target_type} DUE TO {self.prediction_task.disease_readmission} | {str(self.prediction_task.nb_days)} | ".upper()
+            return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.prediction_task.target_type} | {str(self.prediction_task.nb_days)} |".upper()
         else:
-            if len(self.disease_label):
-                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} DUE TO {self.disease_label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
-        return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.label.upper()} | ADMITTED DUE TO {self.icd_code.upper()} | {str(self.time)} |"
+            if self.prediction_task.disease_readmission:
+                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.prediction_task.target_type} DUE TO {self.prediction_task.disease_readmission} | ADMITTED DUE TO {self.prediction_task.disease_selection} | {str(self.prediction_task.nb_days)} |".upper()
+        return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.prediction_task.target_type} | ADMITTED DUE TO {self.prediction_task.disease_selection} | {str(self.prediction_task.nb_days)} |".upper()
 
     def generate_output_suffix(self) -> str:
         return (
             self.generate_icu_log()  # .lower()
             + "_"
-            + self.label.lower().replace(" ", "_")
+            + self.prediction_task.target_type.lower().replace(" ", "_")
             + "_"
-            + str(self.time)
+            + str(self.prediction_task.nb_days)
             + "_"
-            + self.disease_label
+            + self.prediction_task.disease_readmission
+            if self.prediction_task.disease_readmission
+            else ""
         )
 
     def fill_outputs(self) -> None:
@@ -75,20 +70,26 @@ class RawDataLoader:
             hosp_admissions["dischtime"] - hosp_admissions["admittime"]
         ).dt.days
 
-        if self.label == "Readmission":
+        if self.prediction_task.target_type == TargetType.READMISSION:
             # remove hospitalizations with a death
             hosp_admissions = hosp_admissions[
                 hosp_admissions["hospital_expire_flag"] == 0
             ]
-
-            print("[ READMISSION DUE TO " + self.disease_label + " ]")
+            if self.prediction_task.disease_readmission:
+                logger.info(
+                    "[ READMISSION DUE TO "
+                    + self.prediction_task.disease_readmission
+                    + " ]"
+                )
+            else:
+                logger.info("[ READMISSION ]")
         return hosp_admissions[
             ["subject_id", "hadm_id", "admittime", "dischtime", "los"]
         ]
 
     def load_icu_visits(self) -> pd.DataFrame:
         icu_icustays = load_icu_icustays()
-        if self.label != "Readmission":
+        if self.prediction_task.target_type != TargetType.READMISSION:
             return icu_icustays
         # remove such stay_ids with a death for readmission labels
         hosp_patient = load_hosp_patients()[["subject_id", "dod"]]
@@ -97,7 +98,11 @@ class RawDataLoader:
         return visits[["subject_id", "stay_id", "hadm_id", "intime", "outtime", "los"]]
 
     def load_visits(self) -> pd.DataFrame:
-        return self.load_icu_visits() if self.use_icu else self.load_no_icu_visits()
+        return (
+            self.load_icu_visits()
+            if self.prediction_task.use_icu
+            else self.load_no_icu_visits()
+        )
 
     def load_patients(self) -> pd.DataFrame:
         hosp_patients = load_hosp_patients()[
@@ -230,29 +235,41 @@ class RawDataLoader:
         group_col (str): Column to group by.
         admit_col (str), disch_col (str), death_col (str): Relevant date columns.
         """
-        if self.label == "Mortality":
+        if self.prediction_task.target_type == TargetType.MORTALITY:
             return self.partition_by_mort(
                 df, group_col, admit_col, disch_col, death_col
             )
-        elif self.label == "Readmission":
+        elif self.prediction_task.target_type == TargetType.READMISSION:
             gap = datetime.timedelta(days=gap)
             return self.partition_by_readmit(df, gap, group_col, admit_col, disch_col)
-        elif self.label == "Length of Stay":
+        elif self.prediction_task.target_type == TargetType.LOS:
             return self.partition_by_los(df, gap, group_col, admit_col, disch_col)
 
     def filter_visits(self, visits):
         diag = icd_conversion.preproc_icd_module()
-        if len(self.disease_label):
-            hids = icd_conversion.get_pos_ids(diag, self.disease_label)
+        if self.prediction_task.disease_readmission:
+            hids = icd_conversion.get_pos_ids(
+                diag, self.prediction_task.disease_readmission
+            )
             visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
-            print("[ READMISSION DUE TO " + self.disease_label + " ]")
+            logger.info(
+                "[ READMISSION DUE TO "
+                + self.prediction_task.disease_readmission
+                + " ]"
+            )
 
-        if self.icd_code != "No Disease Filter":
-            hids = icd_conversion.get_pos_ids(diag, self.icd_code)
+        if self.prediction_task.disease_selection:
+            hids = icd_conversion.get_pos_ids(
+                diag, self.prediction_task.disease_selection
+            )
             visits = visits[visits["hadm_id"].isin(hids["hadm_id"])]
 
-            self.cohort_output = self.cohort_output + "_" + self.icd_code
-            self.summary_output = self.summary_output + "_" + self.icd_code
+            self.cohort_output = (
+                self.cohort_output + "_" + self.prediction_task.disease_selection
+            )
+            self.summary_output = (
+                self.summary_output + "_" + self.prediction_task.disease_selection
+            )
         return visits
 
     def save_cohort(self, cohort: pd.DataFrame) -> None:
@@ -261,7 +278,7 @@ class RawDataLoader:
             index=False,
             compression="gzip",
         )
-        print("not saved yet")
+        logger.info("COHORT SAVED")
 
     def extract(self) -> None:
         logger.info("===========MIMIC-IV v2.0============")
@@ -279,10 +296,10 @@ class RawDataLoader:
 
         cohort = self.get_case_ctrls(
             df=visits,
-            gap=self.time,
+            gap=self.prediction_task.nb_days,
             group_col="subject_id",
-            admit_col="intime" if self.use_icu else "admittime",
-            disch_col="outtime" if self.use_icu else "dischtime",
+            admit_col="intime" if self.prediction_task.use_icu else "admittime",
+            disch_col="outtime" if self.prediction_task.use_icu else "dischtime",
             death_col="dod",
         )
 
