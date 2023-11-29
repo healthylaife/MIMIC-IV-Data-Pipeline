@@ -1,16 +1,8 @@
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from datetime import datetime
 import pickle
-import datetime
 import os
-import sys
-from pathlib import Path
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "./../..")
-if not os.path.exists("./data/dict"):
-    os.makedirs("./data/dict")
 
 
 class Generator:
@@ -54,11 +46,6 @@ class Generator:
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         self.smooth_meds(bucket)
 
-        # if(self.feat_lab):
-        #    print("[ ======READING LABS ]")
-        #    nhid=len(self.hids)
-        #    for n in range(0,nhids,10000):
-        #        self.generate_labs(self.hids[n,n+10000])
         print("[ SUCCESSFULLY SAVED DATA DICTIONARIES ]")
 
     def generate_feat(self):
@@ -365,7 +352,6 @@ class Generator:
                     final_meds = sub_meds
                 else:
                     final_meds = pd.concat([final_meds, sub_meds], ignore_index=True)
-                    
 
             ###PROC
             if self.feat_proc:
@@ -401,7 +387,6 @@ class Generator:
                 else:
                     final_labs = pd.concat([final_labs, sub_labs], ignore_index=True)
 
-
             t = t + 1
         los = int(self.los / bucket)
 
@@ -435,10 +420,7 @@ class Generator:
         labels_csv["label"] = 0
         for hid in self.hids:
             grp = self.data[self.data["hadm_id"] == hid]
-            # print(grp.head())
-            # print(grp['gender'])
-            # print(int(grp['Age']))
-            # print(grp['ethnicity'].iloc[0])
+
             dataDic[hid] = {
                 "Cond": {},
                 "Proc": {},

@@ -6,4 +6,5 @@ scrap
 venv
 __pycache__
 raw_data
+data
 *.csv

@@ -28,7 +28,7 @@
 
 - define tests
 
-- summary, more comments, clarification of the whole pipeline
+- summary, more comments, clarification of the whole pipeline (use column emum...)
 
 
 
