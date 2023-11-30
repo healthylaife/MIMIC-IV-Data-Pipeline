@@ -30,6 +30,10 @@ class OUT_ICU_HEADER(StrEnum):
     EVENT_TIME_FROM_ADMIT = "event_time_from_admit"
 
 
-class COHORT_HEADER(StrEnum):
+class CohortHeader(StrEnum):
     PATIENT_ID = "subject_id"
     LABEL = "label"
+    AGE = "age"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
+    INSURANCE = "insurance"
+    ETHICITY = "ethnicity"

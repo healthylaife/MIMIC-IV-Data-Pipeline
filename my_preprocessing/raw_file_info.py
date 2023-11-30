@@ -57,6 +57,8 @@ class HospAdmissions(StrEnum):
     HOSPITAL_EXPIRE_FLAG = "hospital_expire_flag"  # whether the patient died within the given hospitalization
     LOS = "los"
     HOSPITAL_AMISSION_ID = "hadm_id"
+    INSURANCE = "insurance"
+    RACE = "race"
 
 
 class HospDiagnosesIcd(StrEnum):
