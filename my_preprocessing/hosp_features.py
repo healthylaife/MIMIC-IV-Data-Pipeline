@@ -9,9 +9,9 @@ from my_preprocessing.raw_file_info import (
     HospAdmissions,
 )
 from my_preprocessing.admission_imputer import impute_hadm_ids
-from my_preprocessing.ndc import (
+from my_preprocessing.ndc_conversion import (
     format_ndc_table,
-    read_ndc_mapping2,
+    read_ndc_mapping,
     ndc_to_str,
     get_EPC,
 )
@@ -128,7 +128,7 @@ def ndc_meds(med, mapping: str) -> pd.DataFrame:
     med.ndc = med.ndc.astype("Int64")
 
     # Read in NDC mapping table
-    ndc_map = read_ndc_mapping2(mapping)[
+    ndc_map = read_ndc_mapping(mapping)[
         ["productndc", "nonproprietaryname", "pharm_classes"]
     ]
 

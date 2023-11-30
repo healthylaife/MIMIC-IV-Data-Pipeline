@@ -1,17 +1,33 @@
-from my_preprocessing.feature_extractor import feature_icu, feature_non_icu
-
-# rename tests...
-
-# add test for icd conversion
+from my_preprocessing.feature_extractor import (
+    FeatureExtractor,
+)
 
 
 def test_feature_icu_all_true():
-    result = feature_icu("cohort_icu_mortality_0_", True, True, True, True, True)
+    feature_extractor = FeatureExtractor(
+        cohort_output="cohort_icu_mortality_0_",
+        use_icu=True,
+        for_diagnoses=True,
+        for_output_events=True,
+        for_chart_events=True,
+        for_procedures=True,
+        for_medications=True,
+        for_labs=True,
+    )
+    result = feature_extractor.save_icu_features()
     assert 0 == 0
 
 
 def test_feature_non_icu_all_true():
-    result = feature_non_icu(
-        "cohort_NON-ICU_readmission_30_I25", True, True, True, True
+    feature_extractor = FeatureExtractor(
+        cohort_output="cohort_icu_mortality_0_",
+        use_icu=True,
+        for_diagnoses=True,
+        for_output_events=True,
+        for_chart_events=True,
+        for_procedures=True,
+        for_medications=True,
+        for_labs=True,
     )
+    result = feature_extractor.save_non_icu_features()
     assert 0 == 0

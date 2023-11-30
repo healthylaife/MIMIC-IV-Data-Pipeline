@@ -37,22 +37,23 @@ class CohortExtractor:
         self.cohort_output = cohort_output
         self.summary_output = summary_output
 
-    def generate_icu_log(self) -> str:
+    def get_icu_status(self) -> str:
         return "ICU" if self.prediction_task.use_icu else "Non-ICU"
 
     def generate_extract_log(self) -> str:
-        if not (self.prediction_task.disease_selection):
-            if self.prediction_task.disease_readmission:
-                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.prediction_task.target_type} DUE TO {self.prediction_task.disease_readmission} | {str(self.prediction_task.nb_days)} | ".upper()
-            return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.prediction_task.target_type} | {str(self.prediction_task.nb_days)} |".upper()
-        else:
-            if self.prediction_task.disease_readmission:
-                return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.prediction_task.target_type} DUE TO {self.prediction_task.disease_readmission} | ADMITTED DUE TO {self.prediction_task.disease_selection} | {str(self.prediction_task.nb_days)} |".upper()
-        return f"EXTRACTING FOR: | {self.generate_icu_log()} | {self.prediction_task.target_type} | ADMITTED DUE TO {self.prediction_task.disease_selection} | {str(self.prediction_task.nb_days)} |".upper()
+        icu_log = self.get_icu_status()
+        task_info = f"{icu_log} | {self.prediction_task.target_type}"
+        if self.prediction_task.disease_readmission:
+            task_info += f" DUE TO {self.prediction_task.disease_readmission}"
+
+        if self.prediction_task.disease_selection:
+            task_info += f" ADMITTED DUE TO {self.prediction_task.disease_selection}"
+
+        return f"EXTRACTING FOR: {task_info} | {self.prediction_task.nb_days} |".upper()
 
     def generate_output_suffix(self) -> str:
         return (
-            self.generate_icu_log()  # .lower()
+            self.get_icu_status()  # .lower()
             + "_"
             + self.prediction_task.target_type.lower().replace(" ", "_")
             + "_"
@@ -64,17 +65,19 @@ class CohortExtractor:
         )
 
     def fill_outputs(self) -> None:
-        if not self.cohort_output:
-            self.cohort_output = "cohort_" + self.generate_output_suffix()
-        if not self.summary_output:
-            self.summary_output = "summary_" + self.generate_output_suffix()
-        if self.prediction_task.disease_selection:
-            self.cohort_output = (
-                self.cohort_output + "_" + self.prediction_task.disease_selection
-            )
-            self.summary_output = (
-                self.summary_output + "_" + self.prediction_task.disease_selection
-            )
+        output_suffix = self.generate_output_suffix()
+        disease_selection = (
+            f"_{self.prediction_task.disease_selection}"
+            if self.prediction_task.disease_selection
+            else ""
+        )
+        self.cohort_output = (
+            self.cohort_output or f"cohort_{output_suffix}{disease_selection}"
+        )
+
+        self.summary_output = (
+            self.summary_output or f"summary_{output_suffix}{disease_selection}"
+        )
 
     def get_case_ctrls(
         self,
@@ -103,57 +106,62 @@ class CohortExtractor:
 
     def save_cohort(self, cohort: pd.DataFrame) -> None:
         cohort.to_csv(
-            COHORT_PATH / (self.cohort_output + ".csv.gz"),
+            COHORT_PATH / f"{self.cohort_output}.csv.gz",
             index=False,
             compression="gzip",
         )
-        logger.info("[ COHORT " + self.cohort_output + " SAVED ]")
+        logger.info(f"[ COHORT {self.cohort_output} SAVED ]")
 
-    def extract(self) -> None:
-        logger.info("===========MIMIC-IV v2.0============")
-        self.fill_outputs()
-        logger.info(self.generate_extract_log())
+    def load_hospital_data(self):
+        return load_hosp_patients(), load_hosp_admissions()
 
-        hosp_patients = load_hosp_patients()
-        hosp_admissions = load_hosp_admissions()
-        visits = pd.DataFrame()
+    def create_visits(self, hosp_patients, hosp_admissions):
         if self.prediction_task.use_icu:
             icu_icustays = load_icu_icustays()
-            visits = make_icu_visits(
+            return make_icu_visits(
                 icu_icustays, hosp_patients, self.prediction_task.target_type
             )
         else:
-            visits = make_no_icu_visits(
-                hosp_admissions, self.prediction_task.target_type
-            )
+            return make_no_icu_visits(hosp_admissions, self.prediction_task.target_type)
 
-        visits = filter_visits(
-            visits,
-            self.prediction_task.disease_readmission,
-            self.prediction_task.disease_selection,
-        )
-        patients = make_patients(hosp_patients)
-        patients = patients.loc[patients["age"] >= 18]
-        admissions_info = hosp_admissions[
-            [
-                HospAdmissions.HOSPITAL_AMISSION_ID,
-                HospAdmissions.INSURANCE,
-                HospAdmissions.RACE,
-            ]
-        ]
-        visits = visits.merge(patients, how="inner", on="subject_id")
-        visits = visits.merge(admissions_info, how="inner", on="hadm_id")
-
-        cohort = self.get_case_ctrls(
+    def prepare_cohort(self, visits):
+        visits = self.filter_and_merge_visits(visits)
+        return self.get_case_ctrls(
             df=visits,
             gap=self.prediction_task.nb_days,
             group_col="subject_id",
             admit_col="intime" if self.prediction_task.use_icu else "admittime",
             disch_col="outtime" if self.prediction_task.use_icu else "dischtime",
             death_col="dod",
-        )
+        ).rename(columns={"race": "ethnicity"})
 
-        cohort = cohort.rename(columns={"race": "ethnicity"})
+    def filter_and_merge_visits(self, visits):
+        visits = filter_visits(
+            visits,
+            self.prediction_task.disease_readmission,
+            self.prediction_task.disease_selection,
+        )
+        patients_data = make_patients(load_hosp_patients())
+        patients_filtered = patients_data.loc[patients_data["age"] >= 18]
+        admissions_info = load_hosp_admissions()[
+            [
+                HospAdmissions.HOSPITAL_AMISSION_ID,
+                HospAdmissions.INSURANCE,
+                HospAdmissions.RACE,
+            ]
+        ]
+        visits = visits.merge(patients_filtered, how="inner", on="subject_id")
+        visits = visits.merge(admissions_info, how="inner", on="hadm_id")
+        return visits
+
+    def extract(self) -> pd.DataFrame:
+        logger.info("===========MIMIC-IV v2.0============")
+        self.fill_outputs()
+        logger.info(self.generate_extract_log())
+
+        hosp_patients, hosp_admissions = self.load_hospital_data()
+        visits = self.create_visits(hosp_patients, hosp_admissions)
+        cohort = self.prepare_cohort(visits)
 
         self.save_cohort(cohort)
         logger.info("[ COHORT SUCCESSFULLY SAVED ]")

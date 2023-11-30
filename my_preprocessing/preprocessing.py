@@ -5,8 +5,8 @@ from my_preprocessing.raw_file_info import (
     IcuStays,
     HospAdmissions,
 )
-from my_preprocessing.preproc_file_info import COHORT_PATH, CohortHeader
-from my_preprocessing.prediction_task import PredictionTask, TargetType
+from my_preprocessing.preproc_file_info import CohortHeader
+from my_preprocessing.prediction_task import TargetType
 import my_preprocessing.icd_conversion as icd_conversion
 from my_preprocessing.prediction_task import DiseaseCode
 import logging
@@ -20,8 +20,8 @@ def make_patients(hosp_patients: pd.DataFrame) -> pd.DataFrame:
     patients = hosp_patients[
         [
             HospPatients.ID,
-            HospPatients.ANCHOR_YEAR,
             HospPatients.ANCHOR_YEAR_GROUP,
+            HospPatients.ANCHOR_AGE,
             HospPatients.DOD,
             HospPatients.GENDER,
         ]
@@ -29,15 +29,11 @@ def make_patients(hosp_patients: pd.DataFrame) -> pd.DataFrame:
     max_anchor_year_group = (
         patients[HospPatients.ANCHOR_YEAR_GROUP].str.slice(start=-4).astype(int)
     )
-
     # To identify visits with prediction windows outside the range 2008-2019.
     patients[MIN_VALID_YEAR_HEADER] = (
-        patients[HospPatients.ANCHOR_YEAR] + 2019 - max_anchor_year_group
+        hosp_patients[HospPatients.ANCHOR_YEAR] + 2019 - max_anchor_year_group
     )
-
-    patients[CohortHeader.AGE] = hosp_patients[HospPatients.ANCHOR_AGE]
-
-    return patients[
+    return patients.rename(columns={HospPatients.ANCHOR_AGE: CohortHeader.AGE})[
         [
             HospPatients.ID,
             CohortHeader.AGE,
