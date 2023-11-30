@@ -42,13 +42,13 @@ def test_cohort_extractor(
     prediction_task = PredictionTask(
         target_type, disease_readmission, disease_selection, nb_days, use_icu
     )
-    raw_data_loader = CohortExtractor(
+    cohort_extractor = CohortExtractor(
         prediction_task=prediction_task,
         preproc_dir="",
         cohort_output="",
         summary_output="",
     )
-    visits_patients = raw_data_loader.extract()
-    assert len(visits_patients) == expected_admission_records_count
-    assert visits_patients["subject_id"].nunique() == expected_patients_count
-    assert visits_patients["label"].sum() == expected_positive_cases_count
+    cohort = cohort_extractor.extract()
+    assert len(cohort) == expected_admission_records_count
+    assert cohort["subject_id"].nunique() == expected_patients_count
+    assert cohort["label"].sum() == expected_positive_cases_count

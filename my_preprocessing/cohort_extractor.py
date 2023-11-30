@@ -8,7 +8,7 @@ from my_preprocessing.raw_file_info import (
     load_icu_icustays,
     HospAdmissions,
 )
-from my_preprocessing.preproc_file_info import COHORT_PATH
+from my_preprocessing.preproc_file_info import COHORT_PATH, CohortHeader
 from my_preprocessing.prediction_task import PredictionTask, TargetType
 
 from my_preprocessing.preprocessing import (
@@ -126,14 +126,25 @@ class CohortExtractor:
 
     def prepare_cohort(self, visits):
         visits = self.filter_and_merge_visits(visits)
+        admit_col = (
+            CohortHeader.IN_TIME
+            if self.prediction_task.use_icu
+            else CohortHeader.ADMIT_TIME
+        )
+        disch_col = (
+            CohortHeader.OUT_TIME
+            if self.prediction_task.use_icu
+            else CohortHeader.DISCH_TIME
+        )
+
         return self.get_case_ctrls(
             df=visits,
             gap=self.prediction_task.nb_days,
-            group_col="subject_id",
-            admit_col="intime" if self.prediction_task.use_icu else "admittime",
-            disch_col="outtime" if self.prediction_task.use_icu else "dischtime",
-            death_col="dod",
-        ).rename(columns={"race": "ethnicity"})
+            group_col=CohortHeader.PATIENT_ID,
+            admit_col=admit_col,
+            disch_col=disch_col,
+            death_col=CohortHeader.DOD,
+        ).rename(columns={HospAdmissions.RACE: CohortHeader.ETHICITY})
 
     def filter_and_merge_visits(self, visits):
         visits = filter_visits(
@@ -145,13 +156,13 @@ class CohortExtractor:
         patients_filtered = patients_data.loc[patients_data["age"] >= 18]
         admissions_info = load_hosp_admissions()[
             [
-                HospAdmissions.HOSPITAL_AMISSION_ID,
+                HospAdmissions.HOSPITAL_ADMISSION_ID,
                 HospAdmissions.INSURANCE,
                 HospAdmissions.RACE,
             ]
         ]
-        visits = visits.merge(patients_filtered, how="inner", on="subject_id")
-        visits = visits.merge(admissions_info, how="inner", on="hadm_id")
+        visits = visits.merge(patients_filtered, on=CohortHeader.PATIENT_ID)
+        visits = visits.merge(admissions_info, on=CohortHeader.HOSPITAL_ADMISSION_ID)
         return visits
 
     def extract(self) -> pd.DataFrame:

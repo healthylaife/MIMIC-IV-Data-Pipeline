@@ -56,14 +56,14 @@ class HospAdmissions(StrEnum):
     DISCHTIME = "dischtime"  # datetime the patient was discharged from the hospital
     HOSPITAL_EXPIRE_FLAG = "hospital_expire_flag"  # whether the patient died within the given hospitalization
     LOS = "los"
-    HOSPITAL_AMISSION_ID = "hadm_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
     INSURANCE = "insurance"
     RACE = "race"
 
 
 class HospDiagnosesIcd(StrEnum):
     SUBJECT_ID = "subject_id"  # patient id
-    HOSPITAL_AMISSION_ID = "hadm_id"  # patient hospitalization id
+    HOSPITAL_ADMISSION_ID = "hadm_id"  # patient hospitalization id
     SEQ_NUM = "seq_num"  #  priority assigned to the diagnoses
     ICD_CODE = "icd_code"  #  International Coding Definitions code
     ICD_VERSION = "icd_version"  # version for the coding system
@@ -74,7 +74,7 @@ class HospDiagnosesIcd(StrEnum):
 
 class HospLabEvents(StrEnum):
     SUNJECT_ID = "subject_id"
-    HOSPITAL_AMISSION_ID = "hadm_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
     CHARTTIME = "charttime"
     ITEMID = "itemid"
     ADMITTIME = "admittime"
@@ -84,7 +84,7 @@ class HospLabEvents(StrEnum):
 
 class HospProceduresIcd(StrEnum):
     PATIENT_ID = "subject_id"
-    HOSPITAL_AMISSION_ID = "hadm_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
     SEQ_NUM = "seq_num"
     CHART_DATE = "chartdate"
     ICD_CODE = "icd_code"
@@ -93,7 +93,7 @@ class HospProceduresIcd(StrEnum):
 
 class HospPrescriptions(StrEnum):
     PATIENT_ID = "subject_id"
-    HOSPITAL_AMISSION_ID = "hadm_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
     DRUG = "drug"
     START_TIME = "starttime"
     STOP_TIME = "stoptime"
@@ -107,7 +107,7 @@ def load_hosp_predictions() -> pd.DataFrame:
         compression="gzip",
         usecols=[
             HospPrescriptions.PATIENT_ID,
-            HospPrescriptions.HOSPITAL_AMISSION_ID,
+            HospPrescriptions.HOSPITAL_ADMISSION_ID,
             HospPrescriptions.DRUG,
             HospPrescriptions.START_TIME,
             HospPrescriptions.STOP_TIME,
@@ -163,7 +163,7 @@ def load_hosp_procedures_icd() -> pd.DataFrame:
 class IcuStays(StrEnum):
     PATIENT_ID = "subject_id"  # patient id
     ID = "stay_id"  # icu stay id
-    HOSPITAL_AMISSION_ID = "hadm_id"  # patient hospitalization id
+    HOSPITAL_ADMISSION_ID = "hadm_id"  # patient hospitalization id
     INTIME = "intime"  #  datetime the patient was transferred into the ICU.
     OUTTIME = "outtime"  #  datetime the patient was transferred out the ICU.
     LOS = "los"  # length of stay for the patient for the given ICU stay in fractional days.
@@ -174,7 +174,7 @@ class IcuStays(StrEnum):
 # Information regarding patient outputs including urine, drainage...
 class OuputputEvents(StrEnum):
     SUBJECT_ID = "subject_id"  # patient id
-    HOSPITAL_AMISSION_ID = "hadm_id"  # patient hospitalization id
+    HOSPITAL_ADMISSION_ID = "hadm_id"  # patient hospitalization id
     ICU_STAY_ID = "stay_id"  # patient icu stay id
     ITEM_ID = "itemid"  # single measurement type id
     CHARTTIME = "charttime"  # time of an output event

@@ -6,7 +6,7 @@ from my_preprocessing.raw_file_info import (
 )
 
 
-def get_conversions_icd_9_10() -> dict:  # to use in raw data loader?
+def get_conversions_icd_9_10() -> dict:
     """Create mapping dictionary ICD9 -> ICD10"""
     icd_map_df = load_static_icd_map()
     # Filter rows where the length of diagnosis_code is 3
@@ -18,12 +18,9 @@ def get_conversions_icd_9_10() -> dict:  # to use in raw data loader?
     return dict(zip(filtered_df["diagnosis_code"], filtered_df["icd10cm"]))
 
 
-def get_pos_ids(diag, ICD10_code: str) -> tuple:
-    pos_ids = pd.DataFrame(
-        diag.loc[diag["root"].str.contains(ICD10_code)]["hadm_id"].unique(),
-        columns=["hadm_id"],
-    )
-    return pos_ids
+def get_pos_ids(diag: pd.DataFrame, ICD10_code: str) -> pd.Series:
+    """Extracts unique hospital admission IDs (hadm_id) where 'root' contains a specific ICD-10 code."""
+    return diag[diag["root"].str.contains(ICD10_code, na=False)]["hadm_id"].unique()
 
 
 def standardize_icd(df: pd.DataFrame):
