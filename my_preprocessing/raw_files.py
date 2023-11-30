@@ -56,6 +56,7 @@ class HospAdmissions(StrEnum):
     DISCHTIME = "dischtime"  # datetime the patient was discharged from the hospital
     HOSPITAL_EXPIRE_FLAG = "hospital_expire_flag"  # whether the patient died within the given hospitalization
     LOS = "los"
+    HOSPITAL_AMISSION_ID = "hadm_id"
 
 
 class HospDiagnosesIcd(StrEnum):

@@ -10,6 +10,7 @@ from my_preprocessing.raw_files import (
     load_icu_icustays,
     HospPatients,
     IcuStays,
+    HospAdmissions,
 )
 from my_preprocessing.preproc_files import COHORT_PATH
 from my_preprocessing.prediction_task import PredictionTask, TargetType
@@ -66,25 +67,24 @@ class CohortExtractor:
 
     def make_no_icu_visits(self) -> pd.DataFrame:
         hosp_admissions = load_hosp_admissions()
-        hosp_admissions["los"] = (
-            hosp_admissions["dischtime"] - hosp_admissions["admittime"]
+        hosp_admissions[HospAdmissions.LOS] = (
+            hosp_admissions[HospAdmissions.DISCHTIME]
+            - hosp_admissions[HospAdmissions.ADMITTIME]
         ).dt.days
 
         if self.prediction_task.target_type == TargetType.READMISSION:
             # remove hospitalizations with a death
             hosp_admissions = hosp_admissions[
-                hosp_admissions["hospital_expire_flag"] == 0
+                hosp_admissions[HospAdmissions.HOSPITAL_EXPIRE_FLAG] == 0
             ]
-            if self.prediction_task.disease_readmission:
-                logger.info(
-                    "[ READMISSION DUE TO "
-                    + self.prediction_task.disease_readmission
-                    + " ]"
-                )
-            else:
-                logger.info("[ READMISSION ]")
         return hosp_admissions[
-            ["subject_id", "hadm_id", "admittime", "dischtime", "los"]
+            [
+                HospAdmissions.PATIENT_ID,
+                HospAdmissions.HOSPITAL_AMISSION_ID,
+                HospAdmissions.ADMITTIME,
+                HospAdmissions.DISCHTIME,
+                HospAdmissions.LOS,
+            ]
         ]
 
     def make_icu_visits(self) -> pd.DataFrame:

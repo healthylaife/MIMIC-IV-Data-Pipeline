@@ -10,7 +10,7 @@ from my_preprocessing.raw_files import (
 )
 
 
-def preproc_chartevents(cohort_path: str, chunksize=10000000) -> pd.DataFrame:
+def make_chart_events(cohort_path: str, chunksize=10000000) -> pd.DataFrame:
     """Function for processing hospital observations from a pickled cohort. optimized for memory efficiency"""
 
     # Only consider values in our cohort TODO: filter?
@@ -53,7 +53,7 @@ def preproc_chartevents(cohort_path: str, chunksize=10000000) -> pd.DataFrame:
     return df_cohort
 
 
-def preproc_output_events(cohort_path: str) -> pd.DataFrame:
+def make_output_events(cohort_path: str) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort.
     Function is structured to save memory when reading and transforming data."""
     outputevents = load_icu_output_events()
@@ -75,7 +75,7 @@ def preproc_output_events(cohort_path: str) -> pd.DataFrame:
     return df_cohort
 
 
-def preproc_icu_procedure_events(cohort_path: str) -> pd.DataFrame:
+def make_icu_procedure_events(cohort_path: str) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
     module = pd.read_csv(
         ICU_PROCEDURE_EVENTS_PATH,
@@ -101,7 +101,7 @@ def preproc_icu_procedure_events(cohort_path: str) -> pd.DataFrame:
     return df_cohort
 
 
-def preprocess_icu_input_events(cohort_path: str) -> pd.DataFrame:
+def make_icu_input_events(cohort_path: str) -> pd.DataFrame:
     adm = pd.read_csv(
         cohort_path,
         usecols=["hadm_id", "stay_id", "intime"],

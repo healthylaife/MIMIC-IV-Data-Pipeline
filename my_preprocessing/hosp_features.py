@@ -17,7 +17,7 @@ from my_preprocessing.ndc import (
 )
 
 
-def preproc_labs_events_features(cohort_path: str) -> pd.DataFrame:
+def make_labs_events_features(cohort_path: str) -> pd.DataFrame:
     cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["admittime"])
     admissions = load_hosp_admissions()[
         [
@@ -66,7 +66,7 @@ def preproc_labs_events_features(cohort_path: str) -> pd.DataFrame:
     return df_cohort
 
 
-def preproc_hosp_procedures_icd(cohort_path: str) -> pd.DataFrame:
+def make_hosp_procedures_icd(cohort_path: str) -> pd.DataFrame:
     cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["admittime"])
     module = load_hosp_procedures_icd()
     df_cohort = module.merge(
@@ -95,7 +95,7 @@ def preproc_hosp_procedures_icd(cohort_path: str) -> pd.DataFrame:
     return df_cohort
 
 
-def preprocess_hosp_prescriptions(cohort_path: str) -> pd.DataFrame:
+def make_hosp_prescriptions(cohort_path: str) -> pd.DataFrame:
     adm = pd.read_csv(
         cohort_path, usecols=["hadm_id", "admittime"], parse_dates=["admittime"]
     )

@@ -19,15 +19,15 @@ from my_preprocessing.preproc_files import (
     PREPROC_MED_PATH,
 )
 from my_preprocessing.icu_features import (
-    preproc_output_events,
-    preproc_chartevents,
-    preproc_icu_procedure_events,
-    preprocess_icu_input_events,
+    make_output_events,
+    make_chart_events,
+    make_icu_procedure_events,
+    make_icu_input_events,
 )
 from my_preprocessing.hosp_features import (
-    preproc_labs_events_features,
-    preprocess_hosp_prescriptions,
-    preproc_hosp_procedures_icd,
+    make_labs_events_features,
+    make_hosp_prescriptions,
+    make_hosp_procedures_icd,
 )
 
 
@@ -141,7 +141,7 @@ def save_diag_features(cohort_output: str, use_icu: bool) -> pd.DataFrame:
 
 def save_output_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING OUPTPUT EVENTS DATA]")
-    out = preproc_output_events(COHORT_PATH / (cohort_output + ".csv.gz"))
+    out = make_output_events(COHORT_PATH / (cohort_output + ".csv.gz"))
     out = out[OUTPUT_ICU_COLUNMS]
     out.to_csv(PREPROC_OUT_ICU_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED OUPTPUT EVENTS DATA]")
@@ -150,7 +150,7 @@ def save_output_features(cohort_output: str) -> pd.DataFrame:
 
 def save_chart_events_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING CHART EVENTS DATA]")
-    chart = preproc_chartevents(COHORT_PATH / (cohort_output + ".csv.gz"))
+    chart = make_chart_events(COHORT_PATH / (cohort_output + ".csv.gz"))
     chart = drop_wrong_uom(chart, 0.95)
     chart = chart[CHART_EVENT_COLUMNS]
     chart.to_csv(PREPROC_CHART_ICU_PATH, compression="gzip")
@@ -160,7 +160,7 @@ def save_chart_events_features(cohort_output: str) -> pd.DataFrame:
 
 def save_icu_procedures_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING PROCEDURES DATA]")
-    proc = preproc_icu_procedure_events(COHORT_PATH / (cohort_output + ".csv.gz"))
+    proc = make_icu_procedure_events(COHORT_PATH / (cohort_output + ".csv.gz"))
     cols = PROCEDURES_ICD_ICU_COLUMNS
     proc = proc[cols]
     proc.to_csv(PREPROC_PROC_ICU_PATH, compression="gzip")
@@ -170,7 +170,7 @@ def save_icu_procedures_features(cohort_output: str) -> pd.DataFrame:
 
 def save_hosp_procedures_icd_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING PROCEDURES DATA]")
-    proc = preproc_hosp_procedures_icd(COHORT_PATH / (cohort_output + ".csv.gz"))
+    proc = make_hosp_procedures_icd(COHORT_PATH / (cohort_output + ".csv.gz"))
     cols = PROCEDURES_ICD_NON_ICU_COLUMNS
     proc = proc[cols]
     proc.to_csv(PREPROC_PROC_ICU_PATH, compression="gzip")
@@ -180,7 +180,7 @@ def save_hosp_procedures_icd_features(cohort_output: str) -> pd.DataFrame:
 
 def save_icu_input_events_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING MEDICATIONS DATA]")
-    med = preprocess_icu_input_events(COHORT_PATH / (cohort_output + ".csv.gz"))
+    med = make_icu_input_events(COHORT_PATH / (cohort_output + ".csv.gz"))
     med = med[INPUT_EVENTS_COLUMNS]
     med.to_csv(PREPROC_MED_ICU_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
@@ -189,7 +189,7 @@ def save_icu_input_events_features(cohort_output: str) -> pd.DataFrame:
 
 def save_lab_events_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING LABS DATA]")
-    labevents = preproc_labs_events_features(COHORT_PATH / (cohort_output + ".csv.gz"))
+    labevents = make_labs_events_features(COHORT_PATH / (cohort_output + ".csv.gz"))
     labevents = drop_wrong_uom(labevents, 0.95)
     labevents = labevents[LAB_EVENTS_COLUNMS]
     labevents.to_csv(PREPROC_LABS_PATH, compression="gzip")
@@ -199,9 +199,7 @@ def save_lab_events_features(cohort_output: str) -> pd.DataFrame:
 
 def save_hosp_prescriptions_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING MEDICATIONS DATA]")
-    prescriptions = preprocess_hosp_prescriptions(
-        COHORT_PATH / (cohort_output + ".csv.gz")
-    )
+    prescriptions = make_hosp_prescriptions(COHORT_PATH / (cohort_output + ".csv.gz"))
     prescriptions = prescriptions[PRESCRIPTIONS_COLUMNS]
     prescriptions.to_csv(PREPROC_MED_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
