@@ -91,11 +91,38 @@ class HospProceduresIcd(StrEnum):
     ICD_VERSION = "icd_version"
 
 
+class HospPrescriptions(StrEnum):
+    PATIENT_ID = "subject_id"
+    HOSPITAL_AMISSION_ID = "hadm_id"
+    DRUG = "drug"
+    START_TIME = "starttime"
+    STOP_TIME = "stoptime"
+    NDC = "ndc"
+    DOSE_VAL_RX = "dose_val_rx"
+
+
+def load_hosp_predictions() -> pd.DataFrame:
+    return pd.read_csv(
+        HOSP_PREDICTIONS_PATH,
+        compression="gzip",
+        usecols=[
+            HospPrescriptions.PATIENT_ID,
+            HospPrescriptions.HOSPITAL_AMISSION_ID,
+            HospPrescriptions.DRUG,
+            HospPrescriptions.START_TIME,
+            HospPrescriptions.STOP_TIME,
+            HospPrescriptions.NDC,
+            HospPrescriptions.DOSE_VAL_RX,
+        ],
+        parse_dates=[HospPrescriptions.START_TIME, HospPrescriptions.STOP_TIME],
+    )
+
+
 def load_hosp_patients() -> pd.DataFrame:
     return pd.read_csv(
         HOSP_PATIENTS_PATH,
         compression="gzip",
-        parse_dates=[HospPatients.DOD.value],
+        parse_dates=[HospPatients.DOD],
     )
 
 

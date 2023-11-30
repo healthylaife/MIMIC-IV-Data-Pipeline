@@ -10,11 +10,10 @@ from my_preprocessing.raw_file_info import (
 )
 
 
-def make_chart_events(cohort_path: str, chunksize=10000000) -> pd.DataFrame:
+def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
     """Function for processing hospital observations from a pickled cohort. optimized for memory efficiency"""
 
     # Only consider values in our cohort TODO: filter?
-    cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["intime"])
     processed_chunks = []
     for chunk in tqdm(
         pd.read_csv(
@@ -53,11 +52,10 @@ def make_chart_events(cohort_path: str, chunksize=10000000) -> pd.DataFrame:
     return df_cohort
 
 
-def make_output_events(cohort_path: str) -> pd.DataFrame:
+def make_output_events(cohort: pd.DataFrame) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort.
     Function is structured to save memory when reading and transforming data."""
     outputevents = load_icu_output_events()
-    cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["intime"])
     df_cohort = outputevents.merge(
         cohort[["stay_id", "intime", "outtime"]],
         how="inner",
@@ -75,7 +73,7 @@ def make_output_events(cohort_path: str) -> pd.DataFrame:
     return df_cohort
 
 
-def make_icu_procedure_events(cohort_path: str) -> pd.DataFrame:
+def make_icu_procedure_events(cohort: pd.DataFrame) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
     module = pd.read_csv(
         ICU_PROCEDURE_EVENTS_PATH,
@@ -84,7 +82,6 @@ def make_icu_procedure_events(cohort_path: str) -> pd.DataFrame:
         parse_dates=["starttime"],
     ).drop_duplicates()
     # Only consider values in our cohort
-    cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["intime"])
     df_cohort = module.merge(
         cohort[["subject_id", "hadm_id", "stay_id", "intime", "outtime"]],
         how="inner",
@@ -101,12 +98,8 @@ def make_icu_procedure_events(cohort_path: str) -> pd.DataFrame:
     return df_cohort
 
 
-def make_icu_input_events(cohort_path: str) -> pd.DataFrame:
-    adm = pd.read_csv(
-        cohort_path,
-        usecols=["hadm_id", "stay_id", "intime"],
-        parse_dates=["intime"],
-    )
+def make_icu_input_events(cohort: pd.DataFrame) -> pd.DataFrame:
+    adm = cohort[["hadm_id", "stay_id", "intime"]]
     med = pd.read_csv(
         ICU_INPUT_EVENT_PATH,
         compression="gzip",

@@ -65,16 +65,8 @@ def impute_missing_hadm_ids(
 
 
 def impute_hadm_ids(
-    lab_table: Union[str, pd.DataFrame], admission_table: Union[str, pd.DataFrame]
+    lab_table: pd.DataFrame, admission_table: pd.DataFrame
 ) -> pd.DataFrame:
-    # Load data from file if necessary
-    lab_table = pd.read_csv(lab_table) if isinstance(lab_table, str) else lab_table
-    admission_table = (
-        pd.read_csv(admission_table)
-        if isinstance(admission_table, str)
-        else admission_table
-    )
-
     # Convert columns to datetime
     lab_table["charttime"] = pd.to_datetime(lab_table["charttime"])
     admission_table["admittime"] = pd.to_datetime(admission_table["admittime"])

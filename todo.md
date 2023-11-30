@@ -1,9 +1,13 @@
+# FeatureExtractor
+
+- cohort preprocessing 
+-  raw file preprocessing
+- feature preprocessing / feature cleaning ?
+
+
+
 # module my preprocessing
 - precommit 
-
-- define min_valid_year use icu in raw data loader?
-
-- rename extract?
 
 - implementer options pour l extract
 

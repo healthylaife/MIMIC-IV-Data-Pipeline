@@ -1,11 +1,11 @@
 import pandas as pd
 from tqdm import tqdm
 from my_preprocessing.raw_file_info import (
-    HOSP_PREDICTIONS_PATH,
     MAP_NDC_PATH,
     load_hosp_procedures_icd,
     load_hosp_lab_events,
     load_hosp_admissions,
+    load_hosp_predictions,
     HospAdmissions,
 )
 from my_preprocessing.admission_imputer import impute_hadm_ids
@@ -17,8 +17,7 @@ from my_preprocessing.ndc import (
 )
 
 
-def make_labs_events_features(cohort_path: str) -> pd.DataFrame:
-    cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["admittime"])
+def make_labs_events_features(cohort: pd.DataFrame) -> pd.DataFrame:
     admissions = load_hosp_admissions()[
         [
             HospAdmissions.PATIENT_ID.value,
@@ -66,8 +65,7 @@ def make_labs_events_features(cohort_path: str) -> pd.DataFrame:
     return df_cohort
 
 
-def make_hosp_procedures_icd(cohort_path: str) -> pd.DataFrame:
-    cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["admittime"])
+def make_hosp_procedures_icd(cohort: pd.DataFrame) -> pd.DataFrame:
     module = load_hosp_procedures_icd()
     df_cohort = module.merge(
         cohort[["hadm_id", "admittime", "dischtime"]],
@@ -95,24 +93,9 @@ def make_hosp_procedures_icd(cohort_path: str) -> pd.DataFrame:
     return df_cohort
 
 
-def make_hosp_prescriptions(cohort_path: str) -> pd.DataFrame:
-    adm = pd.read_csv(
-        cohort_path, usecols=["hadm_id", "admittime"], parse_dates=["admittime"]
-    )
-    med = pd.read_csv(
-        HOSP_PREDICTIONS_PATH,
-        compression="gzip",
-        usecols=[
-            "subject_id",
-            "hadm_id",
-            "drug",
-            "starttime",
-            "stoptime",
-            "ndc",
-            "dose_val_rx",
-        ],
-        parse_dates=["starttime", "stoptime"],
-    )
+def make_hosp_prescriptions(cohort: pd.DataFrame) -> pd.DataFrame:
+    adm = cohort[["hadm_id", "admittime"]]
+    med = load_hosp_predictions()
     med = med.merge(adm, left_on="hadm_id", right_on="hadm_id", how="inner")
     med["start_hours_from_admit"] = med["starttime"] - med["admittime"]
     med["stop_hours_from_admit"] = med["stoptime"] - med["admittime"]
