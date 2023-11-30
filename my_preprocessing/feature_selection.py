@@ -3,10 +3,10 @@ from tqdm import tqdm
 from my_preprocessing.icd_conversion import standardize_icd
 from my_preprocessing.uom_conversion import drop_wrong_uom
 from my_preprocessing.outlier_removal import outlier_imputation
-from my_preprocessing.raw_files import (
+from my_preprocessing.raw_file_info import (
     load_hosp_diagnosis_icd,
 )
-from my_preprocessing.preproc_files import (
+from my_preprocessing.preproc_file_info import (
     COHORT_PATH,
     PREPROC_DIAG_PATH,
     PREPROC_PROC_PATH,

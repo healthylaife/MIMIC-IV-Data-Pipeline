@@ -28,3 +28,8 @@ class OUT_ICU_HEADER(StrEnum):
     CHART_TIME = "charttime"
     IN_TIME = "intime"
     EVENT_TIME_FROM_ADMIT = "event_time_from_admit"
+
+
+class COHORT_HEADER(StrEnum):
+    PATIENT_ID = "subject_id"
+    LABEL = "label"

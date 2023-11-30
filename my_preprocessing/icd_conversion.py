@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from my_preprocessing.raw_files import (
+from my_preprocessing.raw_file_info import (
     load_static_icd_map,
     load_hosp_diagnosis_icd,
 )

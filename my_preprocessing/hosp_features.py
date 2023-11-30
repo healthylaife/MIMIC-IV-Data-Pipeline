@@ -1,6 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
-from my_preprocessing.raw_files import (
+from my_preprocessing.raw_file_info import (
     HOSP_PREDICTIONS_PATH,
     MAP_NDC_PATH,
     load_hosp_procedures_icd,

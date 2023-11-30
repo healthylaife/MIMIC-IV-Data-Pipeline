@@ -4,7 +4,7 @@ import my_preprocessing.icd_conversion as icd_conversion
 import datetime
 import logging
 import numpy as np
-from my_preprocessing.raw_files import (
+from my_preprocessing.raw_file_info import (
     load_hosp_patients,
     load_hosp_admissions,
     load_icu_icustays,
@@ -12,7 +12,7 @@ from my_preprocessing.raw_files import (
     IcuStays,
     HospAdmissions,
 )
-from my_preprocessing.preproc_files import COHORT_PATH
+from my_preprocessing.preproc_file_info import COHORT_PATH, COHORT_HEADER
 from my_preprocessing.prediction_task import PredictionTask, TargetType
 
 logger = logging.getLogger()
@@ -99,7 +99,14 @@ class CohortExtractor:
             | (visits[HospPatients.DOD] >= visits[IcuStays.OUTTIME])
         ]
         return visits[
-            ["subject_id", "stay_id", "hadm_id", "intime", IcuStays.OUTTIME, "los"]
+            [
+                IcuStays.PATIENT_ID,
+                "stay_id",
+                "hadm_id",
+                "intime",
+                IcuStays.OUTTIME,
+                IcuStays.LOS,
+            ]
         ]
 
     def make_visits(self) -> pd.DataFrame:
