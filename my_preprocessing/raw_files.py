@@ -20,10 +20,6 @@ ICU_OUTPUT_EVENT_PATH = RAW_PATH / "icu" / "outputevents.csv.gz"
 ICU_CHART_EVENTS_PATH = RAW_PATH / "icu" / "chartevents.csv.gz"
 ICU_PROCEDURE_EVENTS_PATH = RAW_PATH / "icu" / "procedureevents.csv.gz"
 
-PREPROC_PATH = Path("preproc_data")
-COHORT_PATH = PREPROC_PATH / "cohort"
-FEATURE_PATH = PREPROC_PATH / "features"
-
 
 # icd mapping
 class IcdMap(StrEnum):
@@ -45,9 +41,9 @@ def load_static_icd_map() -> pd.DataFrame:
 # information regarding a patient
 class HospPatients(StrEnum):
     ID = "subject_id"  # patient id
-    YEAR = "anchor_year"  # shifted year for the patient
-    AGE = "anchor_age"  # patient’s age in the anchor_year
-    YEAR_GROUP = "anchor_year_group"  # anchor_year occurred during this range
+    ANCHOR_YEAR = "anchor_year"  # shifted year for the patient
+    ANCHOR_AGE = "anchor_age"  # patient’s age in the anchor_year
+    ANCHOR_YEAR_GROUP = "anchor_year_group"  # anchor_year occurred during this range
     DOD = "dod"  # de-identified date of death for the patient
     GENDER = "gender"
 

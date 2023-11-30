@@ -1,6 +1,7 @@
 # module my preprocessing
+- precommit 
 
-- define min_valid_year in raw data loader?
+- define min_valid_year use icu in raw data loader?
 
 - rename extract?
 
@@ -28,7 +29,7 @@
 
 - summary, more comments, clarification of the whole pipeline (use column emum...)
 
-
+- what are the features: define enum to clarify with header enums
 
 # finalize preprocessing
 - cleaning 

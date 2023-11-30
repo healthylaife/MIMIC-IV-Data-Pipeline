@@ -8,11 +8,15 @@ from my_preprocessing.raw_files import (
     load_hosp_patients,
     load_hosp_admissions,
     load_icu_icustays,
-    COHORT_PATH,
+    HospPatients,
+    IcuStays,
 )
+from my_preprocessing.preproc_files import COHORT_PATH
 from my_preprocessing.prediction_task import PredictionTask, TargetType
 
 logger = logging.getLogger()
+
+MIN_VALID_YEAR_HEADER = "min_valid_year"
 
 
 class CohortExtractor:
@@ -60,8 +64,6 @@ class CohortExtractor:
         if not self.summary_output:
             self.summary_output = "summary_" + self.generate_output_suffix()
 
-    # VISITS AND PATIENTS
-
     def make_no_icu_visits(self) -> pd.DataFrame:
         hosp_admissions = load_hosp_admissions()
         hosp_admissions["los"] = (
@@ -90,10 +92,15 @@ class CohortExtractor:
         if self.prediction_task.target_type != TargetType.READMISSION:
             return icu_icustays
         # remove such stay_ids with a death for readmission labels
-        hosp_patient = load_hosp_patients()[["subject_id", "dod"]]
-        visits = icu_icustays.merge(hosp_patient, how="inner", on="subject_id")
-        visits = visits.loc[(visits.dod.isna()) | (visits["dod"] >= visits["outtime"])]
-        return visits[["subject_id", "stay_id", "hadm_id", "intime", "outtime", "los"]]
+        hosp_patient = load_hosp_patients()[[HospPatients.ID, HospPatients.DOD]]
+        visits = icu_icustays.merge(hosp_patient, on=IcuStays.PATIENT_ID)
+        visits = visits.loc[
+            (visits[HospPatients.DOD].isna())
+            | (visits[HospPatients.DOD] >= visits[IcuStays.OUTTIME])
+        ]
+        return visits[
+            ["subject_id", "stay_id", "hadm_id", "intime", IcuStays.OUTTIME, "los"]
+        ]
 
     def make_visits(self) -> pd.DataFrame:
         return (
@@ -102,30 +109,36 @@ class CohortExtractor:
             else self.make_no_icu_visits()
         )
 
-    def load_patients(self) -> pd.DataFrame:
+    def make_patients(self) -> pd.DataFrame:
         hosp_patients = load_hosp_patients()[
             [
-                "subject_id",
-                "anchor_year",
-                "anchor_age",
-                "anchor_year_group",
-                "dod",
-                "gender",
+                HospPatients.ID,
+                HospPatients.ANCHOR_YEAR,
+                HospPatients.ANCHOR_AGE,
+                HospPatients.ANCHOR_YEAR_GROUP,
+                HospPatients.DOD,
+                HospPatients.GENDER,
             ]
         ]
-        hosp_patients["min_valid_year"] = hosp_patients["anchor_year"] + (
-            2019 - hosp_patients["anchor_year_group"].str.slice(start=-4).astype(int)
+        max_anchor_year_group = (
+            hosp_patients[HospPatients.ANCHOR_YEAR_GROUP]
+            .str.slice(start=-4)
+            .astype(int)
         )
-        hosp_patients["age"] = hosp_patients["anchor_age"]
+        hosp_patients[MIN_VALID_YEAR_HEADER] = (
+            hosp_patients[HospPatients.ANCHOR_YEAR] + 2019 - max_anchor_year_group
+        )
+
+        hosp_patients["age"] = hosp_patients[HospPatients.ANCHOR_AGE]  # ro remove...
         # Define anchor_year corresponding to the anchor_year_group 2017-2019.
         # To identify visits with prediction windows outside the range 2008-2019.
         return hosp_patients[
             [
-                "subject_id",
+                HospPatients.ID,
                 "age",
-                "min_valid_year",
-                "dod",
-                "gender",
+                MIN_VALID_YEAR_HEADER,
+                HospPatients.DOD,
+                HospPatients.GENDER,
             ]
         ]
 
@@ -284,7 +297,7 @@ class CohortExtractor:
 
         visits = self.make_visits()
         visits = self.filter_visits(visits)
-        patients = self.load_patients()
+        patients = self.make_patients()
         patients = patients.loc[patients["age"] >= 18]
         admissions_info = load_hosp_admissions()[["hadm_id", "insurance", "race"]]
 
