@@ -1,4 +1,4 @@
-from my_preprocessing.feature_selection import feature_icu, feature_non_icu
+from my_preprocessing.feature_extractor import feature_icu, feature_non_icu
 
 # rename tests...
 
