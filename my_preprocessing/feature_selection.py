@@ -31,7 +31,7 @@ from my_preprocessing.hosp_features import (
 )
 
 
-DIAGNOSIS_ICU_COLUMNS = [
+DIAGNOSIS_ICU_HEADERS = [
     "subject_id",
     "hadm_id",
     "stay_id",
@@ -40,7 +40,7 @@ DIAGNOSIS_ICU_COLUMNS = [
     "root",
 ]
 
-DIAGNOSIS_NON_ICU_COLUMNS = [
+DIAGNOSIS_NON_ICU_HEADERS = [
     "subject_id",
     "hadm_id",
     "icd_code",
@@ -48,7 +48,7 @@ DIAGNOSIS_NON_ICU_COLUMNS = [
     "root",
 ]
 
-OUTPUT_ICU_COLUNMS = [
+OUTPUT_ICU_HEADERS = [
     "subject_id",
     "hadm_id",
     "stay_id",
@@ -58,7 +58,7 @@ OUTPUT_ICU_COLUNMS = [
     "event_time_from_admit",
 ]
 
-PROCEDURES_ICD_ICU_COLUMNS = [
+PROCEDURES_ICD_ICU_HEADERS = [
     "subject_id",
     "hadm_id",
     "stay_id",
@@ -68,7 +68,7 @@ PROCEDURES_ICD_ICU_COLUMNS = [
     "event_time_from_admit",
 ]
 
-PROCEDURES_ICD_NON_ICU_COLUMNS = [
+PROCEDURES_ICD_NON_ICU_HEADERS = [
     "subject_id",
     "hadm_id",
     "icd_code",
@@ -78,7 +78,7 @@ PROCEDURES_ICD_NON_ICU_COLUMNS = [
     "proc_time_from_admit",
 ]
 
-LAB_EVENTS_COLUNMS = [
+LAB_EVENTS_HEADERS = [
     "subject_id",
     "hadm_id",
     "charttime",
@@ -88,7 +88,7 @@ LAB_EVENTS_COLUNMS = [
     "valuenum",
 ]
 
-PRESCRIPTIONS_COLUMNS = [
+PRESCRIPTIONS_HEADERS = [
     "subject_id",
     "hadm_id",
     "starttime",
@@ -100,7 +100,7 @@ PRESCRIPTIONS_COLUMNS = [
     "dose_val_rx",
 ]
 
-INPUT_EVENTS_COLUMNS = [
+INPUT_EVENTS_HEADERS = [
     "subject_id",
     "hadm_id",
     "stay_id",
@@ -114,7 +114,7 @@ INPUT_EVENTS_COLUMNS = [
     "orderid",
 ]
 
-CHART_EVENT_COLUMNS = ["stay_id", "itemid", "event_time_from_admit", "valuenum"]
+CHART_EVENT_HEADERS = ["stay_id", "itemid", "event_time_from_admit", "valuenum"]
 
 
 def save_diag_features(cohort_output: str, use_icu: bool) -> pd.DataFrame:
@@ -132,7 +132,7 @@ def save_diag_features(cohort_output: str, use_icu: bool) -> pd.DataFrame:
         left_on="hadm_id",
         right_on="hadm_id",
     )
-    cols = DIAGNOSIS_ICU_COLUMNS if use_icu else DIAGNOSIS_NON_ICU_COLUMNS
+    cols = DIAGNOSIS_ICU_HEADERS if use_icu else DIAGNOSIS_NON_ICU_HEADERS
     diag = standardize_icd(diag)[cols]
     diag.to_csv(PREPROC_DIAG_ICU_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
@@ -142,7 +142,7 @@ def save_diag_features(cohort_output: str, use_icu: bool) -> pd.DataFrame:
 def save_output_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING OUPTPUT EVENTS DATA]")
     out = make_output_events(COHORT_PATH / (cohort_output + ".csv.gz"))
-    out = out[OUTPUT_ICU_COLUNMS]
+    out = out[OUTPUT_ICU_HEADERS]
     out.to_csv(PREPROC_OUT_ICU_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED OUPTPUT EVENTS DATA]")
     return out
@@ -152,7 +152,7 @@ def save_chart_events_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING CHART EVENTS DATA]")
     chart = make_chart_events(COHORT_PATH / (cohort_output + ".csv.gz"))
     chart = drop_wrong_uom(chart, 0.95)
-    chart = chart[CHART_EVENT_COLUMNS]
+    chart = chart[CHART_EVENT_HEADERS]
     chart.to_csv(PREPROC_CHART_ICU_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
     return chart
@@ -161,8 +161,7 @@ def save_chart_events_features(cohort_output: str) -> pd.DataFrame:
 def save_icu_procedures_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING PROCEDURES DATA]")
     proc = make_icu_procedure_events(COHORT_PATH / (cohort_output + ".csv.gz"))
-    cols = PROCEDURES_ICD_ICU_COLUMNS
-    proc = proc[cols]
+    proc = proc[PROCEDURES_ICD_ICU_HEADERS]
     proc.to_csv(PREPROC_PROC_ICU_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
     return proc
@@ -171,8 +170,7 @@ def save_icu_procedures_features(cohort_output: str) -> pd.DataFrame:
 def save_hosp_procedures_icd_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING PROCEDURES DATA]")
     proc = make_hosp_procedures_icd(COHORT_PATH / (cohort_output + ".csv.gz"))
-    cols = PROCEDURES_ICD_NON_ICU_COLUMNS
-    proc = proc[cols]
+    proc = proc[PROCEDURES_ICD_NON_ICU_HEADERS]
     proc.to_csv(PREPROC_PROC_ICU_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
     return proc
@@ -181,7 +179,7 @@ def save_hosp_procedures_icd_features(cohort_output: str) -> pd.DataFrame:
 def save_icu_input_events_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING MEDICATIONS DATA]")
     med = make_icu_input_events(COHORT_PATH / (cohort_output + ".csv.gz"))
-    med = med[INPUT_EVENTS_COLUMNS]
+    med = med[INPUT_EVENTS_HEADERS]
     med.to_csv(PREPROC_MED_ICU_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
     return med
@@ -191,7 +189,7 @@ def save_lab_events_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING LABS DATA]")
     labevents = make_labs_events_features(COHORT_PATH / (cohort_output + ".csv.gz"))
     labevents = drop_wrong_uom(labevents, 0.95)
-    labevents = labevents[LAB_EVENTS_COLUNMS]
+    labevents = labevents[LAB_EVENTS_HEADERS]
     labevents.to_csv(PREPROC_LABS_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED LABS DATA]")
     return labevents
@@ -200,7 +198,7 @@ def save_lab_events_features(cohort_output: str) -> pd.DataFrame:
 def save_hosp_prescriptions_features(cohort_output: str) -> pd.DataFrame:
     print("[EXTRACTING MEDICATIONS DATA]")
     prescriptions = make_hosp_prescriptions(COHORT_PATH / (cohort_output + ".csv.gz"))
-    prescriptions = prescriptions[PRESCRIPTIONS_COLUMNS]
+    prescriptions = prescriptions[PRESCRIPTIONS_HEADERS]
     prescriptions.to_csv(PREPROC_MED_PATH, compression="gzip")
     print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
     return prescriptions
