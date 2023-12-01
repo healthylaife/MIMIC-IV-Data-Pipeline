@@ -1,5 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
+from my_preprocessing.preproc_file_info import CohortHeader, NonIcuProceduresHeader
 from my_preprocessing.raw_file_info import (
     MAP_NDC_PATH,
     load_hosp_procedures_icd,
@@ -7,6 +8,7 @@ from my_preprocessing.raw_file_info import (
     load_hosp_admissions,
     load_hosp_predictions,
     HospAdmissions,
+    HospProceduresIcd,
 )
 from my_preprocessing.admission_imputer import impute_hadm_ids
 from my_preprocessing.ndc_conversion import (
@@ -67,28 +69,39 @@ def make_labs_events_features(cohort: pd.DataFrame) -> pd.DataFrame:
     return df_cohort
 
 
-def make_hosp_procedures_icd(cohort: pd.DataFrame) -> pd.DataFrame:
+def make_procedures_feature_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     module = load_hosp_procedures_icd()
     df_cohort = module.merge(
-        cohort[["hadm_id", "admittime", "dischtime"]],
-        how="inner",
-        left_on="hadm_id",
-        right_on="hadm_id",
+        cohort[
+            [
+                CohortHeader.HOSPITAL_ADMISSION_ID,
+                CohortHeader.ADMIT_TIME,
+                CohortHeader.DISCH_TIME,
+            ]
+        ],
+        on=HospProceduresIcd.HOSPITAL_ADMISSION_ID,
     )
-    df_cohort["proc_time_from_admit"] = df_cohort["chartdate"] - df_cohort["admittime"]
+    df_cohort[NonIcuProceduresHeader.PROC_TIME_FROM_ADMIT] = (
+        df_cohort[NonIcuProceduresHeader.CHART_DATE]
+        - df_cohort[NonIcuProceduresHeader.ADMIT_TIME]
+    )
     df_cohort = df_cohort.dropna()
     # Print unique counts and value_counts
-    print(
-        "# Unique ICD9 Procedures:  ",
-        df_cohort.loc[df_cohort.icd_version == 9].icd_code.dropna().nunique(),
-    )
-    print(
-        "# Unique ICD10 Procedures: ",
-        df_cohort.loc[df_cohort.icd_version == 10].icd_code.dropna().nunique(),
-    )
+    for v in [9, 10]:
+        print(
+            f"# Unique ICD{v} Procedures:  ",
+            df_cohort.loc[df_cohort[NonIcuProceduresHeader.ICD_VERSION] == v][
+                NonIcuProceduresHeader.ICD_CODE
+            ]
+            .dropna()
+            .nunique(),
+        )
 
-    print("\nValue counts of each ICD version:\n", df_cohort.icd_version.value_counts())
-    print("# Admissions:  ", df_cohort.hadm_id.nunique())
+    print(
+        "\nValue counts of each ICD version:\n",
+        df_cohort[NonIcuProceduresHeader.ICD_VERSION].value_counts(),
+    )
+    print("# Admissions:  ", df_cohort[CohortHeader.HOSPITAL_ADMISSION_ID].nunique())
     print("Total number of rows: ", df_cohort.shape[0])
 
     # Only return module measurements within the observation range, sorted by subject_id

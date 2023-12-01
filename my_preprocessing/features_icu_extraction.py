@@ -4,13 +4,20 @@ from my_preprocessing.raw_file_info import (
     ICU_CHART_EVENTS_PATH,
     ChartEvents,
     load_icu_output_events,
-    ICU_PROCEDURE_EVENTS_PATH,
+    load_icu_procedure_events,
     ICU_INPUT_EVENT_PATH,
     InputEvents,
 )
 import logging
-from my_preprocessing.preproc_file_info import CohortHeader, OutputEventsHeader
+from my_preprocessing.preproc_file_info import (
+    CohortHeader,
+    OutputEventsHeader,
+    IcuProceduresHeader,
+)
 from my_preprocessing.uom_conversion import drop_wrong_uom
+
+
+logger = logging.getLogger()
 
 
 def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
@@ -49,9 +56,9 @@ def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
         processed_chunks.append(chunk_merged)
     df_cohort = pd.concat(processed_chunks, ignore_index=True)
     df_cohort = drop_wrong_uom(df_cohort, 0.95)
-    print("# Unique Events:  ", df_cohort.itemid.nunique())
-    print("# Admissions:  ", df_cohort.stay_id.nunique())
-    print("Total rows", df_cohort.shape[0])
+    logger.info("# Unique Events:  ", df_cohort.itemid.nunique())
+    logger.info("# Admissions:  ", df_cohort.stay_id.nunique())
+    logger.info("Total rows", df_cohort.shape[0])
 
     return df_cohort
 
@@ -64,39 +71,46 @@ def make_output_events(cohort: pd.DataFrame) -> pd.DataFrame:
         cohort[[CohortHeader.STAY_ID, CohortHeader.IN_TIME, CohortHeader.OUT_TIME]],
         on=OutputEventsHeader.STAY_ID,
     )
-    df_cohort["event_time_from_admit"] = df_cohort["charttime"] - df_cohort["intime"]
+    df_cohort[OutputEventsHeader.EVENT_TIME_FROM_ADMIT] = (
+        df_cohort[OutputEventsHeader.CHART_TIME] - df_cohort[OutputEventsHeader.IN_TIME]
+    )
     df_cohort = df_cohort.dropna()
     # Print unique counts and value_counts
-    print("# Unique Events:  ", df_cohort.itemid.nunique())
-    print("# Admissions:  ", df_cohort.stay_id.nunique())
-    print("Total rows", df_cohort.shape[0])
+    logger.info("# Unique Events:  ", df_cohort[OutputEventsHeader.ITEM_ID].nunique())
+    logger.info("# Admissions:  ", df_cohort[OutputEventsHeader.STAY_ID].nunique())
+    logger.info("Total rows", df_cohort.shape[0])
 
     # Only return module measurements within the observation range, sorted by subject_id
     return df_cohort
 
 
-def make_icu_procedure_events(cohort: pd.DataFrame) -> pd.DataFrame:
+def make_procedures_feature_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
-    module = pd.read_csv(
-        ICU_PROCEDURE_EVENTS_PATH,
-        compression="gzip",
-        usecols=["stay_id", "starttime", "itemid"],
-        parse_dates=["starttime"],
-    ).drop_duplicates()
+    module = load_icu_procedure_events()
     # Only consider values in our cohort
     df_cohort = module.merge(
-        cohort[["subject_id", "hadm_id", "stay_id", "intime", "outtime"]],
-        how="inner",
-        left_on="stay_id",
-        right_on="stay_id",
+        cohort[
+            [
+                CohortHeader.PATIENT_ID,
+                CohortHeader.HOSPITAL_ADMISSION_ID,
+                CohortHeader.STAY_ID,
+                CohortHeader.IN_TIME,
+                CohortHeader.OUT_TIME,
+            ]
+        ],
+        on=CohortHeader.STAY_ID,
     )
-    df_cohort["event_time_from_admit"] = df_cohort["starttime"] - df_cohort["intime"]
+    df_cohort[IcuProceduresHeader.EVENT_TIME_FROM_ADMIT] = (
+        df_cohort[IcuProceduresHeader.START_TIME]
+        - df_cohort[IcuProceduresHeader.IN_TIME]
+    )
 
     df_cohort = df_cohort.dropna()
-    # Print unique counts and value_counts
-    print("# Unique Events:  ", df_cohort.itemid.dropna().nunique())
-    print("# Admissions:  ", df_cohort.stay_id.nunique())
-    print("Total rows", df_cohort.shape[0])
+    logger.info(
+        "# Unique Events:  ", df_cohort[IcuProceduresHeader.ITEM_ID].dropna().nunique()
+    )
+    logger.info("# Admissions:  ", df_cohort[IcuProceduresHeader.STAY_ID].nunique())
+    logger.info("Total rows", df_cohort.shape[0])
     return df_cohort
 
 
@@ -105,26 +119,14 @@ def make_icu_input_events(cohort: pd.DataFrame) -> pd.DataFrame:
     med = pd.read_csv(
         ICU_INPUT_EVENT_PATH,
         compression="gzip",
-        usecols=[
-            InputEvents.SUBJECT_ID.value,
-            InputEvents.STAY_ID.value,
-            InputEvents.ITEMID.value,
-            InputEvents.STARTTIME.value,
-            InputEvents.ENDTIME.value,
-            InputEvents.RATE.value,
-            InputEvents.AMOUNT.value,
-            InputEvents.ORDERID.value,
-        ],
-        parse_dates=[InputEvents.STARTTIME.value, InputEvents.ENDTIME.value],
+        usecols=[f for f in InputEvents],
+        parse_dates=[InputEvents.STARTTIME, InputEvents.ENDTIME],
     )
-    med = med.merge(
-        adm, left_on=InputEvents.STAY_ID.value, right_on="stay_id", how="inner"
-    )
-    med["start_hours_from_admit"] = med[InputEvents.STARTTIME.value] - med["intime"]
-    med["stop_hours_from_admit"] = med[InputEvents.ENDTIME.value] - med["intime"]
+    med = med.merge(adm, left_on=InputEvents.STAY_ID, right_on="stay_id", how="inner")
+    med["start_hours_from_admit"] = med[InputEvents.STARTTIME] - med["intime"]
+    med["stop_hours_from_admit"] = med[InputEvents.ENDTIME] - med["intime"]
     med = med.dropna()
-    print("# of unique type of drug: ", med[InputEvents.ITEMID.value].nunique())
-    print("# Admissions:  ", med[InputEvents.STAY_ID.value].nunique())
-    print("# Total rows", med.shape[0])
-
+    logger.info("# of unique type of drug: ", med[InputEvents.ITEMID].nunique())
+    logger.info("# Admissions:  ", med[InputEvents.STAY_ID].nunique())
+    logger.info("# Total rows", med.shape[0])
     return med

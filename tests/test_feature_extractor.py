@@ -1,4 +1,4 @@
-from my_preprocessing.feature_extractor import (
+from my_preprocessing.features_extractor import (
     FeatureExtractor,
 )
 

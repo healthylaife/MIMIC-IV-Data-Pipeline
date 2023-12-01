@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 from my_preprocessing.preproc_file_info import COHORT_PATH
-from my_preprocessing.feature_extraction import (
+from my_preprocessing.features_extraction import (
     save_chart_events_features,
     save_diag_features,
     save_lab_events_features,

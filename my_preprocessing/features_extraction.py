@@ -4,16 +4,17 @@ from my_preprocessing.icd_conversion import standardize_icd
 
 from my_preprocessing.raw_file_info import load_hosp_diagnosis_icd
 from my_preprocessing.preproc_file_info import *
-from my_preprocessing.icu_features import (
+from my_preprocessing.features_icu_extraction import (
     make_output_events,
     make_chart_events,
-    make_icu_procedure_events,
+    # make_icu_procedure_events,
+    make_procedures_feature_icu,
     make_icu_input_events,
 )
-from my_preprocessing.hosp_features import (
+from my_preprocessing.features_non_icu_extraction import (
     make_labs_events_features,
     make_hosp_prescriptions,
-    make_hosp_procedures_icd,
+    make_procedures_feature_non_icu,
 )
 from pathlib import Path
 
@@ -56,9 +57,9 @@ def save_diag_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:
 def save_procedures_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:
     logger.info("[EXTRACTING PROCEDURES DATA]")
     proc = (
-        make_icu_procedure_events(cohort)
+        make_procedures_feature_icu(cohort)
         if use_icu
-        else make_hosp_procedures_icd(cohort)
+        else make_procedures_feature_non_icu(cohort)
     )
     proc = proc[
         [h.value for h in ProceduresHeader]

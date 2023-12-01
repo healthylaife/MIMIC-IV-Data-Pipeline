@@ -199,6 +199,12 @@ class InputEvents(StrEnum):
     ORDERID = "orderid"
 
 
+class ProceduresEvents(StrEnum):
+    STAY_ID = "stay_id"
+    START_TIME = "starttime"
+    ITEM_ID = "itemid"
+
+
 def load_icu_icustays() -> pd.DataFrame:
     return pd.read_csv(
         ICU_ICUSTAY_PATH,
@@ -212,4 +218,13 @@ def load_icu_output_events() -> pd.DataFrame:
         ICU_OUTPUT_EVENT_PATH,
         compression="gzip",
         parse_dates=[OuputputEvents.CHARTTIME.value],
+    ).drop_duplicates()
+
+
+def load_icu_procedure_events() -> pd.DataFrame:
+    return pd.read_csv(
+        ICU_PROCEDURE_EVENTS_PATH,
+        compression="gzip",
+        usecols=[h for h in ProceduresEvents],
+        parse_dates=[ProceduresEvents.START_TIME],
     ).drop_duplicates()

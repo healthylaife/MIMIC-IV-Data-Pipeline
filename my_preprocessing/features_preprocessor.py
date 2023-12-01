@@ -3,7 +3,7 @@ import logging
 from tqdm import tqdm
 from my_preprocessing.outlier_removal import outlier_imputation
 from my_preprocessing.preproc_file_info import *
-from my_preprocessing.feature_extractor import FeatureExtractor
+from my_preprocessing.features_extractor import FeatureExtractor
 
 logger = logging.getLogger()
 

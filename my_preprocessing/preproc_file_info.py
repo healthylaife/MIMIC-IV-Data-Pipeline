@@ -73,19 +73,19 @@ class ProceduresHeader(StrEnum):
 
 
 class IcuProceduresHeader(StrEnum):
-    STAY_ID_ICU = "stay_id"
-    ITEM_ID_ICU = "itemid"
-    START_TIME_ICU = "starttime"
-    IN_TIME_ICU = "intime"
-    EVENT_TIME_FROM_ADMIT_ICU = "event_time_from_admit"
+    STAY_ID = "stay_id"
+    ITEM_ID = "itemid"
+    START_TIME = "starttime"
+    IN_TIME = "intime"
+    EVENT_TIME_FROM_ADMIT = "event_time_from_admit"
 
 
 class NonIcuProceduresHeader(StrEnum):
-    ICD_CODE_NON_ICU = "icd_code"
-    ICD_VERSION_NON_ICU = "icd_version"
-    CHART_DATE_NON_ICU = "chartdate"
-    ADMIT_TIME_NON_ICU = "admittime"
-    PROC_TIME_FROM_ADMIT_NON_ICU = "proc_time_from_admit"
+    ICD_CODE = "icd_code"
+    ICD_VERSION = "icd_version"
+    CHART_DATE = "chartdate"
+    ADMIT_TIME = "admittime"
+    PROC_TIME_FROM_ADMIT = "proc_time_from_admit"
 
 
 class LabEventsHeader(StrEnum):
