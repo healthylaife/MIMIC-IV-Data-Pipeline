@@ -10,6 +10,7 @@ from my_preprocessing.raw_file_info import (
 )
 import logging
 from my_preprocessing.preproc_file_info import CohortHeader, OutputEventsHeader
+from my_preprocessing.uom_conversion import drop_wrong_uom
 
 
 def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
@@ -47,6 +48,7 @@ def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
         chunk_merged.drop_duplicates(inplace=True)
         processed_chunks.append(chunk_merged)
     df_cohort = pd.concat(processed_chunks, ignore_index=True)
+    df_cohort = drop_wrong_uom(df_cohort, 0.95)
     print("# Unique Events:  ", df_cohort.itemid.nunique())
     print("# Admissions:  ", df_cohort.stay_id.nunique())
     print("Total rows", df_cohort.shape[0])

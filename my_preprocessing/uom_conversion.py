@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def drop_wrong_uom(data, cut_off):
+def drop_wrong_uom(data: pd.DataFrame, cut_off) -> pd.DataFrame:
     """Drop rows with uncommon units of measurement for each itemid, based on a cut-off frequency."""
 
     # Create a function to filter each group

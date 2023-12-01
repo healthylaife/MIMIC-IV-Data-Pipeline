@@ -15,6 +15,7 @@ from my_preprocessing.ndc_conversion import (
     ndc_to_str,
     get_EPC,
 )
+from my_preprocessing.uom_conversion import drop_wrong_uom
 
 
 def make_labs_events_features(cohort: pd.DataFrame) -> pd.DataFrame:
@@ -59,6 +60,7 @@ def make_labs_events_features(cohort: pd.DataFrame) -> pd.DataFrame:
         processed_chunks.append(chunk)
 
     df_cohort = pd.concat(processed_chunks, ignore_index=True)
+    df_cohort = drop_wrong_uom(df_cohort, 0.95)
     print("# Itemid: ", df_cohort.itemid.nunique())
     print("# Admissions: ", df_cohort.hadm_id.nunique())
     print("Total number of rows: ", df_cohort.shape[0])
