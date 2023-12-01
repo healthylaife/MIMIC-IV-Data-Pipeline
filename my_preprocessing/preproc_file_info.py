@@ -36,16 +36,7 @@ CHART_FEATURES_PATH = SUMMARY_PATH / "chart_features.csv"
 CHART_SUMMARY_PATH = SUMMARY_PATH / "chart_summary.csv"
 
 
-class OUT_ICU_HEADER(StrEnum):
-    PATIENT_ID = "subject_id"
-    HOSPITAL_ADMISSION_ID = "hadm_id"
-    STAY_ID = "stay_id"
-    ITEM_ID = "itemid"
-    CHART_TIME = "charttime"
-    IN_TIME = "intime"
-    EVENT_TIME_FROM_ADMIT = "event_time_from_admit"
-
-
+# split common header icu header non icu header
 class CohortHeader(StrEnum):
     PATIENT_ID = "subject_id"
     LABEL = "label"
@@ -64,3 +55,99 @@ class CohortHeader(StrEnum):
     GENDER = "gender"
     ADMIT_TIME = "admittime"
     DISCH_TIME = "dischtime"
+
+
+class OutputEventsHeader(StrEnum):
+    PATIENT_ID = "subject_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
+    STAY_ID = "stay_id"
+    ITEM_ID = "itemid"
+    CHART_TIME = "charttime"
+    IN_TIME = "intime"
+    EVENT_TIME_FROM_ADMIT = "event_time_from_admit"
+
+
+class ProceduresHeader(StrEnum):
+    PATIENT_ID = "subject_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
+
+
+class IcuProceduresHeader(StrEnum):
+    STAY_ID_ICU = "stay_id"
+    ITEM_ID_ICU = "itemid"
+    START_TIME_ICU = "starttime"
+    IN_TIME_ICU = "intime"
+    EVENT_TIME_FROM_ADMIT_ICU = "event_time_from_admit"
+
+
+class NonIcuProceduresHeader(StrEnum):
+    ICD_CODE_NON_ICU = "icd_code"
+    ICD_VERSION_NON_ICU = "icd_version"
+    CHART_DATE_NON_ICU = "chartdate"
+    ADMIT_TIME_NON_ICU = "admittime"
+    PROC_TIME_FROM_ADMIT_NON_ICU = "proc_time_from_admit"
+
+
+class LabEventsHeader(StrEnum):
+    PATIENT_ID = "subject_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
+    ITEM_ID = "itemid"
+    CHART_TIME = "charttime"
+    ADMIT_TIME = "admittime"
+    LAB_TIME_FROM_ADMIT = "lab_time_from_admit"
+    VALUE_NUM = "valuenum"
+
+
+class PrescriptionsHeader(StrEnum):
+    PATIENT_ID = "subject_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
+    START_TIME = "starttime"
+    STOP_TIME = "stoptime"
+    DRUG = "drug"
+    NON_PROPRIEATARY_NAME = ("nonproprietaryname",)
+    START_HOUR_FROM_ADMIT = "start_hours_from_admit"
+    STOP_HOUR_FROM_ADMIT = "stop_hours_from_admit"
+    DOSE_VAL_RX = "dose_val_rx"
+
+
+class MedicationsHeader(StrEnum):
+    PATIENT_ID = "subject_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
+    START_TIME = "starttime"
+    START_HOURS_FROM_ADMIT = "start_hours_from_admit"
+    STOP_HOURS_FROM_ADMIT = "stop_hours_from_admit"
+
+
+class IcuMedicationHeader(StrEnum):
+    STAY_ID = "stay_id"
+    ITEM_ID = "itemid"
+    END_TIME = "endtime"
+    RATE = "rate"
+    AMOUNT = "amount"
+    ORDER_ID = "orderid"
+
+
+class NonIcuMedicationHeader(StrEnum):
+    STOP_TIME = "stoptime"
+    DRUG = "drug"
+    NON_PROPRIEATARY_NAME = "nonproprietaryname"
+    DOSE_VAL_RX = "dose_val_rx"
+
+
+class ChartEventsHeader(StrEnum):
+    STAY_ID = "stay_id"
+    ITEM_ID = "itemid"
+    VALUE_NUM = "valuenum"
+    EVENT_TIME_FROM_ADMIT = "event_time_from_admit"
+
+
+class DiagnosesHeader(StrEnum):
+    PATIENT_ID = "subject_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
+    ICD_CODE = "icd_code"
+    ROOT_ICD10 = "root_icd10_convert"
+    ROOT = "root"
+
+
+class DiagnosesIcuHeader(StrEnum):
+    STAY_ID_ICU = "stay_id"

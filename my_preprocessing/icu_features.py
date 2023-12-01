@@ -8,6 +8,8 @@ from my_preprocessing.raw_file_info import (
     ICU_INPUT_EVENT_PATH,
     InputEvents,
 )
+import logging
+from my_preprocessing.preproc_file_info import CohortHeader, OutputEventsHeader
 
 
 def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
@@ -57,10 +59,8 @@ def make_output_events(cohort: pd.DataFrame) -> pd.DataFrame:
     Function is structured to save memory when reading and transforming data."""
     outputevents = load_icu_output_events()
     df_cohort = outputevents.merge(
-        cohort[["stay_id", "intime", "outtime"]],
-        how="inner",
-        left_on="stay_id",
-        right_on="stay_id",
+        cohort[[CohortHeader.STAY_ID, CohortHeader.IN_TIME, CohortHeader.OUT_TIME]],
+        on=OutputEventsHeader.STAY_ID,
     )
     df_cohort["event_time_from_admit"] = df_cohort["charttime"] - df_cohort["intime"]
     df_cohort = df_cohort.dropna()

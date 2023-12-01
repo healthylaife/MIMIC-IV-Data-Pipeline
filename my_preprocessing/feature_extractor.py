@@ -1,103 +1,15 @@
 import pandas as pd
 import logging
 from my_preprocessing.preproc_file_info import COHORT_PATH
-from my_preprocessing.feature_extractor_utils import (
+from my_preprocessing.feature_extraction import (
     save_chart_events_features,
-    save_hosp_prescriptions_features,
     save_diag_features,
-    save_hosp_procedures_icd_features,
-    save_icu_input_events_features,
-    save_icu_procedures_features,
     save_lab_events_features,
     save_output_features,
+    save_procedures_features,
+    save_medications_features,
 )
-
-
-DIAGNOSIS_ICU_HEADERS = [
-    "subject_id",
-    "hadm_id",
-    "stay_id",
-    "icd_code",
-    "root_icd10_convert",
-    "root",
-]
-
-DIAGNOSIS_NON_ICU_HEADERS = [
-    "subject_id",
-    "hadm_id",
-    "icd_code",
-    "root_icd10_convert",
-    "root",
-]
-
-OUTPUT_ICU_HEADERS = [
-    "subject_id",
-    "hadm_id",
-    "stay_id",
-    "itemid",
-    "charttime",
-    "intime",
-    "event_time_from_admit",
-]
-
-PROCEDURES_ICD_ICU_HEADERS = [
-    "subject_id",
-    "hadm_id",
-    "stay_id",
-    "itemid",
-    "starttime",
-    "intime",
-    "event_time_from_admit",
-]
-
-PROCEDURES_ICD_NON_ICU_HEADERS = [
-    "subject_id",
-    "hadm_id",
-    "icd_code",
-    "icd_version",
-    "chartdate",
-    "admittime",
-    "proc_time_from_admit",
-]
-
-LAB_EVENTS_HEADERS = [
-    "subject_id",
-    "hadm_id",
-    "charttime",
-    "itemid",
-    "admittime",
-    "lab_time_from_admit",
-    "valuenum",
-]
-
-PRESCRIPTIONS_HEADERS = [
-    "subject_id",
-    "hadm_id",
-    "starttime",
-    "stoptime",
-    "drug",
-    "nonproprietaryname",
-    "start_hours_from_admit",
-    "stop_hours_from_admit",
-    "dose_val_rx",
-]
-
-INPUT_EVENTS_HEADERS = [
-    "subject_id",
-    "hadm_id",
-    "stay_id",
-    "itemid",
-    "starttime",
-    "endtime",
-    "start_hours_from_admit",
-    "stop_hours_from_admit",
-    "rate",
-    "amount",
-    "orderid",
-]
-
-CHART_EVENT_HEADERS = ["stay_id", "itemid", "event_time_from_admit", "valuenum"]
-
+from typing import List
 
 logger = logging.getLogger()
 
@@ -123,47 +35,50 @@ class FeatureExtractor:
         self.for_medications = for_medications
         self.for_labs = for_labs
 
-    def save_icu_features(self):
-        diag, out, chart, proc, med = (
-            pd.DataFrame(),
-            pd.DataFrame(),
-            pd.DataFrame(),
-            pd.DataFrame(),
-            pd.DataFrame(),
-        )
-        if not self.use_icu:
-            return diag, out, chart, proc, med
-        cohort_path = COHORT_PATH / (self.cohort_output + ".csv.gz")
-        cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["intime"])
-        if self.for_diagnoses:
-            diag = save_diag_features(cohort, use_icu=True)
-        if self.for_output_events:
-            out = save_output_features(cohort)
-        if self.for_chart_events:
-            chart = save_chart_events_features(cohort)
-        if self.for_procedures:
-            proc = save_icu_procedures_features(cohort)
-        if self.for_medications:
-            med = save_icu_input_events_features(cohort)
-        return diag, out, chart, proc, med
+    def load_cohort(self) -> pd.DataFrame:
+        """Load cohort data from a CSV file."""
+        cohort_path = COHORT_PATH / f"{self.cohort_output}.csv.gz"
+        try:
+            return pd.read_csv(
+                cohort_path,
+                compression="gzip",
+                parse_dates=["intime" if self.use_icu else "admittime"],
+            )
+        except FileNotFoundError:
+            logger.error(f"Cohort file not found at {cohort_path}")
+            raise
+        except Exception as e:
+            logger.error(f"Error loading cohort file: {e}")
+            raise
 
-    def save_non_icu_features(self):
-        diag, lab, proc, med = (
-            pd.DataFrame(),
-            pd.DataFrame(),
-            pd.DataFrame(),
-            pd.DataFrame(),
-        )
-        if self.use_icu:
-            return diag, lab, proc, med
-        cohort_path = COHORT_PATH / (self.cohort_output + ".csv.gz")
-        cohort = pd.read_csv(cohort_path, compression="gzip", parse_dates=["admittime"])
-        if self.for_diagnoses:
-            diag = save_diag_features(cohort, use_icu=False)
-        if self.for_labs:
-            lab = save_lab_events_features(cohort)
-        if self.for_procedures:
-            proc = save_hosp_procedures_icd_features(cohort)
-        if self.for_medications:
-            med = save_hosp_prescriptions_features(cohort)
-        return diag, lab, proc, med
+    def save_features(self) -> List[pd.DataFrame]:
+        cohort = self.load_cohort()
+        feature_conditions = [
+            (self.for_diagnoses, lambda: save_diag_features(cohort, self.use_icu)),
+            (
+                self.for_procedures,
+                lambda: save_procedures_features(cohort, self.use_icu),
+            ),
+            (
+                self.for_medications,
+                lambda: save_medications_features(cohort, self.use_icu),
+            ),
+            (
+                self.for_output_events and self.use_icu,
+                lambda: save_output_features(cohort),
+            ),
+            (
+                self.for_chart_events and self.use_icu,
+                lambda: save_chart_events_features(cohort),
+            ),
+            (
+                self.for_labs and not self.use_icu,
+                lambda: save_lab_events_features(cohort),
+            ),
+        ]
+        features = [
+            feature_func()
+            for condition, feature_func in feature_conditions
+            if condition
+        ]
+        return features
