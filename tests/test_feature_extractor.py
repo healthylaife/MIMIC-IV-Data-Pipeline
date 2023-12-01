@@ -20,8 +20,8 @@ def test_feature_icu_all_true():
 
 def test_feature_non_icu_all_true():
     feature_extractor = FeatureExtractor(
-        cohort_output="cohort_icu_mortality_0_",
-        use_icu=True,
+        cohort_output="cohort_Non-ICU_readmission_30_I50",
+        use_icu=False,
         for_diagnoses=True,
         for_output_events=True,
         for_chart_events=True,

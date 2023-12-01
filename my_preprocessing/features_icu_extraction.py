@@ -1,11 +1,11 @@
 import pandas as pd
 from tqdm import tqdm
 from my_preprocessing.raw_file_info import (
-    ICU_CHART_EVENTS_PATH,
     ChartEvents,
     load_icu_output_events,
     load_icu_procedure_events,
-    ICU_INPUT_EVENT_PATH,
+    load_input_events,
+    load_icu_chart_events,
     InputEvents,
 )
 import logging
@@ -13,6 +13,8 @@ from my_preprocessing.preproc_file_info import (
     CohortHeader,
     OutputEventsHeader,
     IcuProceduresHeader,
+    ChartEventsHeader,
+    MedicationsHeader,
 )
 from my_preprocessing.uom_conversion import drop_wrong_uom
 
@@ -20,46 +22,36 @@ from my_preprocessing.uom_conversion import drop_wrong_uom
 logger = logging.getLogger()
 
 
-def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
-    """Function for processing hospital observations from a pickled cohort. optimized for memory efficiency"""
+def process_chunk_chart_events(
+    chunk: pd.DataFrame, cohort: pd.DataFrame
+) -> pd.DataFrame:
+    """Process a single chunk of chart events."""
+    chunk = chunk.dropna(subset=[ChartEvents.VALUENUM]).merge(
+        cohort, on=ChartEvents.STAY_ID
+    )
+    chunk[ChartEventsHeader.EVENT_TIME_FROM_ADMIT] = (
+        chunk[ChartEvents.CHARTTIME] - chunk[CohortHeader.IN_TIME]
+    )
+    return chunk.drop(["charttime", "intime"], axis=1).dropna().drop_duplicates()
 
-    # Only consider values in our cohort TODO: filter?
-    processed_chunks = []
-    for chunk in tqdm(
-        pd.read_csv(
-            ICU_CHART_EVENTS_PATH,
-            compression="gzip",
-            usecols=[
-                ChartEvents.STAY_ID.value,
-                ChartEvents.CHARTTIME.value,
-                ChartEvents.ITEMID.value,
-                ChartEvents.VALUENUM.value,
-                ChartEvents.VALUEOM.value,
-            ],
-            parse_dates=[ChartEvents.CHARTTIME.value],
-            chunksize=chunksize,
-        )
-    ):
-        chunk = chunk.dropna(subset=["valuenum"])
-        chunk_merged = chunk.merge(
-            cohort[["stay_id", "intime"]],
-            how="inner",
-            left_on="stay_id",
-            right_on="stay_id",
-        )
-        chunk_merged["event_time_from_admit"] = (
-            chunk_merged["charttime"] - chunk_merged["intime"]
-        )
-        chunk_merged.drop(["charttime", "intime"], axis=1, inplace=True)
-        chunk_merged.dropna(inplace=True)
-        chunk_merged.drop_duplicates(inplace=True)
-        processed_chunks.append(chunk_merged)
+
+def log_chart_event_stats(df: pd.DataFrame):
+    """Log statistics about the chart events."""
+    logger.info(f"# Unique Events: {df[ChartEventsHeader.ITEM_ID].nunique()}")
+    logger.info(f"# Admissions: {df[ChartEventsHeader.STAY_ID].nunique()}")
+    logger.info(f"Total rows: {df.shape[0]}")
+
+
+def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
+    """Function for processing hospital observations from a pickled cohort, optimized for memory efficiency."""
+    cohort_columns = [CohortHeader.STAY_ID, CohortHeader.IN_TIME]
+    processed_chunks = [
+        process_chunk_chart_events(chunk, cohort[cohort_columns])
+        for chunk in tqdm(load_icu_chart_events(chunksize))
+    ]
     df_cohort = pd.concat(processed_chunks, ignore_index=True)
     df_cohort = drop_wrong_uom(df_cohort, 0.95)
-    logger.info("# Unique Events:  ", df_cohort.itemid.nunique())
-    logger.info("# Admissions:  ", df_cohort.stay_id.nunique())
-    logger.info("Total rows", df_cohort.shape[0])
-
+    log_chart_event_stats(df_cohort)
     return df_cohort
 
 
@@ -115,16 +107,17 @@ def make_procedures_feature_icu(cohort: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_icu_input_events(cohort: pd.DataFrame) -> pd.DataFrame:
-    adm = cohort[["hadm_id", "stay_id", "intime"]]
-    med = pd.read_csv(
-        ICU_INPUT_EVENT_PATH,
-        compression="gzip",
-        usecols=[f for f in InputEvents],
-        parse_dates=[InputEvents.STARTTIME, InputEvents.ENDTIME],
+    adm = cohort[
+        [CohortHeader.HOSPITAL_ADMISSION_ID, CohortHeader.STAY_ID, CohortHeader.IN_TIME]
+    ]
+    med = load_input_events()
+    med = med.merge(adm, on=InputEvents.STAY_ID)
+    med[MedicationsHeader.START_HOURS_FROM_ADMIT] = (
+        med[InputEvents.STARTTIME] - med[CohortHeader.IN_TIME]
     )
-    med = med.merge(adm, left_on=InputEvents.STAY_ID, right_on="stay_id", how="inner")
-    med["start_hours_from_admit"] = med[InputEvents.STARTTIME] - med["intime"]
-    med["stop_hours_from_admit"] = med[InputEvents.ENDTIME] - med["intime"]
+    med[MedicationsHeader.STOP_HOURS_FROM_ADMIT] = (
+        med[InputEvents.ENDTIME] - med[CohortHeader.IN_TIME]
+    )
     med = med.dropna()
     logger.info("# of unique type of drug: ", med[InputEvents.ITEMID].nunique())
     logger.info("# Admissions:  ", med[InputEvents.STAY_ID].nunique())

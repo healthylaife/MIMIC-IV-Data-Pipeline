@@ -98,18 +98,6 @@ class LabEventsHeader(StrEnum):
     VALUE_NUM = "valuenum"
 
 
-class PrescriptionsHeader(StrEnum):
-    PATIENT_ID = "subject_id"
-    HOSPITAL_ADMISSION_ID = "hadm_id"
-    START_TIME = "starttime"
-    STOP_TIME = "stoptime"
-    DRUG = "drug"
-    NON_PROPRIEATARY_NAME = ("nonproprietaryname",)
-    START_HOUR_FROM_ADMIT = "start_hours_from_admit"
-    STOP_HOUR_FROM_ADMIT = "stop_hours_from_admit"
-    DOSE_VAL_RX = "dose_val_rx"
-
-
 class MedicationsHeader(StrEnum):
     PATIENT_ID = "subject_id"
     HOSPITAL_ADMISSION_ID = "hadm_id"
@@ -132,6 +120,7 @@ class NonIcuMedicationHeader(StrEnum):
     DRUG = "drug"
     NON_PROPRIEATARY_NAME = "nonproprietaryname"
     DOSE_VAL_RX = "dose_val_rx"
+    EPC = "EPC"
 
 
 class ChartEventsHeader(StrEnum):

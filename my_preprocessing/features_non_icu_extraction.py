@@ -1,6 +1,13 @@
 import pandas as pd
 from tqdm import tqdm
-from my_preprocessing.preproc_file_info import CohortHeader, NonIcuProceduresHeader
+
+from my_preprocessing.preproc_file_info import (
+    CohortHeader,
+    NonIcuProceduresHeader,
+    LabEventsHeader,
+    MedicationsHeader,
+    NonIcuMedicationHeader,
+)
 from my_preprocessing.raw_file_info import (
     MAP_NDC_PATH,
     load_hosp_procedures_icd,
@@ -9,8 +16,13 @@ from my_preprocessing.raw_file_info import (
     load_hosp_predictions,
     HospAdmissions,
     HospProceduresIcd,
+    HospLabEvents,
+    HospPrescriptions,
 )
-from my_preprocessing.admission_imputer import impute_hadm_ids
+from my_preprocessing.admission_imputer import (
+    impute_hadm_ids,
+    INPUTED_HOSPITAL_ADMISSION_ID_HEADER,
+)
 from my_preprocessing.ndc_conversion import (
     format_ndc_table,
     read_ndc_mapping,
@@ -18,55 +30,91 @@ from my_preprocessing.ndc_conversion import (
     get_EPC,
 )
 from my_preprocessing.uom_conversion import drop_wrong_uom
+from typing import Tuple
+
+CHUNKSIZE = 10000000
 
 
 def make_labs_events_features(cohort: pd.DataFrame) -> pd.DataFrame:
+    """Process and transform lab events data."""
     admissions = load_hosp_admissions()[
         [
-            HospAdmissions.PATIENT_ID.value,
-            HospAdmissions.ID.value,
-            HospAdmissions.ADMITTIME.value,
-            HospAdmissions.DISCHTIME.value,
+            HospAdmissions.PATIENT_ID,
+            HospAdmissions.ID,
+            HospAdmissions.ADMITTIME,
+            HospAdmissions.DISCHTIME,
         ]
     ]
-    chunksize = 10000000
-    usecols = ["itemid", "subject_id", "hadm_id", "charttime", "valuenum", "valueuom"]
-    processed_chunks = []
-    for chunk in tqdm(load_hosp_lab_events(chunksize=chunksize, use_cols=usecols)):
-        chunk = chunk.dropna(subset=["valuenum"])
-        chunk.loc[:, "valueuom"] = chunk["valueuom"].fillna(0)
+    usecols = [
+        HospLabEvents.ITEM_ID,
+        HospLabEvents.PATIENT_ID,
+        HospLabEvents.HOSPITAL_ADMISSION_ID,
+        HospLabEvents.CHART_TIME,
+        HospLabEvents.VALUE_NUM,
+        HospLabEvents.VALUE_UOM,
+    ]
 
-        # to remove?
-        chunk = chunk[chunk["subject_id"].isin(cohort["subject_id"].unique())]
-        # Split and impute hadm_ids
-        chunk_with_hadm = chunk[chunk["hadm_id"].notna()]
-        chunk_no_hadm = chunk[chunk["hadm_id"].isna()]
+    processed_chunks = [
+        process_lab_chunk(chunk, cohort, admissions)
+        for chunk in tqdm(load_hosp_lab_events(chunksize=CHUNKSIZE, use_cols=usecols))
+    ]
 
-        chunk_without_hadm = impute_hadm_ids(
-            chunk_no_hadm[
-                ["subject_id", "hadm_id", "itemid", "charttime", "valuenum", "valueuom"]
-            ].copy(),
-            admissions,
-        )
-        chunk_without_hadm["hadm_id"] = chunk_without_hadm["hadm_id_new"]
-        chunk_without_hadm = chunk_without_hadm[
-            ["subject_id", "hadm_id", "itemid", "charttime", "valuenum", "valueuom"]
+    return pd.concat(processed_chunks, ignore_index=True)
+
+
+def process_lab_chunk(
+    chunk: pd.DataFrame, cohort: pd.DataFrame, admissions: pd.DataFrame
+) -> pd.DataFrame:
+    """Process a single chunk of lab events."""
+    chunk = chunk.dropna(subset=[HospLabEvents.VALUE_NUM]).fillna(
+        {HospLabEvents.VALUE_UOM: 0}
+    )
+    chunk = chunk[
+        chunk[LabEventsHeader.PATIENT_ID].isin(cohort[CohortHeader.PATIENT_ID])
+    ]
+    chunk_with_hadm, chunk_no_hadm = (
+        chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].notna()],
+        chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].isna()],
+    )
+    chunk_imputed = impute_hadm_ids(chunk_no_hadm.copy(), admissions)
+    chunk_imputed[HospLabEvents.HOSPITAL_ADMISSION_ID] = chunk_imputed[
+        INPUTED_HOSPITAL_ADMISSION_ID_HEADER
+    ]
+    chunk_imputed = chunk_imputed[
+        [
+            HospLabEvents.PATIENT_ID,
+            HospLabEvents.HOSPITAL_ADMISSION_ID,
+            HospLabEvents.ITEM_ID,
+            HospLabEvents.CHART_TIME,
+            HospLabEvents.VALUE_NUM,
+            HospLabEvents.VALUE_UOM,
         ]
-        chunk = pd.concat([chunk_with_hadm, chunk_without_hadm], ignore_index=True)
-        # Merge with cohort data
-        chunk = chunk.merge(cohort[["hadm_id", "admittime", "dischtime"]], on="hadm_id")
-        chunk["charttime"] = pd.to_datetime(chunk["charttime"])
-        chunk["lab_time_from_admit"] = chunk["charttime"] - chunk["admittime"]
+    ]
+    merged_chunk = pd.concat([chunk_with_hadm, chunk_imputed], ignore_index=True)
+    return merge_with_cohort_and_calculate_lab_time(merged_chunk, cohort)
 
-        chunk.dropna(inplace=True)
-        processed_chunks.append(chunk)
 
-    df_cohort = pd.concat(processed_chunks, ignore_index=True)
-    df_cohort = drop_wrong_uom(df_cohort, 0.95)
-    print("# Itemid: ", df_cohort.itemid.nunique())
-    print("# Admissions: ", df_cohort.hadm_id.nunique())
-    print("Total number of rows: ", df_cohort.shape[0])
-    return df_cohort
+def merge_with_cohort_and_calculate_lab_time(
+    chunk: pd.DataFrame, cohort: pd.DataFrame
+) -> pd.DataFrame:
+    """Merge chunk with cohort data and calculate the lab time from admit time."""
+    chunk = chunk.merge(
+        cohort[
+            [
+                CohortHeader.HOSPITAL_ADMISSION_ID,
+                CohortHeader.ADMIT_TIME,
+                CohortHeader.DISCH_TIME,
+            ]
+        ],
+        on=LabEventsHeader.HOSPITAL_ADMISSION_ID,
+    )
+    chunk[LabEventsHeader.CHART_TIME] = pd.to_datetime(
+        chunk[LabEventsHeader.CHART_TIME]
+    )
+    chunk[LabEventsHeader.LAB_TIME_FROM_ADMIT] = (
+        chunk[LabEventsHeader.CHART_TIME] - chunk[LabEventsHeader.ADMIT_TIME]
+    )
+    return chunk.dropna()
 
 
 def make_procedures_feature_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
@@ -109,38 +157,46 @@ def make_procedures_feature_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_hosp_prescriptions(cohort: pd.DataFrame) -> pd.DataFrame:
-    adm = cohort[["hadm_id", "admittime"]]
+    adm = cohort[[CohortHeader.HOSPITAL_ADMISSION_ID, CohortHeader.ADMIT_TIME]]
     med = load_hosp_predictions()
-    med = med.merge(adm, left_on="hadm_id", right_on="hadm_id", how="inner")
-    med["start_hours_from_admit"] = med["starttime"] - med["admittime"]
-    med["stop_hours_from_admit"] = med["stoptime"] - med["admittime"]
+    med = med.merge(adm, on=MedicationsHeader.HOSPITAL_ADMISSION_ID)
+    med[MedicationsHeader.START_HOURS_FROM_ADMIT] = (
+        med[MedicationsHeader.START_TIME] - med[CohortHeader.ADMIT_TIME]
+    )
+    med[MedicationsHeader.STOP_HOURS_FROM_ADMIT] = (
+        med[NonIcuMedicationHeader.STOP_TIME] - med[CohortHeader.ADMIT_TIME]
+    )
 
     # Normalize drug strings and remove potential duplicates
 
-    med.drug = med.drug.fillna("").astype(str)
-    med.drug = med.drug.apply(
+    med[NonIcuMedicationHeader.DRUG] = (
+        med[NonIcuMedicationHeader.DRUG].fillna("").astype(str)
+    )
+    med[NonIcuMedicationHeader.DRUG] = med[NonIcuMedicationHeader.DRUG].apply(
         lambda x: x.lower().strip().replace(" ", "_") if not "" else ""
     )
-    med.drug = med.drug.dropna().apply(lambda x: x.lower().strip())
+    med[NonIcuMedicationHeader.DRUG] = (
+        med[NonIcuMedicationHeader.DRUG].dropna().apply(lambda x: x.lower().strip())
+    )
     med = ndc_meds(med, MAP_NDC_PATH)
 
     print("Number of unique type of drug: ", med.drug.nunique())
     print(
         "Number of unique type of drug (after grouping to use Non propietary names): ",
-        med.nonproprietaryname.nunique(),
+        med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME].nunique(),
     )
     print("Total number of rows: ", med.shape[0])
-    print("# Admissions:  ", med.hadm_id.nunique())
+    print("# Admissions:  ", med[CohortHeader.HOSPITAL_ADMISSION_ID].nunique())
 
     return med
 
 
 def ndc_meds(med, mapping: str) -> pd.DataFrame:
     # Convert any nan values to a dummy value
-    med.ndc = med.ndc.fillna(-1)
+    med[HospPrescriptions.NDC] = med[HospPrescriptions.NDC].fillna(-1)
 
     # Ensures the decimal is removed from the ndc col
-    med.ndc = med.ndc.astype("Int64")
+    med[HospPrescriptions.NDC] = med[HospPrescriptions.NDC].astype("Int64")
 
     # Read in NDC mapping table
     ndc_map = read_ndc_mapping(mapping)[
@@ -148,8 +204,8 @@ def ndc_meds(med, mapping: str) -> pd.DataFrame:
     ]
 
     # Normalize the NDC codes in the mapping table so that they can be merged
-    ndc_map["new_ndc"] = ndc_map.productndc.apply(format_ndc_table)
-    ndc_map.drop_duplicates(subset=["new_ndc", "nonproprietaryname"], inplace=True)
+    ndc_map.loc[:, "new_ndc"] = ndc_map["productndc"].apply(format_ndc_table)
+    ndc_map = ndc_map.drop_duplicates(subset=["new_ndc", "nonproprietaryname"])
     med["new_ndc"] = med.ndc.apply(ndc_to_str)
 
     # Left join the med dataset to the mapping information

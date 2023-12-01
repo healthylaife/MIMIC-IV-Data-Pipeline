@@ -35,6 +35,14 @@ def load_static_icd_map() -> pd.DataFrame:
     return pd.read_csv(MAP_PATH, delimiter="\t")
 
 
+class NdcMap(StrEnum):
+    NON_PROPRIETARY_NAME = "NONPROPRIETARYNAME"
+
+
+def load_ndc_mapping() -> pd.DataFrame:
+    return pd.read_csv(MAP_NDC_PATH, delimiter="\t")
+
+
 # The Hosp module provides all data acquired from the hospital wide electronic health record
 
 
@@ -73,13 +81,14 @@ class HospDiagnosesIcd(StrEnum):
 
 
 class HospLabEvents(StrEnum):
-    SUNJECT_ID = "subject_id"
+    PATIENT_ID = "subject_id"
     HOSPITAL_ADMISSION_ID = "hadm_id"
-    CHARTTIME = "charttime"
-    ITEMID = "itemid"
-    ADMITTIME = "admittime"
+    CHART_TIME = "charttime"
+    ITEM_ID = "itemid"
+    ADMIT_TIME = "admittime"
     LAB_TIME_FROM_ADMIT = "lab_time_from_admit"
-    VALUENUM = "valuenum"
+    VALUE_NUM = "valuenum"
+    VALUE_UOM = "valueuom"
 
 
 class HospProceduresIcd(StrEnum):
@@ -205,6 +214,15 @@ class ProceduresEvents(StrEnum):
     ITEM_ID = "itemid"
 
 
+def load_input_events() -> pd.DataFrame:
+    return pd.read_csv(
+        ICU_INPUT_EVENT_PATH,
+        compression="gzip",
+        usecols=[f for f in InputEvents],
+        parse_dates=[InputEvents.STARTTIME, InputEvents.ENDTIME],
+    )
+
+
 def load_icu_icustays() -> pd.DataFrame:
     return pd.read_csv(
         ICU_ICUSTAY_PATH,
@@ -228,3 +246,13 @@ def load_icu_procedure_events() -> pd.DataFrame:
         usecols=[h for h in ProceduresEvents],
         parse_dates=[ProceduresEvents.START_TIME],
     ).drop_duplicates()
+
+
+def load_icu_chart_events(chunksize: int) -> pd.DataFrame:
+    return pd.read_csv(
+        ICU_CHART_EVENTS_PATH,
+        compression="gzip",
+        usecols=[c for c in ChartEvents],
+        parse_dates=[ChartEvents.CHARTTIME.value],
+        chunksize=chunksize,
+    )

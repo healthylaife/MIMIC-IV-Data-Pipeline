@@ -1,11 +1,14 @@
 import pandas as pd
-from uuid import uuid1
 from collections import defaultdict
 from typing import Union, List, Tuple
 from functools import partial
 from multiprocessing import Pool
-import glob
-import os
+
+from my_preprocessing.raw_file_info import HospAdmissions, HospLabEvents
+from my_preprocessing.preproc_file_info import LabEventsHeader
+
+
+INPUTED_HOSPITAL_ADMISSION_ID_HEADER = "hadm_id_new"
 
 
 def hadm_imputer(
@@ -36,68 +39,49 @@ def hadm_imputer(
     return valid_hadm_ids[0] if valid_hadm_ids else (None, None, None)
 
 
-def impute_missing_hadm_ids(
-    lab_table: pd.DataFrame, subject_hadm_admittime_tracker: dict
-) -> None:
-    """Impute missing HADM IDs in the lab table using subject_hadm_admittime_tracker."""
-
-    def impute_row(row):
-        """Helper function to impute data for a single row."""
-        new_hadm_id, new_admittime, new_dischtime = hadm_imputer(
-            row["charttime"],
-            row["hadm_id"],
-            subject_hadm_admittime_tracker.get(row["subject_id"], []),
-        )
-        return pd.Series(
-            [new_hadm_id, new_admittime, new_dischtime],
-            index=["hadm_id_new", "admittime", "dischtime"],
-        )
-
-    # Apply the imputation function to each row
-    imputed_data = lab_table.apply(impute_row, axis=1)
-
-    # Combine the original data with the imputed data
-    result = pd.concat([lab_table, imputed_data], axis=1)
-
-    # Generate a unique table name and save the result
-    tab_name = str(uuid1())
-    result.to_csv(f"{tab_name}.csv", index=False)
+def impute_row(row, subject_hadm_admittime_tracker):
+    """Helper function to impute data for a single row."""
+    new_hadm_id, new_admittime, new_dischtime = hadm_imputer(
+        row["charttime"],
+        row["hadm_id"],
+        subject_hadm_admittime_tracker.get(row["subject_id"], []),
+    )
+    return pd.Series(
+        [new_hadm_id, new_admittime, new_dischtime],
+        index=[INPUTED_HOSPITAL_ADMISSION_ID_HEADER, "admittime", "dischtime"],
+    )
 
 
-def impute_hadm_ids(
-    lab_table: pd.DataFrame, admission_table: pd.DataFrame
+def process_chunk(
+    chunk: pd.DataFrame, subject_hadm_admittime_tracker: dict
 ) -> pd.DataFrame:
-    # Convert columns to datetime
-    lab_table["charttime"] = pd.to_datetime(lab_table["charttime"])
-    admission_table["admittime"] = pd.to_datetime(admission_table["admittime"])
-    admission_table["dischtime"] = pd.to_datetime(admission_table["dischtime"])
+    """Process a single chunk for imputing HADM IDs."""
+    imputed_data = chunk.apply(
+        lambda row: impute_row(row, subject_hadm_admittime_tracker), axis=1
+    )
+    return pd.concat([chunk, imputed_data], axis=1)
 
-    # Create a tracker dictionary from the admission table
+
+def impute_hadm_ids(lab_table: pd.DataFrame, admissions: pd.DataFrame) -> pd.DataFrame:
+    """Impute missing HADM IDs in the lab table."""
+    # ... existing conversion to datetime ...
+
+    # Create tracker from admission table
     subject_hadm_admittime_tracker = defaultdict(list)
-    for row in admission_table.itertuples():
+    for row in admissions.itertuples():
         subject_hadm_admittime_tracker[row.subject_id].append(
             (row.hadm_id, row.admittime, row.dischtime)
         )
 
-    # Split the lab table into chunks
-    chunks = [lab_table[i : i + 100] for i in range(0, lab_table.shape[0], 100)]
-
-    # Function for processing each chunk
-    impute_func = partial(
-        impute_missing_hadm_ids,
-        subject_hadm_admittime_tracker=subject_hadm_admittime_tracker,
+    # Prepare chunks and function for parallel processing
+    chunks = [lab_table[i : i + 100] for i in range(0, len(lab_table), 100)]
+    process_func = partial(
+        process_chunk, subject_hadm_admittime_tracker=subject_hadm_admittime_tracker
     )
 
-    # Process chunks in parallel
-    with Pool(8) as p:
-        p.map(impute_func, chunks)
-
-    # Consolidate processed chunks into a single DataFrame
-    all_csvs = glob.glob("*.csv")
-    lab_tab = pd.concat([pd.read_csv(csv) for csv in all_csvs])
-
-    # Clean up temporary files
-    for csv in all_csvs:
-        os.remove(csv)
-
-    return lab_tab
+    # Parallel processing
+    with Pool(8) as pool:
+        processed_chunks = pool.map(process_func, chunks)
+    non_empty_chunks = [chunk.dropna(how="all", axis=1) for chunk in processed_chunks]
+    # Consolidate processed chunks
+    return pd.concat(non_empty_chunks, ignore_index=True)
