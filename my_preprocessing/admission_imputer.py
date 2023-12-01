@@ -42,13 +42,17 @@ def hadm_imputer(
 def impute_row(row, subject_hadm_admittime_tracker):
     """Helper function to impute data for a single row."""
     new_hadm_id, new_admittime, new_dischtime = hadm_imputer(
-        row["charttime"],
-        row["hadm_id"],
-        subject_hadm_admittime_tracker.get(row["subject_id"], []),
+        row[LabEventsHeader.CHART_TIME],
+        row[LabEventsHeader.HOSPITAL_ADMISSION_ID],
+        subject_hadm_admittime_tracker.get(row[LabEventsHeader.PATIENT_ID], []),
     )
     return pd.Series(
         [new_hadm_id, new_admittime, new_dischtime],
-        index=[INPUTED_HOSPITAL_ADMISSION_ID_HEADER, "admittime", "dischtime"],
+        index=[
+            INPUTED_HOSPITAL_ADMISSION_ID_HEADER,
+            HospAdmissions.ADMITTIME,
+            HospAdmissions.DISCHTIME,
+        ],
     )
 
 
@@ -64,8 +68,6 @@ def process_chunk(
 
 def impute_hadm_ids(lab_table: pd.DataFrame, admissions: pd.DataFrame) -> pd.DataFrame:
     """Impute missing HADM IDs in the lab table."""
-    # ... existing conversion to datetime ...
-
     # Create tracker from admission table
     subject_hadm_admittime_tracker = defaultdict(list)
     for row in admissions.itertuples():
@@ -74,7 +76,10 @@ def impute_hadm_ids(lab_table: pd.DataFrame, admissions: pd.DataFrame) -> pd.Dat
         )
 
     # Prepare chunks and function for parallel processing
-    chunks = [lab_table[i : i + 100] for i in range(0, len(lab_table), 100)]
+    chunk_size = 100
+    chunks = [
+        lab_table[i : i + chunk_size] for i in range(0, len(lab_table), chunk_size)
+    ]
     process_func = partial(
         process_chunk, subject_hadm_admittime_tracker=subject_hadm_admittime_tracker
     )

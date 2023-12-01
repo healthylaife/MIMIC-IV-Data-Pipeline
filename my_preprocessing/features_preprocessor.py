@@ -32,7 +32,7 @@ class FeaturePreprocessor:
         self.group_chart = group_chart
         self.clean_chart = clean_chart
         self.impute_outlier_chart = impute_outlier_chart
-        self.clean_labs = (clean_labs,)
+        self.clean_labs = clean_labs
         self.impute_labs = impute_labs
         self.thresh = thresh
         self.left_thresh = left_thresh
