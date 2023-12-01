@@ -35,14 +35,9 @@ def process_chunk_chart_events(
     return chunk.drop(["charttime", "intime"], axis=1).dropna().drop_duplicates()
 
 
-def log_chart_event_stats(df: pd.DataFrame):
-    """Log statistics about the chart events."""
-    logger.info(f"# Unique Events: {df[ChartEventsHeader.ITEM_ID].nunique()}")
-    logger.info(f"# Admissions: {df[ChartEventsHeader.STAY_ID].nunique()}")
-    logger.info(f"Total rows: {df.shape[0]}")
-
-
-def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
+def make_chart_events_features(
+    cohort: pd.DataFrame, chunksize=10000000
+) -> pd.DataFrame:
     """Function for processing hospital observations from a pickled cohort, optimized for memory efficiency."""
     cohort_columns = [CohortHeader.STAY_ID, CohortHeader.IN_TIME]
     processed_chunks = [
@@ -51,11 +46,14 @@ def make_chart_events(cohort: pd.DataFrame, chunksize=10000000) -> pd.DataFrame:
     ]
     df_cohort = pd.concat(processed_chunks, ignore_index=True)
     df_cohort = drop_wrong_uom(df_cohort, 0.95)
-    log_chart_event_stats(df_cohort)
+    """Log statistics about the chart events."""
+    logger.info(f"# Unique Events: {df_cohort[ChartEventsHeader.ITEM_ID].nunique()}")
+    logger.info(f"# Admissions: {df_cohort[ChartEventsHeader.STAY_ID].nunique()}")
+    logger.info(f"Total rows: {df_cohort.shape[0]}")
     return df_cohort
 
 
-def make_output_events(cohort: pd.DataFrame) -> pd.DataFrame:
+def make_output_events_features(cohort: pd.DataFrame) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort.
     Function is structured to save memory when reading and transforming data."""
     outputevents = load_icu_output_events()
@@ -76,7 +74,7 @@ def make_output_events(cohort: pd.DataFrame) -> pd.DataFrame:
     return df_cohort
 
 
-def make_procedures_feature_icu(cohort: pd.DataFrame) -> pd.DataFrame:
+def make_procedures_features_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
     module = load_icu_procedure_events()
     # Only consider values in our cohort
@@ -106,7 +104,7 @@ def make_procedures_feature_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     return df_cohort
 
 
-def make_icu_input_events(cohort: pd.DataFrame) -> pd.DataFrame:
+def make_medications_features_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     adm = cohort[
         [CohortHeader.HOSPITAL_ADMISSION_ID, CohortHeader.STAY_ID, CohortHeader.IN_TIME]
     ]

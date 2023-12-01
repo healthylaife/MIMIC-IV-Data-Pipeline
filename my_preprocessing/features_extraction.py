@@ -5,16 +5,15 @@ from my_preprocessing.icd_conversion import standardize_icd
 from my_preprocessing.raw_file_info import load_hosp_diagnosis_icd
 from my_preprocessing.preproc_file_info import *
 from my_preprocessing.features_icu_extraction import (
-    make_output_events,
-    make_chart_events,
-    # make_icu_procedure_events,
-    make_procedures_feature_icu,
-    make_icu_input_events,
+    make_output_events_features,
+    make_chart_events_features,
+    make_procedures_features_icu,
+    make_medications_features_icu,
 )
 from my_preprocessing.features_non_icu_extraction import (
     make_labs_events_features,
-    make_hosp_prescriptions,
-    make_procedures_feature_non_icu,
+    make_medications_features_non_icu,
+    make_procedures_features_non_icu,
 )
 from pathlib import Path
 
@@ -57,9 +56,9 @@ def save_diag_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:
 def save_procedures_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:
     logger.info("[EXTRACTING PROCEDURES DATA]")
     proc = (
-        make_procedures_feature_icu(cohort)
+        make_procedures_features_icu(cohort)
         if use_icu
-        else make_procedures_feature_non_icu(cohort)
+        else make_procedures_features_non_icu(cohort)
     )
     proc = proc[
         [h.value for h in ProceduresHeader]
@@ -75,7 +74,11 @@ def save_procedures_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFram
 
 def save_medications_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:
     logger.info("[EXTRACTING MEDICATIONS DATA]")
-    med = make_icu_input_events(cohort) if use_icu else make_hosp_prescriptions(cohort)
+    med = (
+        make_medications_features_icu(cohort)
+        if use_icu
+        else make_medications_features_non_icu(cohort)
+    )
     med = med[
         [h.value for h in MedicationsHeader]
         + [
@@ -90,14 +93,14 @@ def save_medications_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFra
 
 def save_output_features(cohort: pd.DataFrame) -> pd.DataFrame:
     logger.info("[EXTRACTING OUPTPUT EVENTS DATA]")
-    out = make_output_events(cohort)
+    out = make_output_events_features(cohort)
     out = out[[h.value for h in OutputEventsHeader]]
     return save_data(out, PREPROC_OUT_ICU_PATH, "OUTPUT")
 
 
 def save_chart_events_features(cohort: pd.DataFrame) -> pd.DataFrame:
     logger.info("[EXTRACTING CHART EVENTS DATA]")
-    chart = make_chart_events(cohort)
+    chart = make_chart_events_features(cohort)
     chart = chart[[h.value for h in ChartEventsHeader]]
     return save_data(chart, PREPROC_CHART_ICU_PATH, "CHART")
 

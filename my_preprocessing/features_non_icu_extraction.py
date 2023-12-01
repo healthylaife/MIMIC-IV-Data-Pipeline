@@ -9,7 +9,6 @@ from my_preprocessing.preproc_file_info import (
     NonIcuMedicationHeader,
 )
 from my_preprocessing.raw_file_info import (
-    MAP_NDC_PATH,
     load_hosp_procedures_icd,
     load_hosp_lab_events,
     load_hosp_admissions,
@@ -24,8 +23,8 @@ from my_preprocessing.admission_imputer import (
     INPUTED_HOSPITAL_ADMISSION_ID_HEADER,
 )
 from my_preprocessing.ndc_conversion import (
-    format_ndc_table,
-    read_ndc_mapping,
+    NdcMappingHeader,
+    prepare_ndc_mapping,
     ndc_to_str,
     get_EPC,
 )
@@ -117,7 +116,7 @@ def merge_with_cohort_and_calculate_lab_time(
     return chunk.dropna()
 
 
-def make_procedures_feature_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
+def make_procedures_features_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     module = load_hosp_procedures_icd()
     df_cohort = module.merge(
         cohort[
@@ -156,7 +155,7 @@ def make_procedures_feature_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     return df_cohort
 
 
-def make_hosp_prescriptions(cohort: pd.DataFrame) -> pd.DataFrame:
+def make_medications_features_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     adm = cohort[[CohortHeader.HOSPITAL_ADMISSION_ID, CohortHeader.ADMIT_TIME]]
     med = load_hosp_predictions()
     med = med.merge(adm, on=MedicationsHeader.HOSPITAL_ADMISSION_ID)
@@ -173,14 +172,16 @@ def make_hosp_prescriptions(cohort: pd.DataFrame) -> pd.DataFrame:
         med[NonIcuMedicationHeader.DRUG].fillna("").astype(str)
     )
     med[NonIcuMedicationHeader.DRUG] = med[NonIcuMedicationHeader.DRUG].apply(
-        lambda x: x.lower().strip().replace(" ", "_") if not "" else ""
+        lambda x: str(x).lower().strip().replace(" ", "_") if not "" else ""
     )
     med[NonIcuMedicationHeader.DRUG] = (
-        med[NonIcuMedicationHeader.DRUG].dropna().apply(lambda x: x.lower().strip())
+        med[NonIcuMedicationHeader.DRUG]
+        .dropna()
+        .apply(lambda x: str(x).lower().strip())
     )
-    med = ndc_meds(med, MAP_NDC_PATH)
+    med = ndc_meds(med)
 
-    print("Number of unique type of drug: ", med.drug.nunique())
+    print("Number of unique type of drug: ", med[NonIcuMedicationHeader.DRUG].nunique())
     print(
         "Number of unique type of drug (after grouping to use Non propietary names): ",
         med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME].nunique(),
@@ -191,25 +192,15 @@ def make_hosp_prescriptions(cohort: pd.DataFrame) -> pd.DataFrame:
     return med
 
 
-def ndc_meds(med, mapping: str) -> pd.DataFrame:
+def ndc_meds(med: pd.DataFrame) -> pd.DataFrame:
     # Convert any nan values to a dummy value
     med[HospPrescriptions.NDC] = med[HospPrescriptions.NDC].fillna(-1)
 
     # Ensures the decimal is removed from the ndc col
     med[HospPrescriptions.NDC] = med[HospPrescriptions.NDC].astype("Int64")
-
-    # Read in NDC mapping table
-    ndc_map = read_ndc_mapping(mapping)[
-        ["productndc", "nonproprietaryname", "pharm_classes"]
-    ]
-
-    # Normalize the NDC codes in the mapping table so that they can be merged
-    ndc_map.loc[:, "new_ndc"] = ndc_map["productndc"].apply(format_ndc_table)
-    ndc_map = ndc_map.drop_duplicates(subset=["new_ndc", "nonproprietaryname"])
-    med["new_ndc"] = med.ndc.apply(ndc_to_str)
-
-    # Left join the med dataset to the mapping information
-    med = med.merge(ndc_map, how="inner", left_on="new_ndc", right_on="new_ndc")
+    med[NdcMappingHeader.NEW_NDC] = med[HospPrescriptions.NDC].apply(ndc_to_str)
+    ndc_map = prepare_ndc_mapping()
+    med = med.merge(ndc_map, on=NdcMappingHeader.NEW_NDC)
 
     # Function generates a list of EPCs, as a drug can have multiple EPCs
     med["EPC"] = med.pharm_classes.apply(get_EPC)
