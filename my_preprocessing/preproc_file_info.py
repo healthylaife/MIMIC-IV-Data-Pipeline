@@ -123,6 +123,10 @@ class NonIcuMedicationHeader(StrEnum):
     EPC = "EPC"
 
 
+class PreprocMedicationHeader(StrEnum):
+    DRUG_NAME = "drug_name"
+
+
 class ChartEventsHeader(StrEnum):
     STAY_ID = "stay_id"
     ITEM_ID = "itemid"
@@ -139,4 +143,10 @@ class DiagnosesHeader(StrEnum):
 
 
 class DiagnosesIcuHeader(StrEnum):
-    STAY_ID_ICU = "stay_id"
+    STAY_ID = "stay_id"
+
+
+class PreprocDiagnosesHeader(StrEnum):
+    PATIENT_ID = "subject_id"
+    HOSPITAL_ADMISSION_ID = "hadm_id"
+    NEW_ICD_CODE = "new_icd_code"

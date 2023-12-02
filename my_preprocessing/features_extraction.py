@@ -49,7 +49,7 @@ def save_diag_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:
     if use_icu:
         cols = cols + [h.value for h in DiagnosesIcuHeader]
 
-    diag = diag[cols]  # standardize_icd(diag)[cols]
+    diag = diag[cols]
     return save_data(diag, PREPROC_DIAG_ICU_PATH, "DIAGNOSES")
 
 
