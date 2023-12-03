@@ -5,6 +5,8 @@ from my_preprocessing.features_summary_generator import FeatureSummaryGenerator
 from my_preprocessing.outlier_removal import outlier_imputation
 from my_preprocessing.preproc_file_info import *
 from my_preprocessing.features_extractor import FeatureExtractor
+from typing import List
+from pathlib import Path
 
 logger = logging.getLogger()
 
@@ -44,131 +46,120 @@ class FeaturePreprocessor:
         features = []
         if self.feature_extractor.for_diagnoses:
             features.append(self.preprocess_diag_features())
+        if not self.feature_extractor.use_icu:
+            if self.feature_extractor.for_medications:
+                features.append(self.preprocess_med_features())
+            if self.feature_extractor.for_procedures:
+                features.append(self.preprocess_proc_features())
 
-        if self.feature_extractor.for_medications:
-            features.append(self.preprocess_med_features())
-        if self.feature_extractor.for_procedures:
-            features.append(self.preprocess_proc_features())
-
-    def feature_selection(self):
-        features = []
+    def feature_selection(self) -> List[pd.DataFrame]:
+        features: List[pd.DataFrame] = []
         if self.group_diag_icd:
-            logger.info("[FEATURE SELECTION DIAGNOSIS DATA]")
-            path = (
-                PREPROC_DIAG_ICU_PATH
-                if self.feature_extractor.use_icu
-                else PREPROC_DIAG_PATH
-            )
-            diag = pd.read_csv(path, compression="gzip")
-            features = pd.read_csv(DIAG_FEATURES_PATH)
-            diag = diag[
-                diag[PreprocDiagnosesHeader.NEW_ICD_CODE].isin(
-                    features[PreprocDiagnosesHeader.NEW_ICD_CODE].unique()
+            features.append(
+                self.process_feature_selection(
+                    PREPROC_DIAG_ICU_PATH
+                    if self.feature_extractor.use_icu
+                    else PREPROC_DIAG_PATH,
+                    DIAG_FEATURES_PATH,
+                    PreprocDiagnosesHeader.NEW_ICD_CODE.value,
+                    "Diagnosis",
                 )
-            ]
-            logger.info("Total number of rows", diag.shape[0])
-            diag.to_csv(PREPROC_DIAG_PATH, compression="gzip", index=False)
-            features.append(diag)
-            logger.info("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
+            )
+
         if self.group_med_code:
-            logger.info("[FEATURE SELECTION MEDICATIONS DATA]")
             path = (
                 PREPROC_MED_ICU_PATH
                 if self.feature_extractor.use_icu
-                else PREPROC_DIAG_PATH
+                else PREPROC_MED_PATH
             )
-            feature = "itemid" if self.feature_extractor.use_icu else "drug_name"
-            med = pd.read_csv(path, compression="gzip")
-            features = pd.read_csv(MED_FEATURES_PATH)
-            med = med[med[feature].isin(features[feature].unique())]
-            logger.info("Total number of rows", med.shape[0])
-            med.to_csv(
-                PREPROC_MED_PATH,
-                compression="gzip",
-                index=False,
+            feature_name = (
+                IcuMedicationHeader.ITEM_ID
+                if self.feature_extractor.use_icu
+                else PreprocMedicationHeader.DRUG_NAME
             )
-            features.append(med)
-            logger.info("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
-        if self.feature_extractor.for_procedures:
-            logger.info("[FEATURE SELECTION PROCEDURES DATA]")
-            proc = pd.read_csv(PREPROC_PROC_PATH, compression="gzip")
-            features = pd.read_csv(PROC_FEATURES_PATH)
-            proc = proc[
-                proc[NonIcuProceduresHeader.ICD_CODE].isin(
-                    features[NonIcuProceduresHeader.ICD_CODE].unique()
+            features.append(
+                self.process_feature_selection(
+                    path, MED_FEATURES_PATH, feature_name, "Medications"
                 )
-            ]
-            logger.info("Total number of rows", proc.shape[0])
-            proc.to_csv(PREPROC_PROC_PATH, compression="gzip", index=False)
-            logger.info("[SUCCESSFULLY SAVED PROCEDURES DATA]")
+            )
 
-        if self.feature_extractor.for_labs:
-            if self.clean_labs:
-                logger.info("[FEATURE SELECTION LABS DATA]")
-                chunksize = 10000000
-                labs = pd.DataFrame()
-                for chunk in tqdm(
-                    pd.read_csv(
-                        PREPROC_LABS_PATH,
-                        compression="gzip",
-                        index_col=None,
-                        chunksize=chunksize,
-                    )
-                ):
-                    if labs.empty:
-                        labs = chunk
-                    else:
-                        labs = labs.append(chunk, ignore_index=True)
-                features = pd.read_csv(LABS_FEATURES_PATH)
-                labs = labs[labs["itemid"].isin(features["itemid"].unique())]
-                logger.info("Total number of rows", labs.shape[0])
-                labs.to_csv(PREPROC_LABS_PATH, compression="gzip", index=False)
-                logger.info("[SUCCESSFULLY SAVED LABS DATA]")
-                features.append(labs)
+        if self.feature_extractor.for_procedures:
+            path = (
+                PREPROC_PROC_ICU_PATH
+                if self.feature_extractor.use_icu
+                else PREPROC_PROC_PATH
+            )
+            features.append(
+                self.process_feature_selection(
+                    path,
+                    PROC_FEATURES_PATH,
+                    IcuProceduresHeader.ITEM_ID
+                    if self.feature_extractor.use_icu
+                    else NonIcuProceduresHeader.ICD_CODE.value,
+                    "Procedures",
+                )
+            )
+
+        if self.feature_extractor.for_labs and self.clean_labs:
+            labs = self.concat_csv_chunks(PREPROC_LABS_PATH, 10000000)
+            feature_df = pd.read_csv(LABS_FEATURES_PATH)
+            labs = labs[labs["itemid"].isin(feature_df["itemid"].unique())]
+            self.log_and_save(labs, PREPROC_LABS_PATH, "Labs")
+            features.append(labs)
 
         if self.feature_extractor.for_chart_events:
-            logger.info("[FEATURE SELECTION OUTPUT EVENTS DATA]")
-            out = pd.read_csv(PREPROC_OUT_ICU_PATH, compression="gzip")
-            features = pd.read_csv(OUT_FEATURES_PATH)
-            out = out[out["itemid"].isin(features["itemid"].unique())]
-            logger.info("Total number of rows", out.shape[0])
-            out.to_csv(
-                PREPROC_OUT_ICU_PATH,
-                compression="gzip",
-                index=False,
+            features.append(
+                self.process_feature_selection(
+                    PREPROC_OUT_ICU_PATH, OUT_FEATURES_PATH, "itemid", "Output Events"
+                )
             )
-            logger.info("[SUCCESSFULLY SAVED OUTPUT EVENTS DATA]")
-            features.append(out)
+
         if self.feature_extractor.for_output_events:
-            logger.info("[FEATURE SELECTION OUTPUT EVENTS DATA]")
-            out = pd.read_csv(PREPROC_OUT_ICU_PATH, compression="gzip")
-            features = pd.read_csv(OUT_FEATURES_PATH)
-            out = out[out["itemid"].isin(features["itemid"].unique())]
-            logger.info("Total number of rows", out.shape[0])
-            out.to_csv(
-                PREPROC_OUT_ICU_PATH,
-                compression="gzip",
-                index=False,
+            features.append(
+                self.process_feature_selection(
+                    PREPROC_OUT_ICU_PATH, OUT_FEATURES_PATH, "itemid", "Output Events"
+                )
             )
-            logger.info("[SUCCESSFULLY SAVED OUTPUT EVENTS DATA]")
+
         return features
 
+    def process_feature_selection(
+        self, data_path: Path, feature_path: Path, feature_col: str, data_type: str
+    ):
+        """Generalized method for processing feature selection."""
+        data_df = pd.read_csv(data_path, compression="gzip")
+        feature_df = pd.read_csv(feature_path)
+        data_df = data_df[data_df[feature_col].isin(feature_df[feature_col].unique())]
+        self.log_and_save(data_df, data_path, data_type)
+        return data_df
+
+    def concat_csv_chunks(self, file_path: Path, chunksize: int):
+        """Concatenate chunks from a CSV file."""
+        chunks = pd.read_csv(file_path, compression="gzip", chunksize=chunksize)
+        return pd.concat(chunks, ignore_index=True)
+
+    def log_and_save(self, df: pd.DataFrame, path: Path, data_type: str):
+        """Log information and save DataFrame to a CSV file."""
+        logger.info(f"Total number of rows in {data_type}: {df.shape[0]}")
+        df.to_csv(path, compression="gzip", index=False)
+        logger.info(f"[SUCCESSFULLY SAVED {data_type} DATA]")
+
     def clean_events_features(self):
-        features = []
-        if self.clean_chart:
+        features: List[pd.DataFrame] = []
+        if self.clean_chart and self.feature_extractor.use_icu:
             features.append(self.clean_chart_features())
-        if self.clean_labs:
+        if self.clean_labs and not self.feature_extractor.use_icu:
             features.append(self.clean_lab_features())
         return features
 
     def preprocess_diag_features(self) -> pd.DataFrame:
         logger.info("[PROCESSING DIAGNOSIS DATA]")
-        diag = pd.read_csv(
+        path = (
             PREPROC_DIAG_ICU_PATH
             if self.feature_extractor.use_icu
-            else PREPROC_DIAG_PATH,
-            compression="gzip",
+            else PREPROC_DIAG_PATH
         )
+        diag = pd.read_csv(path, compression="gzip")
         if self.group_diag_icd == IcdGroupOption.KEEP:
             diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = diag[DiagnosesHeader.ICD_CODE]
         if self.group_diag_icd == IcdGroupOption.CONVERT:
@@ -180,13 +171,16 @@ class FeaturePreprocessor:
             cols_to_keep = cols_to_keep + [h.value for h in DiagnosesIcuHeader]
         diag = diag[cols_to_keep]
         logger.info("Total number of rows", diag.shape[0])
-        diag.to_csv(PREPROC_DIAG_ICU_PATH, compression="gzip", index=False)
+        diag.to_csv(path, compression="gzip", index=False)
         logger.info("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
         return diag
 
     def preprocess_med_features(self) -> pd.DataFrame:
         logger.info("[PROCESSING MEDICATIONS DATA]")
-        med = pd.read_csv(PREPROC_MED_PATH, compression="gzip")
+        path = (
+            PREPROC_MED_ICU_PATH if self.feature_extractor.use_icu else PREPROC_MED_PATH
+        )
+        med = pd.read_csv(path, compression="gzip")
         med[PreprocMedicationHeader.DRUG_NAME] = (
             med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME]
             if self.group_med_code
@@ -200,7 +194,7 @@ class FeaturePreprocessor:
         )
         med.dropna()
         print("Total number of rows", med.shape[0])
-        med.to_csv(PREPROC_MED_PATH, compression="gzip", index=False)
+        med.to_csv(path, compression="gzip", index=False)
         print("[SUCCESSFULLY SAVED MEDICATIONS DATA]")
         return med
 

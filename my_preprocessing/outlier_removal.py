@@ -48,8 +48,10 @@ def outlier_imputation(
     pd.DataFrame: The DataFrame with outlier processing applied.
     """
 
-    def impute_group(group):
-        return compute_outlier_imputation(group, cut_off, left_thresh, impute)
+    def impute_group(group: pd.Series) -> pd.Series:
+        arr = group.values
+        imputed_arr = compute_outlier_imputation(arr, cut_off, left_thresh, impute)
+        return pd.Series(imputed_arr, index=group.index)
 
     # Apply the outlier imputation or removal to each group
     data[value_attribute] = data.groupby(id_attribute)[value_attribute].transform(

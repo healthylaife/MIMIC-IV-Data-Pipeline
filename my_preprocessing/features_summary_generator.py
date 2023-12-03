@@ -29,8 +29,62 @@ class FeatureSummaryGenerator:
             summaries.append(self.lab_summary())
         return summaries
 
+    # def diag_summary(self) -> pd.DataFrame:
+    #     path = (
+    #         PREPROC_DIAG_ICU_PATH
+    #         if self.feature_extractor.use_icu
+    #         else PREPROC_DIAG_PATH
+    #     )
+    #     header = (
+    #         DiagnosesIcuHeader.STAY_ID
+    #         if self.feature_extractor.use_icu
+    #         else DiagnosesHeader.HOSPITAL_ADMISSION_ID
+    #     )
+    #     diag = pd.read_csv(path, compression="gzip")
+    #     summary = self.compute_summary(
+    #         diag, PreprocDiagnosesHeader.NEW_ICD_CODE, header, DIAG_SUMMARY_PATH
+    #     )
+    #     summary[PreprocDiagnosesHeader.NEW_ICD_CODE].to_csv(
+    #         DIAG_FEATURES_PATH, index=False
+    #     )
+    #     return summary
+
+    # def compute_summary(self, df, feature_col, group_col, output_path) -> pd.DataFrame:
+    #     """Computes the summary statistics for a given DataFrame."""
+    #     freq = (
+    #         df.groupby([group_col, feature_col])
+    #         .size()
+    #         .reset_index(name="mean_frequency")
+    #     )
+    #     freq = freq.groupby(feature_col)["mean_frequency"].mean().reset_index()
+    #     total = df.groupby(feature_col).size().reset_index(name="total_count")
+    #     summary = pd.merge(freq, total, on=feature_col, how="right").fillna(0)
+    #     summary.to_csv(output_path, index=False)
+    #     return summary
+
+    def diag_sum(self) -> pd.DataFrame:
+        path = (
+            PREPROC_DIAG_ICU_PATH
+            if self.feature_extractor.use_icu
+            else PREPROC_DIAG_PATH
+        )
+        header = (
+            DiagnosesIcuHeader.STAY_ID
+            if self.feature_extractor.use_icu
+            else DiagnosesHeader.HOSPITAL_ADMISSION_ID
+        )
+        diag = pd.read_csv(path, compression="gzip")
+        summary = self.compute_summary(
+            diag, PreprocDiagnosesHeader.NEW_ICD_CODE, header, DIAG_SUMMARY_PATH
+        )
+
     def diag_summary(self) -> pd.DataFrame:
-        diag = pd.read_csv(PREPROC_DIAG_ICU_PATH, compression="gzip")
+        diag = pd.read_csv(
+            PREPROC_DIAG_ICU_PATH
+            if self.feature_extractor.use_icu
+            else PREPROC_DIAG_PATH,
+            compression="gzip",
+        )
         freq = (
             diag.groupby(
                 [
@@ -64,11 +118,14 @@ class FeatureSummaryGenerator:
         return summary
 
     def med_summary(self) -> pd.DataFrame:
-        med = pd.read_csv(PREPROC_MED_ICU_PATH, compression="gzip")
+        path = (
+            PREPROC_MED_ICU_PATH if self.feature_extractor.use_icu else PREPROC_MED_PATH
+        )
+        med = pd.read_csv(path, compression="gzip")
         feature_name = (
-            IcuMedicationHeader.ITEM_ID
+            IcuMedicationHeader.ITEM_ID.value
             if self.feature_extractor.use_icu
-            else PreprocMedicationHeader.DRUG_NAME
+            else PreprocMedicationHeader.DRUG_NAME.value
         )
         freq = (
             med.groupby(
@@ -127,18 +184,12 @@ class FeatureSummaryGenerator:
             .size()
             .reset_index(name="mean_frequency")
         )
-        if self.feature_extractor.use_icu:
-            freq = (
-                proc.groupby(["stay_id", feature_name])
-                .size()
-                .reset_index(name="mean_frequency")
-            )
-            freq = freq.groupby(feature_name)["mean_frequency"].mean().reset_index()
-            total = proc.groupby(feature_name).size().reset_index(name="total_count")
-            summary = pd.merge(freq, total, on=feature_name, how="right")
-            summary = summary.fillna(0)
-            summary.to_csv(PROC_SUMMARY_PATH, index=False)
-            summary[feature_name].to_csv(PROC_FEATURES_PATH, index=False)
+        freq = freq.groupby(feature_name)["mean_frequency"].mean().reset_index()
+        total = proc.groupby(feature_name).size().reset_index(name="total_count")
+        summary = pd.merge(freq, total, on=feature_name, how="right")
+        summary = summary.fillna(0)
+        summary.to_csv(PROC_SUMMARY_PATH, index=False)
+        summary[feature_name].to_csv(PROC_FEATURES_PATH, index=False)
         return summary[feature_name]
 
     def out_summary(self) -> pd.DataFrame:

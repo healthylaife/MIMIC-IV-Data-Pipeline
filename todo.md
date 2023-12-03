@@ -7,6 +7,9 @@
 
 
 # module my preprocessing
+
+- mkdir...
+
 - precommit 
 
 - implementer options pour l extract

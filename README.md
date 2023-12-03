@@ -97,6 +97,9 @@ Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-pa
 ### Pipeline details
 
 #### Cohort extraction
+Options: 
+- use icu data
+
 
 #### Feature extraction
 

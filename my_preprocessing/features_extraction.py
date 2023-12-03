@@ -50,7 +50,9 @@ def save_diag_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:
         cols = cols + [h.value for h in DiagnosesIcuHeader]
 
     diag = diag[cols]
-    return save_data(diag, PREPROC_DIAG_ICU_PATH, "DIAGNOSES")
+    return save_data(
+        diag, PREPROC_DIAG_ICU_PATH if use_icu else PREPROC_DIAG_PATH, "DIAGNOSES"
+    )
 
 
 def save_procedures_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:

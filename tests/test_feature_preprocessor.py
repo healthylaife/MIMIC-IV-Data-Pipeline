@@ -21,8 +21,8 @@ def test_feature_icu_all_true():
         clean_chart=True,
         impute_outlier_chart=True,
         impute_labs=True,
-        thresh=95,
-        left_thresh=5,
+        thresh=98,
+        left_thresh=2,
         clean_labs=True,
     )
 
