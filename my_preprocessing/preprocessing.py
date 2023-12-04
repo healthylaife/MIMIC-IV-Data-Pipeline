@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
-from my_preprocessing.file_info import (
+from my_preprocessing.raw.hosp import (
     HospPatients,
-    IcuStays,
     HospAdmissions,
 )
-from my_preprocessing.preproc_file_info import CohortHeader
+from my_preprocessing.raw.icu import IcuStays
+
+from my_preprocessing.preproc.cohort import CohortHeader
 from my_preprocessing.prediction_task import TargetType
 import my_preprocessing.icd_conversion as icd_conversion
 from my_preprocessing.prediction_task import DiseaseCode

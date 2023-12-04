@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from my_preprocessing.file_info import (
     load_static_icd_map,
-    load_hosp_diagnosis_icd,
 )
+from my_preprocessing.raw.hosp import load_hosp_diagnosis_icd
 
 
 def get_conversions_icd_9_10() -> dict:

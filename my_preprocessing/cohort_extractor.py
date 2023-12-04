@@ -2,13 +2,15 @@ from pathlib import Path
 import pandas as pd
 import datetime
 import logging
-from my_preprocessing.file_info import (
+from my_preprocessing.raw.hosp import (
     load_hosp_patients,
     load_hosp_admissions,
-    load_icu_icustays,
     HospAdmissions,
 )
-from my_preprocessing.preproc_file_info import COHORT_PATH, CohortHeader
+from my_preprocessing.raw.icu import load_icu_icustays
+
+
+from my_preprocessing.preproc.cohort import COHORT_PATH, CohortHeader
 from my_preprocessing.prediction_task import PredictionTask, TargetType
 
 from my_preprocessing.preprocessing import (
@@ -177,4 +179,23 @@ class CohortExtractor:
         self.save_cohort(cohort)
         logger.info("[ COHORT SUCCESSFULLY SAVED ]")
         logger.info(self.cohort_output)
+
+        self.save_summary(cohort)
+
         return cohort
+
+    def save_summary(self, cohort: pd.DataFrame) -> None:
+        summary = "\n".join(
+            [
+                f"{self.prediction_task.disease_readmission} FOR {self.get_icu_status()} DATA",
+                f"# Admission Records: {cohort.shape[0]}",
+                f"# Patients: {cohort[CohortHeader.PATIENT_ID].nunique()}",
+                f"# Positive cases: {cohort[cohort['label']==1].shape[0]}",
+                f"# Negative cases: {cohort[cohort['label']==0].shape[0]}",
+            ]
+        )
+
+        with open(f"./data/cohort/{self.summary_output}.txt", "w") as f:
+            f.write(summary)
+
+        print("[ SUMMARY SUCCESSFULLY SAVED ]")

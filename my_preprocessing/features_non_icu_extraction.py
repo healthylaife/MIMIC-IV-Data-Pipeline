@@ -1,18 +1,19 @@
 import pandas as pd
 from tqdm import tqdm
 
+
+from my_preprocessing.preproc.cohort import CohortHeader
 from my_preprocessing.preproc_file_info import (
-    CohortHeader,
     NonIcuProceduresHeader,
     LabEventsHeader,
     MedicationsHeader,
     NonIcuMedicationHeader,
 )
-from my_preprocessing.file_info import (
+from my_preprocessing.raw.hosp import (
     load_hosp_procedures_icd,
     load_hosp_lab_events,
     load_hosp_admissions,
-    load_hosp_predictions,
+    load_hosp_prescriptions,
     HospAdmissions,
     HospProceduresIcd,
     HospLabEvents,
@@ -157,7 +158,7 @@ def make_procedures_features_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
 
 def make_medications_features_non_icu(cohort: pd.DataFrame) -> pd.DataFrame:
     adm = cohort[[CohortHeader.HOSPITAL_ADMISSION_ID, CohortHeader.ADMIT_TIME]]
-    med = load_hosp_predictions()
+    med = load_hosp_prescriptions()
     med = med.merge(adm, on=MedicationsHeader.HOSPITAL_ADMISSION_ID)
     med[MedicationsHeader.START_HOURS_FROM_ADMIT] = (
         med[MedicationsHeader.START_TIME] - med[CohortHeader.ADMIT_TIME]

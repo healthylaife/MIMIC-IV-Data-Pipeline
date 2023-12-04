@@ -1,6 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
-from my_preprocessing.file_info import (
+from my_preprocessing.raw.icu import (
     ChartEvents,
     load_icu_output_events,
     load_icu_procedure_events,
@@ -9,8 +9,8 @@ from my_preprocessing.file_info import (
     InputEvents,
 )
 import logging
+from my_preprocessing.preproc.cohort import CohortHeader
 from my_preprocessing.preproc_file_info import (
-    CohortHeader,
     OutputEventsHeader,
     IcuProceduresHeader,
     ChartEventsHeader,

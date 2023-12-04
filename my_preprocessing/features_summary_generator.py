@@ -2,7 +2,8 @@ import pandas as pd
 import logging
 from tqdm import tqdm
 from my_preprocessing.features_extractor import FeatureExtractor
-from my_preprocessing.preproc_file_info import *
+from my_preprocessing.preproc.feature import *
+from my_preprocessing.preproc.summary import *
 
 logger = logging.getLogger()
 
@@ -28,39 +29,6 @@ class FeatureSummaryGenerator:
         if self.feature_extractor.for_labs:
             summaries.append(self.lab_summary())
         return summaries
-
-    # def diag_summary(self) -> pd.DataFrame:
-    #     path = (
-    #         PREPROC_DIAG_ICU_PATH
-    #         if self.feature_extractor.use_icu
-    #         else PREPROC_DIAG_PATH
-    #     )
-    #     header = (
-    #         DiagnosesIcuHeader.STAY_ID
-    #         if self.feature_extractor.use_icu
-    #         else DiagnosesHeader.HOSPITAL_ADMISSION_ID
-    #     )
-    #     diag = pd.read_csv(path, compression="gzip")
-    #     summary = self.compute_summary(
-    #         diag, PreprocDiagnosesHeader.NEW_ICD_CODE, header, DIAG_SUMMARY_PATH
-    #     )
-    #     summary[PreprocDiagnosesHeader.NEW_ICD_CODE].to_csv(
-    #         DIAG_FEATURES_PATH, index=False
-    #     )
-    #     return summary
-
-    # def compute_summary(self, df, feature_col, group_col, output_path) -> pd.DataFrame:
-    #     """Computes the summary statistics for a given DataFrame."""
-    #     freq = (
-    #         df.groupby([group_col, feature_col])
-    #         .size()
-    #         .reset_index(name="mean_frequency")
-    #     )
-    #     freq = freq.groupby(feature_col)["mean_frequency"].mean().reset_index()
-    #     total = df.groupby(feature_col).size().reset_index(name="total_count")
-    #     summary = pd.merge(freq, total, on=feature_col, how="right").fillna(0)
-    #     summary.to_csv(output_path, index=False)
-    #     return summary
 
     def diag_summary(self) -> pd.DataFrame:
         diag = pd.read_csv(

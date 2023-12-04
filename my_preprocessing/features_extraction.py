@@ -2,8 +2,9 @@ import pandas as pd
 import logging
 from my_preprocessing.icd_conversion import standardize_icd
 
-from my_preprocessing.file_info import load_hosp_diagnosis_icd
-from my_preprocessing.preproc_file_info import *
+from my_preprocessing.raw.hosp import load_hosp_diagnosis_icd
+from my_preprocessing.file_info import save_data
+from my_preprocessing.preproc.cohort import CohortHeader
 from my_preprocessing.features_icu_extraction import (
     make_output_events_features,
     make_chart_events_features,
@@ -15,16 +16,33 @@ from my_preprocessing.features_non_icu_extraction import (
     make_medications_features_non_icu,
     make_procedures_features_non_icu,
 )
+from my_preprocessing.preproc.feature import (
+    DiagnosesHeader,
+    DiagnosesIcuHeader,
+    PREPROC_DIAG_ICU_PATH,
+    PREPROC_DIAG_PATH,
+    LabEventsHeader,
+    PREPROC_LABS_PATH,
+    PREPROC_CHART_ICU_PATH,
+    ChartEventsHeader,
+    ProceduresHeader,
+    IcuProceduresHeader,
+    NonIcuProceduresHeader,
+    PREPROC_PROC_ICU_PATH,
+    PREPROC_PROC_PATH,
+    OutputEventsHeader,
+    PREPROC_OUT_ICU_PATH,
+    MedicationsHeader,
+    IcuMedicationHeader,
+    NonIcuMedicationHeader,
+    PREPROC_MED_ICU_PATH,
+    PREPROC_MED_PATH,
+)
+
+
 from pathlib import Path
 
 logger = logging.getLogger()
-
-
-def save_data(data: pd.DataFrame, path: Path, data_name: str) -> pd.DataFrame:
-    """Save DataFrame to specified path."""
-    data.to_csv(path, compression="gzip")
-    logger.info(f"[SUCCESSFULLY SAVED {data_name} DATA]")
-    return data
 
 
 def make_diag_features(cohort: pd.DataFrame, use_icu: bool) -> pd.DataFrame:
