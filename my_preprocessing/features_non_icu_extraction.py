@@ -8,7 +8,7 @@ from my_preprocessing.preproc_file_info import (
     MedicationsHeader,
     NonIcuMedicationHeader,
 )
-from my_preprocessing.raw_file_info import (
+from my_preprocessing.file_info import (
     load_hosp_procedures_icd,
     load_hosp_lab_events,
     load_hosp_admissions,
@@ -203,6 +203,6 @@ def ndc_meds(med: pd.DataFrame) -> pd.DataFrame:
     med = med.merge(ndc_map, on=NdcMappingHeader.NEW_NDC)
 
     # Function generates a list of EPCs, as a drug can have multiple EPCs
-    med["EPC"] = med.pharm_classes.apply(get_EPC)
+    med[NonIcuMedicationHeader.EPC] = med.pharm_classes.apply(get_EPC)
 
     return med

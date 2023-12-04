@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from my_preprocessing.raw_file_info import MAP_NDC_PATH, HospPrescriptions
+from my_preprocessing.file_info import MAP_NDC_PATH, HospPrescriptions
 from enum import StrEnum
 
 

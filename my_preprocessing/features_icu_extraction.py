@@ -1,6 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
-from my_preprocessing.raw_file_info import (
+from my_preprocessing.file_info import (
     ChartEvents,
     load_icu_output_events,
     load_icu_procedure_events,

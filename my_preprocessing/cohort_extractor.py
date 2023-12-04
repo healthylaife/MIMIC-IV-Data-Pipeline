@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import datetime
 import logging
-from my_preprocessing.raw_file_info import (
+from my_preprocessing.file_info import (
     load_hosp_patients,
     load_hosp_admissions,
     load_icu_icustays,

@@ -62,22 +62,6 @@ class FeatureSummaryGenerator:
     #     summary.to_csv(output_path, index=False)
     #     return summary
 
-    def diag_sum(self) -> pd.DataFrame:
-        path = (
-            PREPROC_DIAG_ICU_PATH
-            if self.feature_extractor.use_icu
-            else PREPROC_DIAG_PATH
-        )
-        header = (
-            DiagnosesIcuHeader.STAY_ID
-            if self.feature_extractor.use_icu
-            else DiagnosesHeader.HOSPITAL_ADMISSION_ID
-        )
-        diag = pd.read_csv(path, compression="gzip")
-        summary = self.compute_summary(
-            diag, PreprocDiagnosesHeader.NEW_ICD_CODE, header, DIAG_SUMMARY_PATH
-        )
-
     def diag_summary(self) -> pd.DataFrame:
         diag = pd.read_csv(
             PREPROC_DIAG_ICU_PATH

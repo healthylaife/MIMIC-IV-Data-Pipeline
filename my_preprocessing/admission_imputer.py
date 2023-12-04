@@ -4,7 +4,7 @@ from typing import Union, List, Tuple
 from functools import partial
 from multiprocessing import Pool
 
-from my_preprocessing.raw_file_info import HospAdmissions, HospLabEvents
+from my_preprocessing.file_info import HospAdmissions, HospLabEvents
 from my_preprocessing.preproc_file_info import LabEventsHeader
 
 

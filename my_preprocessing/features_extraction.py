@@ -2,7 +2,7 @@ import pandas as pd
 import logging
 from my_preprocessing.icd_conversion import standardize_icd
 
-from my_preprocessing.raw_file_info import load_hosp_diagnosis_icd
+from my_preprocessing.file_info import load_hosp_diagnosis_icd
 from my_preprocessing.preproc_file_info import *
 from my_preprocessing.features_icu_extraction import (
     make_output_events_features,
