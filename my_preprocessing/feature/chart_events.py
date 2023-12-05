@@ -76,7 +76,7 @@ class Chart(Feature):
         return save_data(out, self.feature_path(), "OUTPUT")
 
     def summary(self):
-        chart = pd.read_csv(self.feature_path, compression="gzip")
+        chart = pd.read_csv(self.feature_path(), compression="gzip")
         freq = (
             chart.groupby([ChartEventsHeader.STAY_ID, ChartEventsHeader.ITEM_ID])
             .size()

@@ -143,20 +143,18 @@ class Procedures(Feature):
 
     def summary(self):
         proc = pd.read_csv(
-            PREPROC_PROC_ICU_PATH
-            if self.feature_extractor.use_icu
-            else PREPROC_PROC_PATH,
+            PREPROC_PROC_ICU_PATH if self.use_icu else PREPROC_PROC_PATH,
             compression="gzip",
         )
         feature_name = (
             IcuProceduresHeader.ITEM_ID
-            if self.feature_extractor.use_icu
+            if self.use_icu
             else NonIcuProceduresHeader.ICD_CODE
         )
         freq = (
             proc.groupby(
                 [
-                    "stay_id" if self.feature_extractor.use_icu else "hadm_id",
+                    "stay_id" if self.use_icu else "hadm_id",
                     feature_name,
                 ]
             )

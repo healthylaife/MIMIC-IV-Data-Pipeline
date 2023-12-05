@@ -6,8 +6,6 @@ from my_preprocessing.feature.lab_events import Lab
 from my_preprocessing.feature.medications import Medications
 from my_preprocessing.feature.output_events import OutputEvents
 from my_preprocessing.feature.procedures import Procedures
-from my_preprocessing.features_summary_generator import FeatureSummaryGenerator
-from my_preprocessing.outlier_removal import outlier_imputation
 from my_preprocessing.preproc.feature import *
 from my_preprocessing.features_extractor import FeatureExtractor
 from typing import List
@@ -146,60 +144,31 @@ class FeaturePreprocessor:
         df.to_csv(path, compression="gzip", index=False)
         logger.info(f"[SUCCESSFULLY SAVED {data_type} DATA]")
 
-    def clean_events_features(self):
-        features: List[pd.DataFrame] = []
+    def preproc_events_features(self):
+        event_preproc_features: List[pd.DataFrame] = []
         if self.clean_chart and self.feature_extractor.use_icu:
-            features.append(self.clean_chart_features())
+            chart = Chart(
+                cohort=pd.DataFrame(),
+                thresh=self.thresh,
+                left_thresh=self.left_thresh,
+                impute_outlier=self.impute_outlier_chart,
+            )
+            event_preproc_features.append(chart.preproc())
         if self.clean_labs and not self.feature_extractor.use_icu:
-            features.append(self.clean_lab_features())
-        return features
-
-    def clean_chart_features(self) -> pd.DataFrame:
-        logger.info("[PROCESSING CHART EVENTS DATA]")
-        chart = pd.read_csv(PREPROC_CHART_ICU_PATH, compression="gzip")
-        chart = outlier_imputation(
-            chart,
-            "itemid",
-            "valuenum",
-            self.thresh,
-            self.left_thresh,
-            self.impute_outlier_chart,
-        )
-
-        logger.info("Total number of rows", chart.shape[0])
-        chart.to_csv(
-            PREPROC_CHART_ICU_PATH,
-            compression="gzip",
-            index=False,
-        )
-        logger.info("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
-
-        return chart
-
-    def clean_lab_features(self) -> pd.DataFrame:
-        print("[PROCESSING LABS DATA]")
-        labs = pd.read_csv(PREPROC_LABS_PATH, compression="gzip")
-        labs = outlier_imputation(
-            labs,
-            "itemid",
-            "valuenum",
-            self.thresh,
-            self.left_thresh,
-            self.impute_labs,
-        )
-
-        print("Total number of rows", labs.shape[0])
-        labs.to_csv(PREPROC_LABS_PATH, compression="gzip", index=False)
-        print("[SUCCESSFULLY SAVED LABS DATA]")
-
-        return labs
+            lab = Lab(
+                cohort=pd.DataFrame(),
+                thresh=self.thresh,
+                left_thresh=self.left_thresh,
+                impute_outlier=self.impute_labs,
+            )
+            event_preproc_features.append(lab.preproc())
+        return event_preproc_features
 
     def preprocess(self):
         self.preprocess_no_event_features()
-        summary_generator = FeatureSummaryGenerator(self.feature_extractor)
-        summary_generator.save_summaries()
+        self.save_summaries()
         self.feature_selection()
-        self.clean_events_features()
+        self.preproc_events_features()
 
     def preprocess_no_event_features(self):
         no_event_preproc_features = []
