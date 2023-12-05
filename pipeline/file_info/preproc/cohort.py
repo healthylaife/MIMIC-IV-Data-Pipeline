@@ -1,5 +1,5 @@
 from enum import StrEnum
-from my_preprocessing.file_info import PREPROC_PATH
+from pipeline.file_info.common import PREPROC_PATH
 import pandas as pd
 import logging
 

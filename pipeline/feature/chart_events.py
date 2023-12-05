@@ -1,22 +1,22 @@
 from tqdm import tqdm
-from my_preprocessing.feature.feature import Feature
+from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
-from my_preprocessing.outlier_removal import outlier_imputation
-from my_preprocessing.preproc.feature import (
+from pipeline.preprocessing.outlier_removal import outlier_imputation
+from pipeline.file_info.preproc.feature import (
     PREPROC_CHART_ICU_PATH,
     ChartEventsHeader,
 )
-from my_preprocessing.preproc.cohort import CohortHeader
-from my_preprocessing.preproc.summary import CHART_FEATURES_PATH, CHART_SUMMARY_PATH
-from my_preprocessing.raw.icu import (
+from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.summary import CHART_FEATURES_PATH, CHART_SUMMARY_PATH
+from pipeline.file_info.raw.icu import (
     load_icu_chart_events,
     ChartEvents,
 )
-from my_preprocessing.file_info import save_data
+from pipeline.file_info.common import save_data
 from pathlib import Path
 
-from my_preprocessing.uom_conversion import drop_wrong_uom
+from pipeline.conversion.uom import drop_wrong_uom
 
 logger = logging.getLogger()
 

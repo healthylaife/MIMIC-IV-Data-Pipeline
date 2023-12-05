@@ -1,4 +1,4 @@
-from my_preprocessing.features_extractor import (
+from pipeline.features_extractor import (
     FeatureExtractor,
 )
 

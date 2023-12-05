@@ -1,6 +1,4 @@
-from enum import StrEnum
-
-from my_preprocessing.file_info import PREPROC_PATH
+from pipeline.file_info.common import PREPROC_PATH
 
 SUMMARY_PATH = PREPROC_PATH / "summary"
 

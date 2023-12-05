@@ -1,18 +1,18 @@
-from my_preprocessing.feature.feature import Feature
+from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
-from my_preprocessing.preproc.feature import (
+from pipeline.file_info.preproc.feature import (
     ProceduresHeader,
     IcuProceduresHeader,
     NonIcuProceduresHeader,
     PREPROC_PROC_ICU_PATH,
     PREPROC_PROC_PATH,
 )
-from my_preprocessing.preproc.cohort import CohortHeader
-from my_preprocessing.preproc.summary import PROC_FEATURES_PATH, PROC_SUMMARY_PATH
-from my_preprocessing.raw.hosp import HospProceduresIcd, load_hosp_procedures_icd
-from my_preprocessing.raw.icu import load_icu_procedure_events
-from my_preprocessing.file_info import save_data
+from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.summary import PROC_FEATURES_PATH, PROC_SUMMARY_PATH
+from pipeline.file_info.raw.hosp import HospProceduresIcd, load_hosp_procedures_icd
+from pipeline.file_info.raw.icu import load_icu_procedure_events
+from pipeline.file_info.common import save_data
 from pathlib import Path
 
 logger = logging.getLogger()

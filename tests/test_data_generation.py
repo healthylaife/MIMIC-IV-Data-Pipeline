@@ -1,4 +1,4 @@
-from my_data_generator.data_generation_new import Generator
+# from pipeline.data_generation_new import Generator
 
 
 # def test_generator():

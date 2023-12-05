@@ -4,8 +4,8 @@ from typing import Union, List, Tuple
 from functools import partial
 from multiprocessing import Pool
 
-from my_preprocessing.raw.hosp import HospAdmissions
-from my_preprocessing.preproc.feature import LabEventsHeader
+from pipeline.file_info.raw.hosp import HospAdmissions
+from pipeline.file_info.preproc.feature import LabEventsHeader
 
 
 INPUTED_HOSPITAL_ADMISSION_ID_HEADER = "hadm_id_new"

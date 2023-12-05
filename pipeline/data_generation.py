@@ -1,6 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
-from my_preprocessing.preproc.cohort import COHORT_PATH, CohortHeader
+from pipeline.file_info.preproc.cohort import COHORT_PATH, CohortHeader
 
 
 def generate_admission_cohort(cohort_output: str) -> pd.DataFrame:

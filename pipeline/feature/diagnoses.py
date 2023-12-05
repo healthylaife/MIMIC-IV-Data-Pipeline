@@ -1,19 +1,19 @@
 from enum import StrEnum
-from my_preprocessing.feature.feature import Feature
+from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
-from my_preprocessing.preproc.feature import (
+from pipeline.file_info.preproc.feature import (
     DiagnosesHeader,
     DiagnosesIcuHeader,
     PREPROC_DIAG_ICU_PATH,
     PREPROC_DIAG_PATH,
 )
-from my_preprocessing.preproc.cohort import CohortHeader
-from my_preprocessing.preproc.feature import PreprocDiagnosesHeader
-from my_preprocessing.preproc.summary import DIAG_FEATURES_PATH, DIAG_SUMMARY_PATH
-from my_preprocessing.raw.hosp import load_hosp_diagnosis_icd
-from my_preprocessing.icd_conversion import standardize_icd
-from my_preprocessing.file_info import save_data
+from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.feature import PreprocDiagnosesHeader
+from pipeline.file_info.preproc.summary import DIAG_FEATURES_PATH, DIAG_SUMMARY_PATH
+from pipeline.file_info.raw.hosp import load_hosp_diagnosis_icd
+from pipeline.conversion.icd import standardize_icd
+from pipeline.file_info.common import save_data
 from pathlib import Path
 
 logger = logging.getLogger()

@@ -1,6 +1,6 @@
 import pytest
-from my_preprocessing.cohort_extractor import CohortExtractor
-from my_preprocessing.prediction_task import PredictionTask, TargetType
+from pipeline.cohort_extractor import CohortExtractor
+from pipeline.prediction_task import PredictionTask, TargetType
 
 
 @pytest.mark.parametrize(

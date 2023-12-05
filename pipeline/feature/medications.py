@@ -1,13 +1,13 @@
-from my_preprocessing.feature.feature import Feature
+from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
-from my_preprocessing.ndc_conversion import (
+from pipeline.conversion.ndc import (
     NdcMappingHeader,
     get_EPC,
     ndc_to_str,
     prepare_ndc_mapping,
 )
-from my_preprocessing.preproc.feature import (
+from pipeline.file_info.preproc.feature import (
     MedicationsHeader,
     IcuMedicationHeader,
     NonIcuMedicationHeader,
@@ -15,17 +15,17 @@ from my_preprocessing.preproc.feature import (
     PREPROC_MED_PATH,
     PreprocMedicationHeader,
 )
-from my_preprocessing.preproc.cohort import CohortHeader
-from my_preprocessing.preproc.summary import MED_FEATURES_PATH, MED_SUMMARY_PATH
-from my_preprocessing.raw.hosp import (
+from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.summary import MED_FEATURES_PATH, MED_SUMMARY_PATH
+from pipeline.file_info.raw.hosp import (
     HospPrescriptions,
     load_hosp_prescriptions,
 )
-from my_preprocessing.raw.icu import (
+from pipeline.file_info.raw.icu import (
     InputEvents,
     load_input_events,
 )
-from my_preprocessing.file_info import save_data
+from pipeline.file_info.common import save_data
 from pathlib import Path
 
 logger = logging.getLogger()

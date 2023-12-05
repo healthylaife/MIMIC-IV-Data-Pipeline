@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from my_preprocessing.file_info import MAP_NDC_PATH
+from pipeline.file_info.common import MAP_NDC_PATH
 from enum import StrEnum
 
 

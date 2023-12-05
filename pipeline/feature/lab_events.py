@@ -1,29 +1,29 @@
 from tqdm import tqdm
-from my_preprocessing.admission_imputer import (
+from pipeline.preprocessing.admission_imputer import (
     INPUTED_HOSPITAL_ADMISSION_ID_HEADER,
     impute_hadm_ids,
 )
-from my_preprocessing.feature.feature import Feature
+from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
-from my_preprocessing.outlier_removal import outlier_imputation
-from my_preprocessing.preproc.feature import (
+from pipeline.preprocessing.outlier_removal import outlier_imputation
+from pipeline.file_info.preproc.feature import (
     PREPROC_LABS_PATH,
     LabEventsHeader,
 )
-from my_preprocessing.preproc.cohort import CohortHeader
-from my_preprocessing.preproc.summary import LABS_FEATURES_PATH, LABS_SUMMARY_PATH
-from my_preprocessing.raw.hosp import (
+from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.summary import LABS_FEATURES_PATH, LABS_SUMMARY_PATH
+from pipeline.file_info.raw.hosp import (
     HospAdmissions,
     HospLabEvents,
     load_hosp_admissions,
     load_hosp_lab_events,
 )
 
-from my_preprocessing.file_info import save_data
+from pipeline.file_info.common import save_data
 from pathlib import Path
 
-from my_preprocessing.uom_conversion import drop_wrong_uom
+from pipeline.conversion.uom import drop_wrong_uom
 
 logger = logging.getLogger()
 

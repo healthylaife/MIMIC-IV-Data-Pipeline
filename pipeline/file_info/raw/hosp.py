@@ -1,6 +1,6 @@
 from enum import StrEnum
 import pandas as pd
-from my_preprocessing.file_info import RAW_PATH
+from pipeline.file_info.common import RAW_PATH
 
 """ 
 The Hosp module provides all data acquired from the hospital wide electronic health record

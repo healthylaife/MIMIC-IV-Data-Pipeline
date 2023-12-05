@@ -2,22 +2,22 @@ from pathlib import Path
 import pandas as pd
 import datetime
 import logging
-from my_preprocessing.raw.hosp import (
+from pipeline.file_info.raw.hosp import (
     load_hosp_patients,
     load_hosp_admissions,
     HospAdmissions,
 )
-from my_preprocessing.raw.icu import load_icu_icustays
+from pipeline.file_info.raw.icu import load_icu_icustays
+from pipeline.file_info.preproc.cohort import COHORT_PATH, CohortHeader
+from pipeline.prediction_task import PredictionTask, TargetType
 
-
-from my_preprocessing.preproc.cohort import COHORT_PATH, CohortHeader
-from my_preprocessing.prediction_task import PredictionTask, TargetType
-
-from my_preprocessing.preprocessing import (
+from pipeline.preprocessing.visit import (
     make_patients,
     make_icu_visits,
     make_no_icu_visits,
     filter_visits,
+)
+from pipeline.preprocessing.partition import (
     partition_by_mort,
     partition_by_los,
     partition_by_readmit,

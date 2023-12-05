@@ -1,5 +1,5 @@
-from my_preprocessing.features_extractor import FeatureExtractor
-from my_preprocessing.features_preprocessor import FeaturePreprocessor, IcdGroupOption
+from pipeline.features_extractor import FeatureExtractor
+from pipeline.features_preprocessor import FeaturePreprocessor, IcdGroupOption
 
 
 def test_feature_icu_all_true():

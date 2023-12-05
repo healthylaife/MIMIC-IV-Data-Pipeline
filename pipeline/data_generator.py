@@ -3,10 +3,10 @@ import pandas as pd
 from tqdm import tqdm
 import pickle
 import os
-from my_preprocessing.prediction_task import PredictionTask, TargetType
-from my_preprocessing.preproc_file_info import *
-from my_preprocessing.features_extractor import FeatureExtractor
-from my_preprocessing.data_generation import (
+from pipeline.prediction_task import PredictionTask, TargetType
+from pipeline.preproc_file_info import *
+from pipeline.features_extractor import FeatureExtractor
+from pipeline.data_generation import (
     generate_diag,
     generate_proc,
     generate_labs,

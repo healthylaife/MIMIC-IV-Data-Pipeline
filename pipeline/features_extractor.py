@@ -1,16 +1,16 @@
 import pandas as pd
 import logging
-from my_preprocessing.feature.feature import Feature
-from my_preprocessing.feature.chart_events import Chart
-from my_preprocessing.feature.diagnoses import Diagnoses
-from my_preprocessing.feature.medications import Medications
-from my_preprocessing.feature.output_events import OutputEvents
-from my_preprocessing.feature.procedures import Procedures
-from my_preprocessing.preproc.cohort import load_cohort
+from pipeline.feature.feature_abc import Feature
+from pipeline.feature.chart_events import Chart
+from pipeline.feature.diagnoses import Diagnoses
+from pipeline.feature.medications import Medications
+from pipeline.feature.output_events import OutputEvents
+from pipeline.feature.procedures import Procedures
+from pipeline.file_info.preproc.cohort import load_cohort
 
 from typing import List, Tuple
 
-from my_preprocessing.feature.lab_events import Lab
+from pipeline.feature.lab_events import Lab
 
 logger = logging.getLogger()
 

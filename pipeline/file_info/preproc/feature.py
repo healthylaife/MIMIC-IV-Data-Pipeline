@@ -1,7 +1,6 @@
 from enum import StrEnum
-from pathlib import Path
 
-from my_preprocessing.file_info import PREPROC_PATH
+from pipeline.file_info.common import PREPROC_PATH
 
 
 FEATURE_PATH = PREPROC_PATH / "features"
