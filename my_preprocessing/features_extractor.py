@@ -1,15 +1,16 @@
 import pandas as pd
 import logging
-from my_preprocessing.preproc.cohort import COHORT_PATH
-from my_preprocessing.features_extraction import (
-    save_chart_events_features,
-    save_diag_features,
-    save_lab_events_features,
-    save_output_features,
-    save_procedures_features,
-    save_medications_features,
-)
-from typing import List
+from my_preprocessing.feature.feature import Feature
+from my_preprocessing.feature.chart_events import Chart
+from my_preprocessing.feature.diagnoses import Diagnoses
+from my_preprocessing.feature.medications import Medications
+from my_preprocessing.feature.output_events import OutputEvents
+from my_preprocessing.feature.procedures import Procedures
+from my_preprocessing.preproc.cohort import load_cohort
+
+from typing import List, Tuple
+
+from my_preprocessing.feature.lab_events import Lab
 
 logger = logging.getLogger()
 
@@ -35,50 +36,32 @@ class FeatureExtractor:
         self.for_medications = for_medications
         self.for_labs = for_labs
 
-    def load_cohort(self) -> pd.DataFrame:
-        """Load cohort data from a CSV file."""
-        cohort_path = COHORT_PATH / f"{self.cohort_output}.csv.gz"
-        try:
-            return pd.read_csv(
-                cohort_path,
-                compression="gzip",
-                parse_dates=["intime" if self.use_icu else "admittime"],
-            )
-        except FileNotFoundError:
-            logger.error(f"Cohort file not found at {cohort_path}")
-            raise
-        except Exception as e:
-            logger.error(f"Error loading cohort file: {e}")
-            raise
-
     def save_features(self) -> List[pd.DataFrame]:
-        cohort = self.load_cohort()
-        feature_conditions = [
-            (self.for_diagnoses, lambda: save_diag_features(cohort, self.use_icu)),
+        cohort = load_cohort(self.use_icu, self.cohort_output)
+        feature_conditions: List[Tuple[bool, Feature]] = [
+            (self.for_diagnoses, Diagnoses(cohort, self.use_icu)),
             (
                 self.for_procedures,
-                lambda: save_procedures_features(cohort, self.use_icu),
+                Procedures(cohort, self.use_icu),
             ),
             (
                 self.for_medications,
-                lambda: save_medications_features(cohort, self.use_icu),
+                Medications(cohort, self.use_icu),
             ),
             (
                 self.for_output_events and self.use_icu,
-                lambda: save_output_features(cohort),
+                OutputEvents(cohort),
             ),
             (
                 self.for_chart_events and self.use_icu,
-                lambda: save_chart_events_features(cohort),
+                Chart(cohort),
             ),
             (
                 self.for_labs and not self.use_icu,
-                lambda: save_lab_events_features(cohort),
+                Lab(cohort),
             ),
         ]
         features = [
-            feature_func()
-            for condition, feature_func in feature_conditions
-            if condition
+            feature.save() for condition, feature in feature_conditions if condition
         ]
         return features

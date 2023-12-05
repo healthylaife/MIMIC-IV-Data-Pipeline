@@ -12,7 +12,6 @@ from my_preprocessing.prediction_task import PredictionTask, TargetType
         (True, TargetType.READMISSION, 30, None, None, 128, 93, 18),
         (True, TargetType.READMISSION, 90, None, None, 128, 93, 22),
         (True, TargetType.READMISSION, 30, "I50", None, 27, 20, 2),
-        # heart failure
         (True, TargetType.READMISSION, 30, "I25", None, 32, 29, 2),
         (True, TargetType.READMISSION, 30, "N18", None, 25, 18, 2),
         (True, TargetType.READMISSION, 30, "J44", None, 17, 12, 3),
@@ -44,9 +43,6 @@ def test_cohort_extractor(
     )
     cohort_extractor = CohortExtractor(
         prediction_task=prediction_task,
-        preproc_dir="",
-        cohort_output="",
-        summary_output="",
     )
     cohort = cohort_extractor.extract()
     assert len(cohort) == expected_admission_records_count

@@ -14,28 +14,34 @@ logger = logging.getLogger()
 
 
 class OutputEvents(Feature):
+    def __init__(self, cohort: pd.DataFrame):
+        self.cohort = cohort
+
     def summary_path(self):
         pass
 
     def feature_path(self) -> Path:
         return PREPROC_OUT_ICU_PATH
 
-    def make(self, cohort: pd.DataFrame) -> pd.DataFrame:
+    def make(self) -> pd.DataFrame:
         """Function for getting hosp observations pertaining to a pickled cohort.
         Function is structured to save memory when reading and transforming data."""
         raw_out = load_icu_output_events()
         out = raw_out.merge(
-            cohort[[CohortHeader.STAY_ID, CohortHeader.IN_TIME, CohortHeader.OUT_TIME]],
+            self.cohort[
+                [CohortHeader.STAY_ID, CohortHeader.IN_TIME, CohortHeader.OUT_TIME]
+            ],
             on=CohortHeader.STAY_ID,
         )
         out[OutputEventsHeader.EVENT_TIME_FROM_ADMIT] = (
             out[OuputputEvents.CHART_TIME] - out[CohortHeader.IN_TIME]
         )
         out = out.dropna()
+
         # Print unique counts and value_counts
-        logger.info("# Unique Events:  ", out[OuputputEvents.ITEM_ID].nunique())
-        logger.info("# Admissions:  ", out[OuputputEvents.STAY_ID].nunique())
-        logger.info("Total rows", out.shape[0])
+        logger.info(f"# Unique Events: {out[OuputputEvents.ITEM_ID].nunique()}")
+        logger.info(f"# Admissions: {out[OuputputEvents.STAY_ID].nunique()}")
+        logger.info(f"Total rows: {out.shape[0]}")
 
         return out
 

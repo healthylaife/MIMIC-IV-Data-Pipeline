@@ -1,5 +1,8 @@
-import tqdm
-from my_preprocessing.admission_imputer import INPUTED_HOSPITAL_ADMISSION_ID_HEADER
+from tqdm import tqdm
+from my_preprocessing.admission_imputer import (
+    INPUTED_HOSPITAL_ADMISSION_ID_HEADER,
+    impute_hadm_ids,
+)
 from my_preprocessing.feature.feature import Feature
 import logging
 import pandas as pd
@@ -24,7 +27,7 @@ logger = logging.getLogger()
 
 
 class Lab(Feature):
-    def __init__(self, chunksize: int, cohort: pd.DataFrame):
+    def __init__(self, cohort: pd.DataFrame, chunksize: int = 10000000):
         self.chunksize = chunksize
         self.cohort = cohort
 
@@ -82,7 +85,7 @@ class Lab(Feature):
             chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].notna()],
             chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].isna()],
         )
-        chunk_imputed = self.impute_hadm_ids(chunk_no_hadm.copy(), admissions)
+        chunk_imputed = impute_hadm_ids(chunk_no_hadm.copy(), admissions)
         chunk_imputed[HospLabEvents.HOSPITAL_ADMISSION_ID] = chunk_imputed[
             INPUTED_HOSPITAL_ADMISSION_ID_HEADER
         ]

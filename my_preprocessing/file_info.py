@@ -8,6 +8,7 @@ MAP_PATH = Path("utils") / "mappings" / "ICD9_to_ICD10_mapping.txt"
 MAP_NDC_PATH = Path("utils") / "mappings" / "ndc_product.txt"
 PREPROC_PATH = Path("preproc_data")
 
+
 logger = logging.getLogger()
 
 

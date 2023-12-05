@@ -7,10 +7,13 @@ SUMMARY_PATH = PREPROC_PATH / "summary"
 
 DIAG_FEATURES_PATH = SUMMARY_PATH / "diag_features.csv"
 DIAG_SUMMARY_PATH = SUMMARY_PATH / "diag_summary.csv"
+
 MED_FEATURES_PATH = SUMMARY_PATH / "med_features.csv"
 MED_SUMMARY_PATH = SUMMARY_PATH / "med_summary.csv"
+
 OUT_FEATURES_PATH = SUMMARY_PATH / "out_features.csv"
 OUT_SUMMARY_PATH = SUMMARY_PATH / "out_summary.csv"
+
 PROC_FEATURES_PATH = SUMMARY_PATH / "proc_features.csv"
 PROC_SUMMARY_PATH = SUMMARY_PATH / "proc_summary.csv"
 

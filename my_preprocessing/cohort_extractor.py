@@ -23,6 +23,7 @@ from my_preprocessing.preprocessing import (
     partition_by_readmit,
 )
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
 
@@ -30,12 +31,10 @@ class CohortExtractor:
     def __init__(
         self,
         prediction_task: PredictionTask,
-        preproc_dir: Path,
-        cohort_output: Path,
-        summary_output: Path,
+        cohort_output: Path = None,
+        summary_output: Path = None,
     ):
         self.prediction_task = prediction_task
-        self.preproc_dir = preproc_dir
         self.cohort_output = cohort_output
         self.summary_output = summary_output
 
@@ -61,9 +60,11 @@ class CohortExtractor:
             + "_"
             + str(self.prediction_task.nb_days)
             + "_"
-            + self.prediction_task.disease_readmission
-            if self.prediction_task.disease_readmission
-            else ""
+            + (
+                self.prediction_task.disease_readmission
+                if self.prediction_task.disease_readmission
+                else ""
+            )
         )
 
     def fill_outputs(self) -> None:
@@ -198,4 +199,4 @@ class CohortExtractor:
         with open(f"./data/cohort/{self.summary_output}.txt", "w") as f:
             f.write(summary)
 
-        print("[ SUMMARY SUCCESSFULLY SAVED ]")
+        logger.info("[ SUMMARY SUCCESSFULLY SAVED ]")

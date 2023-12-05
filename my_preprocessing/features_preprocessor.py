@@ -8,6 +8,15 @@ from my_preprocessing.features_extractor import FeatureExtractor
 from typing import List
 from pathlib import Path
 
+from my_preprocessing.preproc.summary import (
+    CHART_FEATURES_PATH,
+    DIAG_FEATURES_PATH,
+    LABS_FEATURES_PATH,
+    MED_FEATURES_PATH,
+    OUT_FEATURES_PATH,
+    PROC_FEATURES_PATH,
+)
+
 logger = logging.getLogger()
 
 
@@ -110,7 +119,10 @@ class FeaturePreprocessor:
         if self.feature_extractor.for_chart_events:
             features.append(
                 self.process_feature_selection(
-                    PREPROC_OUT_ICU_PATH, OUT_FEATURES_PATH, "itemid", "Output Events"
+                    PREPROC_CHART_ICU_PATH,
+                    CHART_FEATURES_PATH,
+                    "itemid",
+                    "Output Events",
                 )
             )
 

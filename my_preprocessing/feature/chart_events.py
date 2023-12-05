@@ -1,4 +1,4 @@
-import tqdm
+from tqdm import tqdm
 from my_preprocessing.feature.feature import Feature
 import logging
 import pandas as pd
@@ -20,9 +20,9 @@ logger = logging.getLogger()
 
 
 class Chart(Feature):
-    def __init__(self, chunksize: int, cohort: pd.DataFrame):
-        self.chunksize = chunksize
+    def __init__(self, cohort: pd.DataFrame, chunksize: int = 10000000):
         self.cohort = cohort
+        self.chunksize = chunksize
 
     def summary_path(self):
         pass
@@ -32,11 +32,11 @@ class Chart(Feature):
 
     def make(self) -> pd.DataFrame:
         """Function for processing hospital observations from a pickled cohort, optimized for memory efficiency."""
-        cohort_columns = [CohortHeader.STAY_ID, CohortHeader.IN_TIME]
         processed_chunks = [
-            self.process_chunk_chart_events(chunk, self.cohort[cohort_columns])
+            self.process_chunk_chart_events(chunk)
             for chunk in tqdm(load_icu_chart_events(self.chunksize))
         ]
+
         df_cohort = pd.concat(processed_chunks, ignore_index=True)
         df_cohort = drop_wrong_uom(df_cohort, 0.95)
         """Log statistics about the chart events."""

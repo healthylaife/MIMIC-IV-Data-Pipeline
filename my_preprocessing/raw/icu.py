@@ -31,7 +31,7 @@ def load_icu_icustays() -> pd.DataFrame:
     return pd.read_csv(
         ICU_ICUSTAY_PATH,
         compression="gzip",
-        parse_dates=[IcuStays.INTIME.value, IcuStays.OUTTIME.value],
+        parse_dates=[IcuStays.INTIME, IcuStays.OUTTIME],
     )
 
 
@@ -48,7 +48,7 @@ def load_icu_output_events() -> pd.DataFrame:
     return pd.read_csv(
         ICU_OUTPUT_EVENT_PATH,
         compression="gzip",
-        parse_dates=[OuputputEvents.CHARTTIME.value],
+        parse_dates=[OuputputEvents.CHART_TIME],
     ).drop_duplicates()
 
 
@@ -65,7 +65,7 @@ def load_icu_chart_events(chunksize: int) -> pd.DataFrame:
         ICU_CHART_EVENTS_PATH,
         compression="gzip",
         usecols=[c for c in ChartEvents],
-        parse_dates=[ChartEvents.CHARTTIME.value],
+        parse_dates=[ChartEvents.CHARTTIME],
         chunksize=chunksize,
     )
 

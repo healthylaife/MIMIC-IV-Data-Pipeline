@@ -12,7 +12,7 @@ class Feature(ABC):
         pass
 
     @abstractmethod
-    def make(self, cohort: pd.DataFrame) -> pd.DataFrame:
+    def make(self) -> pd.DataFrame:
         pass
 
     @abstractmethod

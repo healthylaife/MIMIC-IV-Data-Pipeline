@@ -18,9 +18,13 @@ logger = logging.getLogger()
 
 
 class Procedures(Feature):
-    def __init__(self, use_icu: bool, cohort: pd.DataFrame):
-        self.use_icu = use_icu
+    def __init__(
+        self,
+        cohort: pd.DataFrame,
+        use_icu: bool,
+    ):
         self.cohort = cohort
+        self.use_icu = use_icu
 
     def summary_path(self) -> Path:
         pass
@@ -65,44 +69,41 @@ class Procedures(Feature):
             ]
             - procedures[
                 IcuProceduresHeader.IN_TIME
-                if self.us_icu
+                if self.use_icu
                 else NonIcuProceduresHeader.ADMIT_TIME
             ]
         )
         procedures = procedures.dropna()
-        self.log_icu() if self.use_icu else self.log_non_icu()
+        self.log_icu(procedures) if self.use_icu else self.log_non_icu(procedures)
         return procedures
 
     def log_icu(self, procedures: pd.DataFrame) -> None:
         logger.info(
-            "# Unique Events:  ",
-            procedures[IcuProceduresHeader.ITEM_ID].dropna().nunique(),
+            f"# Unique Events: {procedures[IcuProceduresHeader.ITEM_ID].dropna().nunique()}"
         )
         logger.info(
-            "# Admissions:  ", procedures[IcuProceduresHeader.STAY_ID].nunique()
+            f"# Admissions:   {procedures[IcuProceduresHeader.STAY_ID].nunique()}"
         )
-        logger.info("Total rows", procedures.shape[0])
+        logger.info(f"Total rows: {procedures.shape[0]}")
 
     def log_non_icu(self, procedures: pd.DataFrame) -> None:
         for v in [9, 10]:
-            print(
-                f"# Unique ICD{v} Procedures:  ",
+            unique_procedures_count = (
                 procedures.loc[procedures[NonIcuProceduresHeader.ICD_VERSION] == v][
                     NonIcuProceduresHeader.ICD_CODE
                 ]
                 .dropna()
-                .nunique(),
+                .nunique()
             )
+            logger.info(f" # Unique ICD{v} Procedures:{ unique_procedures_count}")
 
-        print(
-            "\nValue counts of each ICD version:\n",
-            procedures[NonIcuProceduresHeader.ICD_VERSION].value_counts(),
+        logger.info(
+            f"\nValue counts of each ICD version:\n {procedures[NonIcuProceduresHeader.ICD_VERSION].value_counts()}"
         )
-        print(
-            "# Admissions:  ",
-            procedures[CohortHeader.HOSPITAL_ADMISSION_ID].nunique(),
+        logger.info(
+            f"# Admissions:{procedures[CohortHeader.HOSPITAL_ADMISSION_ID].nunique()}"
         )
-        print("Total number of rows: ", procedures.shape[0])
+        logger.info(f"Total number of rows: {procedures.shape[0]}")
 
     def save(self) -> pd.DataFrame:
         proc = self.make()
@@ -118,3 +119,6 @@ class Procedures(Feature):
 
         # TODO: CHECK SUMMARY? as for diag?
         return save_data(proc, self.feature_path(), "PROCEDURES")
+
+    def preproc(self):
+        pass
