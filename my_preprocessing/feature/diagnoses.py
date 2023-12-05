@@ -10,6 +10,7 @@ from my_preprocessing.preproc.feature import (
 )
 from my_preprocessing.preproc.cohort import CohortHeader
 from my_preprocessing.preproc.feature import PreprocDiagnosesHeader
+from my_preprocessing.preproc.summary import DIAG_FEATURES_PATH, DIAG_SUMMARY_PATH
 from my_preprocessing.raw.hosp import load_hosp_diagnosis_icd
 from my_preprocessing.icd_conversion import standardize_icd
 from my_preprocessing.file_info import save_data
@@ -22,6 +23,9 @@ class IcdGroupOption(StrEnum):
     KEEP = "Keep both ICD-9 and ICD-10 codes"
     CONVERT = "Convert ICD-9 to ICD-10 codes"
     GROUP = "Convert ICD-9 to ICD-10 and group ICD-10 codes"
+
+
+MEAN_FREQUENCY_HEADER = "mean_frequency"
 
 
 class Diagnoses(Feature):
@@ -85,3 +89,41 @@ class Diagnoses(Feature):
         diag = diag[cols_to_keep]
         logger.info(f"Total number of rows: {diag.shape[0]}")
         return save_data(diag, self.feature_path(), "DIAGNOSES")
+
+    def summary(self):
+        diag = pd.read_csv(
+            self.feature_path(),
+            compression="gzip",
+        )
+        freq = (
+            diag.groupby(
+                [
+                    DiagnosesIcuHeader.STAY_ID
+                    if self.use_icu
+                    else DiagnosesHeader.HOSPITAL_ADMISSION_ID,
+                    PreprocDiagnosesHeader.NEW_ICD_CODE,
+                ]
+            )
+            .size()
+            .reset_index(name="mean_frequency")
+        )
+        freq = (
+            freq.groupby(PreprocDiagnosesHeader.NEW_ICD_CODE)[MEAN_FREQUENCY_HEADER]
+            .mean()
+            .reset_index()
+        )
+        total = (
+            diag.groupby(PreprocDiagnosesHeader.NEW_ICD_CODE)
+            .size()
+            .reset_index(name="total_count")
+        )
+        summary = pd.merge(
+            freq, total, on=PreprocDiagnosesHeader.NEW_ICD_CODE, how="right"
+        )
+        summary = summary.fillna(0)
+
+        summary.to_csv(DIAG_SUMMARY_PATH, index=False)
+        summary[PreprocDiagnosesHeader.NEW_ICD_CODE].to_csv(
+            DIAG_FEATURES_PATH, index=False
+        )
+        return summary

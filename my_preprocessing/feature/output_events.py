@@ -6,6 +6,7 @@ from my_preprocessing.preproc.feature import (
     OutputEventsHeader,
 )
 from my_preprocessing.preproc.cohort import CohortHeader
+from my_preprocessing.preproc.summary import OUT_FEATURES_PATH, OUT_SUMMARY_PATH
 from my_preprocessing.raw.icu import load_icu_output_events, OuputputEvents
 from my_preprocessing.file_info import save_data
 from pathlib import Path
@@ -53,3 +54,22 @@ class OutputEvents(Feature):
 
     def preproc(self):
         pass
+
+    def summary(self):
+        out = pd.read_csv(self.feature_path(), compression="gzip")
+        freq = (
+            out.groupby([OutputEventsHeader.STAY_ID, OutputEventsHeader.ITEM_ID])
+            .size()
+            .reset_index(name="mean_frequency")
+        )
+        freq = freq.groupby(["itemid"])["mean_frequency"].mean().reset_index()
+        total = (
+            out.groupby(OutputEventsHeader.ITEM_ID)
+            .size()
+            .reset_index(name="total_count")
+        )
+        summary = pd.merge(freq, total, on=OutputEventsHeader.ITEM_ID, how="right")
+        summary = summary.fillna(0)
+        summary.to_csv(OUT_SUMMARY_PATH, index=False)
+        summary[OutputEventsHeader.ITEM_ID].to_csv(OUT_FEATURES_PATH, index=False)
+        return summary[OutputEventsHeader.ITEM_ID]

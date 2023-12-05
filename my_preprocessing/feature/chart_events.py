@@ -2,11 +2,13 @@ from tqdm import tqdm
 from my_preprocessing.feature.feature import Feature
 import logging
 import pandas as pd
+from my_preprocessing.outlier_removal import outlier_imputation
 from my_preprocessing.preproc.feature import (
     PREPROC_CHART_ICU_PATH,
     ChartEventsHeader,
 )
 from my_preprocessing.preproc.cohort import CohortHeader
+from my_preprocessing.preproc.summary import CHART_FEATURES_PATH, CHART_SUMMARY_PATH
 from my_preprocessing.raw.icu import (
     load_icu_chart_events,
     ChartEvents,
@@ -20,9 +22,19 @@ logger = logging.getLogger()
 
 
 class Chart(Feature):
-    def __init__(self, cohort: pd.DataFrame, chunksize: int = 10000000):
+    def __init__(
+        self,
+        cohort: pd.DataFrame,
+        chunksize: int = 10000000,
+        thresh=1,
+        left_thresh=0,
+        impute_outlier=False,
+    ):
         self.cohort = cohort
         self.chunksize = chunksize
+        self.thresh = thresh
+        self.left_thresh = left_thresh
+        self.impute_outlier = impute_outlier
 
     def summary_path(self):
         pass
@@ -63,5 +75,52 @@ class Chart(Feature):
         out = out[[h.value for h in ChartEventsHeader]]
         return save_data(out, self.feature_path(), "OUTPUT")
 
+    def summary(self):
+        chart = pd.read_csv(self.feature_path, compression="gzip")
+        freq = (
+            chart.groupby([ChartEventsHeader.STAY_ID, ChartEventsHeader.ITEM_ID])
+            .size()
+            .reset_index(name="mean_frequency")
+        )
+        freq = (
+            freq.groupby([ChartEventsHeader.ITEM_ID])["mean_frequency"]
+            .mean()
+            .reset_index()
+        )
+
+        missing = (
+            chart[chart[ChartEventsHeader.VALUE_NUM] == 0]
+            .groupby(ChartEventsHeader.ITEM_ID)
+            .size()
+            .reset_index(name="missing_count")
+        )
+        total = (
+            chart.groupby(ChartEventsHeader.ITEM_ID)
+            .size()
+            .reset_index(name="total_count")
+        )
+        summary = pd.merge(missing, total, on=ChartEventsHeader.ITEM_ID, how="right")
+        summary = pd.merge(freq, summary, on=ChartEventsHeader.ITEM_ID, how="right")
+        summary = summary.fillna(0)
+        summary.to_csv(CHART_SUMMARY_PATH, index=False)
+        summary[ChartEventsHeader.ITEM_ID].to_csv(CHART_FEATURES_PATH, index=False)
+
     def preproc(self):
-        pass
+        logger.info("[PROCESSING CHART EVENTS DATA]")
+        chart = pd.read_csv(PREPROC_CHART_ICU_PATH, compression="gzip")
+        chart = outlier_imputation(
+            chart,
+            "itemid",
+            "valuenum",
+            self.thresh,
+            self.left_thresh,
+            self.impute_outlier,
+        )
+
+        logger.info("Total number of rows", chart.shape[0])
+        chart.to_csv(
+            PREPROC_CHART_ICU_PATH,
+            compression="gzip",
+            index=False,
+        )
+        logger.info("[SUCCESSFULLY SAVED CHART EVENTS DATA]")

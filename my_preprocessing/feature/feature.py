@@ -22,3 +22,7 @@ class Feature(ABC):
     @abstractmethod
     def preproc(self):
         pass
+
+    @abstractmethod
+    def summary(self):
+        pass

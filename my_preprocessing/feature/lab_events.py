@@ -6,11 +6,13 @@ from my_preprocessing.admission_imputer import (
 from my_preprocessing.feature.feature import Feature
 import logging
 import pandas as pd
+from my_preprocessing.outlier_removal import outlier_imputation
 from my_preprocessing.preproc.feature import (
     PREPROC_LABS_PATH,
     LabEventsHeader,
 )
 from my_preprocessing.preproc.cohort import CohortHeader
+from my_preprocessing.preproc.summary import LABS_FEATURES_PATH, LABS_SUMMARY_PATH
 from my_preprocessing.raw.hosp import (
     HospAdmissions,
     HospLabEvents,
@@ -27,9 +29,19 @@ logger = logging.getLogger()
 
 
 class Lab(Feature):
-    def __init__(self, cohort: pd.DataFrame, chunksize: int = 10000000):
-        self.chunksize = chunksize
+    def __init__(
+        self,
+        cohort: pd.DataFrame,
+        chunksize: int = 10000000,
+        thresh=1,
+        left_thresh=0,
+        impute_outlier=False,
+    ):
         self.cohort = cohort
+        self.chunksize = chunksize
+        self.thresh = thresh
+        self.left_thresh = left_thresh
+        self.impute = impute_outlier
 
     def summary_path(self):
         pass
@@ -125,4 +137,62 @@ class Lab(Feature):
         return chunk.dropna()
 
     def preproc(self):
-        pass
+        print("[PROCESSING LABS DATA]")
+        labs = pd.read_csv(PREPROC_LABS_PATH, compression="gzip")
+        labs = outlier_imputation(
+            labs,
+            "itemid",
+            "valuenum",
+            self.thresh,
+            self.left_thresh,
+            self.impute,
+        )
+
+        print("Total number of rows", labs.shape[0])
+        labs.to_csv(PREPROC_LABS_PATH, compression="gzip", index=False)
+        print("[SUCCESSFULLY SAVED LABS DATA]")
+
+        return labs
+
+    def summary(self):
+        labs = pd.DataFrame()
+        for chunk in tqdm(
+            pd.read_csv(
+                PREPROC_LABS_PATH,
+                compression="gzip",
+                chunksize=self.chunksize,
+            )
+        ):
+            if labs.empty:
+                labs = chunk
+            else:
+                labs = labs.append(chunk, ignore_index=True)
+        freq = (
+            labs.groupby(
+                [LabEventsHeader.HOSPITAL_ADMISSION_ID, LabEventsHeader.ITEM_ID]
+            )
+            .size()
+            .reset_index(name="mean_frequency")
+        )
+        freq = (
+            freq.groupby([LabEventsHeader.ITEM_ID])["mean_frequency"]
+            .mean()
+            .reset_index()
+        )
+
+        missing = (
+            labs[labs[LabEventsHeader.VALUE_NUM] == 0]
+            .groupby(LabEventsHeader.ITEM_ID)
+            .size()
+            .reset_index(name="missing_count")
+        )
+        total = (
+            labs.groupby(LabEventsHeader.ITEM_ID).size().reset_index(name="total_count")
+        )
+        summary = pd.merge(missing, total, on=LabEventsHeader.ITEM_ID, how="right")
+        summary = pd.merge(freq, summary, on=LabEventsHeader.ITEM_ID, how="right")
+        summary["missing%"] = 100 * (summary["missing_count"] / summary["total_count"])
+        summary = summary.fillna(0)
+        summary.to_csv(LABS_SUMMARY_PATH, index=False)
+        summary[LabEventsHeader.ITEM_ID].to_csv(LABS_FEATURES_PATH, index=False)
+        return summary[LabEventsHeader.ITEM_ID]
