@@ -237,7 +237,6 @@ class FeaturePreprocessor:
                 icd_group_option=self.group_diag_icd,
             )
             summaries.append(dia.summary())
-
         if self.feature_extractor.for_medications:
             med = Medications(
                 cohort=pd.DataFrame(),
