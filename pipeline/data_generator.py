@@ -82,7 +82,7 @@ class DataGenerator:
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         self.smooth_meds(self.bucket)
         print("[ SUCCESSFULLY SAVED DATA DICTIONARIES ]")
-        
+
     def smooth_meds(self, bucket):
         final_meds = pd.DataFrame()
         final_proc = pd.DataFrame()
