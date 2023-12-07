@@ -1,6 +1,7 @@
 from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
+import numpy as np
 from pipeline.conversion.ndc import (
     NdcMappingHeader,
     get_EPC,
@@ -36,6 +37,8 @@ class Medications(Feature):
         self.cohort = cohort
         self.use_icu = use_icu
         self.group_code = group_code
+        self.df = pd.DataFrame()
+        self.final_df = pd.DataFrame()
 
     def summary_path(self) -> Path:
         pass
@@ -235,5 +238,150 @@ class Medications(Feature):
         del meds["los"]
 
         meds["dose_val_rx"] = meds["dose_val_rx"].apply(pd.to_numeric, errors="coerce")
-
+        self.df = meds
         return meds
+
+    def mortality_length(self, include_time):
+        col = "stay_id" if self.use_icu else "hadm_id"
+        self.df = self.df[self.df[col].isin(self.cohort[col])]
+        self.df = self.df[self.df["start_time"] <= include_time]
+        self.df.loc[self.df["stop_time"] > include_time, "stop_time"] = include_time
+
+    def los_length(self, include_time):
+        col = "stay_id" if self.use_icu else "hadm_id"
+        self.df = self.df[self.df[col].isin(self.cohort[col])]
+        self.df = self.df[self.df["start_time"] <= include_time]
+        self.df.loc[self.df["stop_time"] > include_time, "stop_time"] = include_time
+
+    def read_length(self):
+        col = "stay_id" if self.use_icu else "hadm_id"
+        self.df = self.df[self.df[col].isin(self.cohort[col])]
+        self.df = pd.merge(
+            self.df, self.cohort[[col, "select_time"]], on=col, how="left"
+        )
+        self.df["stop_time"] = self.df["stop_time"] - self.df["select_time"]
+
+        self.df["start_time"] = self.df["start_time"] - self.df["select_time"]
+        self.df = self.df[self.df["stop_time"] >= 0]
+        self.df.loc[self.df["start_time"] < 0, "start_time"] = 0
+
+    def smooth_meds_step(self, bucket, i, t):
+        sub_meds = (
+            self.df[(self.df["start_time"] >= i) & (self.df["start_time"] < i + bucket)]
+            .groupby(
+                ["stay_id", "itemid", "orderid"]
+                if self.use_icu
+                else ["hadm_id", "drug_name"]
+            )
+            .agg(
+                {
+                    "stop_time": "max",
+                    "subject_id": "max",
+                    "rate": np.nanmean,
+                    "amount": np.nanmean,
+                }
+                if self.use_icu
+                else {
+                    "stop_time": "max",
+                    "subject_id": "max",
+                    "dose_val_rx": np.nanmean,
+                }
+            )
+        )
+        sub_meds = sub_meds.reset_index()
+        sub_meds["start_time"] = t
+        sub_meds["stop_time"] = sub_meds["stop_time"] / bucket
+        if self.final_df.empty:
+            self.final_df = sub_meds
+        else:
+            self.final_df = self.final_df.append(sub_meds)
+
+    def smooth_meds(self):
+        f2_df = self.final_df.groupby(
+            ["stay_id", "itemid", "orderid"]
+            if self.use_icd
+            else ["hadm_id", "drug_name"]
+        ).size()
+        df_per_adm = (
+            f2_df.groupby("stay_id" if self.use_icd else "hadm_id")
+            .sum()
+            .reset_index()[0]
+            .max()
+        )
+        dflength_per_adm = (
+            self.final_df.groupby("stay_id" if self.use_icd else "hadm_id").size().max()
+        )
+        return f2_df, df_per_adm, dflength_per_adm
+
+    def dict_step(self, hid, los, dataDic):
+        feat = self.final_df["itemid" if self.use_icu else "drug_name"].unique()
+        df2 = self.final_df[
+            self.final_df["stay_id" if self.use_icu else "hadm_id"] == hid
+        ]
+        if df2.shape[0] == 0:
+            val = pd.DataFrame(np.zeros([los, len(feat)]), columns=feat)
+            val = val.fillna(0)
+            val.columns = pd.MultiIndex.from_product([["MEDS"], val.columns])
+        else:
+            if self.use_icu:
+                rate = df2.pivot_table(
+                    index="start_time", columns="itemid", values="rate"
+                )
+                amount = df2.pivot_table(
+                    index="start_time", columns="itemid", values="amount"
+                )
+            else:
+                val = df2.pivot_table(
+                    index="start_time", columns="drug_name", values="dose_val_rx"
+                )
+
+            df2 = df2.pivot_table(
+                index="start_time",
+                columns="itemid" if self.use_icu else "drug_name",
+                values="stop_time",
+            )
+            add_indices = pd.Index(range(los)).difference(df2.index)
+            add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
+            df2 = pd.concat([df2, add_df])
+            df2 = df2.sort_index()
+            df2 = df2.ffill()
+            df2 = df2.fillna(0)
+            if self.use_icu:
+                rate = pd.concat([rate, add_df])
+                rate = rate.sort_index()
+                rate = rate.ffill()
+                rate = rate.fillna(-1)
+                amount = pd.concat([amount, add_df])
+                amount = amount.sort_index()
+                amount = amount.ffill()
+                amount = amount.fillna(-1)
+            else:
+                val = pd.concat([val, add_df])
+                val = val.sort_index()
+                val = val.ffill()
+                val = val.fillna(-1)
+
+            df2.iloc[:, 0:] = df2.iloc[:, 0:].sub(df2.index, 0)
+            df2[df2 > 0] = 1
+            df2[df2 < 0] = 0
+            val.iloc[:, 0:] = df2.iloc[:, 0:] * val.iloc[:, 0:]
+            # print(df2.head())
+            if self.use_icu:
+                dataDic.iloc[:, 0:].to_dict(orient="list")
+                dataDic[hid]["Med"]["rate"] = rate.iloc[:, 0:].to_dict(orient="list")
+                dataDic[hid]["Med"]["amount"] = amount.iloc[:, 0:].to_dict(
+                    orient="list"
+                )
+            else:
+                dataDic[hid]["Med"]["signal"] = df2.iloc[:, 0:].to_dict(orient="list")
+                dataDic[hid]["Med"]["val"] = val.iloc[:, 0:].to_dict(orient="list")
+
+            feat_df = pd.DataFrame(columns=list(set(feat) - set(val.columns)))
+
+            val = pd.concat([val, feat_df], axis=1)
+
+            val = val[feat]
+            val = val.fillna(0)
+
+            val.columns = pd.MultiIndex.from_product([["MEDS"], val.columns])
+        return val

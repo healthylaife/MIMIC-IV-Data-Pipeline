@@ -3,21 +3,25 @@ import pandas as pd
 from tqdm import tqdm
 import pickle
 import os
+from pipeline.feature.lab_events import Lab
+from pipeline.feature.medications import Medications
+from pipeline.feature.output_events import OutputEvents
+from pipeline.feature.procedures import Procedures
 from pipeline.prediction_task import PredictionTask, TargetType
 import logging
 
 from pipeline.features_extractor import FeatureExtractor
-from pipeline.file_info.preproc.cohort import generate_admission_cohort
 from pipeline.feature.chart_events import ChartEvents
-from pipeline.preprocessing.data_gen import generate_admission_cohort
+from pipeline.feature.diagnoses import Diagnoses
+from pipeline.preprocessing.data_gen import mortality_length
 
 logger = logging.getLogger()
 
 
-class Generator:
+class DataGenerator:
     def __init__(
         self,
-        cohort_output: str,
+        cohort: pd.DataFrame,
         feature_extractor: FeatureExtractor,
         prediction_task: PredictionTask,
         impute: str,
@@ -34,13 +38,41 @@ class Generator:
         self.predW = predW
 
     def process_data(self):
-        # self.cohort = generate_admission_cohort(self.cohort_output)
+        features = []
+        if self.feature_extractor.for_diagnoses:
+            dia = Diagnoses(
+                cohort=pd.DataFrame(),
+                use_icu=self.feature_extractor.use_icu,
+                # icd_group_option=self.group_diag_icd,
+            )
+            features.append(dia.generate_fun())
+            print("[ ======READING DIAGNOSIS ]")
+        if self.feature_extractor.for_procedures:
+            print("[ ======READING PROCEDURES ]")
+            proc = Procedures(
+                cohort=pd.DataFrame(), use_icu=self.feature_extractor.use_icu
+            )
+            features.append(proc.generate_fun())
+        if self.feature_extractor.for_medications:
+            print("[ ======READING MEDICATIONS ]")
+            med = Medications(
+                cohort=pd.DataFrame(), use_icu=self.feature_extractor.use_icu
+            )
+            features.append(med.generate_fun())
+        if self.feature_extractor.for_labs:
+            print("[ ======READING LABS ]")
+            labs = Lab(cohort=pd.DataFrame())
+            features.append(labs.generate_fun())
 
-        self.generate_feat()
+        if self.feature_extractor.for_labs:
+            print("[ ======READING LABS ]")
+            out = OutputEvents(cohort=pd.DataFrame())
+            features.append(out.generate_fun())
+
         print("[ READ ALL FEATURES ]")
         if self.prediction_task.target_type == TargetType.MORTALITY:
             print(self.predW)
-            self.mortality_length(self.include_time, self.predW)
+            mortality_length(self.cohort, self.include_time, self.predW)
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         elif self.prediction_task.target_type == TargetType.READMISSION:
             self.readmission_length(self.include_time)
@@ -50,129 +82,7 @@ class Generator:
             print("[ PROCESSED TIME SERIES TO EQUAL LENGTH  ]")
         self.smooth_meds(self.bucket)
         print("[ SUCCESSFULLY SAVED DATA DICTIONARIES ]")
-
-    def generate_feat(self):
-        use_icu = self.feature_extractor.for_icu
-        if self.feature_extractor.for_diagnoses:
-            print("[ ======READING DIAGNOSIS ]")
-            generate_diag(use_icu)
-        if self.feature_extractor.for_procedures:
-            print("[ ======READING PROCEDURES ]")
-            generate_proc(use_icu)
-        if self.feature_extractor.for_medications:
-            print("[ ======READING MEDICATIONS ]")
-            self.feature_extractor.for_labs()
-        if self.feature_extractor.for_labs:
-            print("[ ======READING LABS ]")
-            generate_labs(use_icu)
-
-    def mortality_length(self, include_time, predW):
-        self.los = include_time
-        self.data = self.data[(self.data["los"] >= include_time + predW)]
-        self.hids = self.data["hadm_id"].unique()
-
-        if self.feat_cond:
-            self.cond = self.cond[self.cond["hadm_id"].isin(self.data["hadm_id"])]
-
-        self.data["los"] = include_time
-        ###MEDS
-        if self.feat_med:
-            self.meds = self.meds[self.meds["hadm_id"].isin(self.data["hadm_id"])]
-            self.meds = self.meds[self.meds["start_time"] <= include_time]
-            self.meds.loc[
-                self.meds.stop_time > include_time, "stop_time"
-            ] = include_time
-
-        ###PROCS
-        if self.feat_proc:
-            self.proc = self.proc[self.proc["hadm_id"].isin(self.data["hadm_id"])]
-            self.proc = self.proc[self.proc["start_time"] <= include_time]
-
-        ###LAB
-        if self.feat_lab:
-            self.labs = self.labs[self.labs["hadm_id"].isin(self.data["hadm_id"])]
-            self.labs = self.labs[self.labs["start_time"] <= include_time]
-
-        self.los = include_time
-
-    def los_length(self, include_time):
-        self.los = include_time
-        self.data = self.data[(self.data["los"] >= include_time)]
-        self.hids = self.data["hadm_id"].unique()
-
-        if self.feat_cond:
-            self.cond = self.cond[self.cond["hadm_id"].isin(self.data["hadm_id"])]
-
-        self.data["los"] = include_time
-        ###MEDS
-        if self.feat_med:
-            self.meds = self.meds[self.meds["hadm_id"].isin(self.data["hadm_id"])]
-            self.meds = self.meds[self.meds["start_time"] <= include_time]
-            self.meds.loc[
-                self.meds.stop_time > include_time, "stop_time"
-            ] = include_time
-
-        ###PROCS
-        if self.feat_proc:
-            self.proc = self.proc[self.proc["hadm_id"].isin(self.data["hadm_id"])]
-            self.proc = self.proc[self.proc["start_time"] <= include_time]
-
-        ###LAB
-        if self.feat_lab:
-            self.labs = self.labs[self.labs["hadm_id"].isin(self.data["hadm_id"])]
-            self.labs = self.labs[self.labs["start_time"] <= include_time]
-
-        # self.los=include_time
-
-    def readmission_length(self, include_time):
-        self.los = include_time
-        self.data = self.data[(self.data["los"] >= include_time)]
-        self.hids = self.data["hadm_id"].unique()
-        if self.feat_cond:
-            self.cond = self.cond[self.cond["hadm_id"].isin(self.data["hadm_id"])]
-        self.data["select_time"] = self.data["los"] - include_time
-        self.data["los"] = include_time
-
-        ####Make equal length input time series and remove data for pred window if needed
-
-        ###MEDS
-        if self.feat_med:
-            self.meds = self.meds[self.meds["hadm_id"].isin(self.data["hadm_id"])]
-            self.meds = pd.merge(
-                self.meds,
-                self.data[["hadm_id", "select_time"]],
-                on="hadm_id",
-                how="left",
-            )
-            self.meds["stop_time"] = self.meds["stop_time"] - self.meds["select_time"]
-            self.meds["start_time"] = self.meds["start_time"] - self.meds["select_time"]
-            self.meds = self.meds[self.meds["stop_time"] >= 0]
-            self.meds.loc[self.meds.start_time < 0, "start_time"] = 0
-
-        ###PROCS
-        if self.feat_proc:
-            self.proc = self.proc[self.proc["hadm_id"].isin(self.data["hadm_id"])]
-            self.proc = pd.merge(
-                self.proc,
-                self.data[["hadm_id", "select_time"]],
-                on="hadm_id",
-                how="left",
-            )
-            self.proc["start_time"] = self.proc["start_time"] - self.proc["select_time"]
-            self.proc = self.proc[self.proc["start_time"] >= 0]
-
-        ###LABS
-        if self.feat_lab:
-            self.labs = self.labs[self.labs["hadm_id"].isin(self.data["hadm_id"])]
-            self.labs = pd.merge(
-                self.labs,
-                self.data[["hadm_id", "select_time"]],
-                on="hadm_id",
-                how="left",
-            )
-            self.labs["start_time"] = self.labs["start_time"] - self.labs["select_time"]
-            self.labs = self.labs[self.labs["start_time"] >= 0]
-
+        
     def smooth_meds(self, bucket):
         final_meds = pd.DataFrame()
         final_proc = pd.DataFrame()

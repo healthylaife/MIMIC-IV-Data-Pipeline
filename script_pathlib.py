@@ -1,4 +1,5 @@
 from pipeline.cohort_extractor import CohortExtractor
+from pipeline.feature.diagnoses import IcdGroupOption
 from pipeline.feature_selector import FeatureSelector
 from pipeline.features_preprocessor import FeaturePreprocessor
 from pipeline.prediction_task import TargetType, PredictionTask, DiseaseCode
@@ -29,7 +30,7 @@ if __name__ == "__main__":
 
     feat_preproc = FeaturePreprocessor(
         feature_extractor=feature_extractor,
-        group_diag_icd=True,
+        group_diag_icd=IcdGroupOption.KEEP,
         group_med_code=True,
         keep_proc_icd9=False,
         clean_chart=False,
@@ -54,7 +55,7 @@ if __name__ == "__main__":
 
     feat_preproc = FeaturePreprocessor(
         feature_extractor=feature_extractor,
-        group_diag_icd=None,
+        group_diag_icd=IcdGroupOption.KEEP,
         group_med_code=False,
         keep_proc_icd9=False,
         clean_chart=False,
@@ -65,3 +66,9 @@ if __name__ == "__main__":
         left_thresh=0,
     )
     feat_preproc.preproc_events_features()
+
+    from pipeline.data_generator import DataGenerator
+    from pipeline.preprocessing.data_gen import generate_admission_cohort
+
+    cohort = generate_admission_cohort(feature_extractor.cohort_output)
+    # data_generator = DataGenerator(

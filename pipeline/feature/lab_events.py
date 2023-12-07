@@ -18,9 +18,8 @@ from pipeline.file_info.raw.hosp import (
     HospLabEvents,
     load_hosp_admissions,
     load_hosp_lab_events,
-    load_hosp_lab_events2,
 )
-
+import numpy as np
 from pipeline.file_info.common import save_data
 from pathlib import Path
 
@@ -43,6 +42,8 @@ class Lab(Feature):
         self.thresh = thresh
         self.left_thresh = left_thresh
         self.impute = impute_outlier
+        self.df = pd.DataFrame()
+        self.final_df = pd.DataFrame()
 
     def summary_path(self):
         pass
@@ -74,9 +75,6 @@ class Lab(Feature):
             HospLabEvents.VALUE_NUM,
             HospLabEvents.VALUE_UOM,
         ]
-        # breakpoint()
-        lab_events = load_hosp_lab_events2(use_cols=usecols)
-        return self.process_lab_chunk(lab_events, admissions)
         processed_chunks = [
             self.process_lab_chunk(chunk, admissions)
             for chunk in tqdm(
@@ -100,9 +98,7 @@ class Lab(Feature):
             chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].notna()],
             chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].isna()],
         )
-        # breakpoint()
         chunk_imputed = impute_hadm_ids(chunk_no_hadm.copy(), admissions)
-        # breakpoint()
         chunk_imputed[HospLabEvents.HOSPITAL_ADMISSION_ID] = chunk_imputed[
             INPUTED_HOSPITAL_ADMISSION_ID_HEADER
         ]
@@ -201,3 +197,140 @@ class Lab(Feature):
         summary.to_csv(LABS_SUMMARY_PATH, index=False)
         summary[LabEventsHeader.ITEM_ID].to_csv(LABS_FEATURES_PATH, index=False)
         return summary[LabEventsHeader.ITEM_ID]
+
+    def generate_fun(self):
+        chunksize = self.chunksize
+        final = pd.DataFrame()
+        for labs in tqdm(
+            pd.read_csv(
+                PREPROC_LABS_PATH,
+                compression="gzip",
+                chunksize=chunksize,
+            )
+        ):
+            labs = labs[labs["hadm_id"].isin(self.data["hadm_id"])]
+            labs[["start_days", "dummy", "start_hours"]] = labs[
+                "lab_time_from_admit"
+            ].str.split(" ", expand=True)
+            labs[["start_hours", "min", "sec"]] = labs["start_hours"].str.split(
+                ":", expand=True
+            )
+            labs["start_time"] = pd.to_numeric(labs["start_days"]) * 24 + pd.to_numeric(
+                labs["start_hours"]
+            )
+            labs = labs.drop(
+                columns=["start_days", "dummy", "start_hours", "min", "sec"]
+            )
+            labs = labs[labs["start_time"] >= 0]
+
+            ###Remove where event time is after discharge time
+            labs = pd.merge(
+                labs, self.data[["hadm_id", "los"]], on="hadm_id", how="left"
+            )
+            labs["sanity"] = labs["los"] - labs["start_time"]
+            labs = labs[labs["sanity"] > 0]
+            del labs["sanity"]
+
+            if final.empty:
+                final = labs
+            else:
+                final = pd.concat([final, labs], ignore_index=True)
+        self.df = final
+        return final
+
+    def mortality_length(self, include_time):
+        self.df = self.df[self.df["hadm_id"].isin(self.cohort["hadm_id"])]
+        self.df = self.df[self.df["start_time"] <= include_time]
+
+    def los_length(self, include_time):
+        self.df = self.df[self.df["hadm_id"].isin(self.cohort["hadm_id"])]
+        self.df = self.df[self.df["start_time"] <= include_time]
+
+    def read_length(self):
+        self.df = self.df[self.df["hadm_id"].isin(self.cohort["hadm_id"])]
+        self.df = pd.merge(
+            self.df, self.cohort[["hadm_id", "select_time"]], on="hadm_id", how="left"
+        )
+        self.df["start_time"] = self.df["start_time"] - self.df["select_time"]
+        self.df = self.df[self.df["start_time"] >= 0]
+        sub_chart = (
+            self.df[
+                (self.chart["start_time"] >= i) & (self.df["start_time"] < i + bucket)
+            ]
+            .groupby(["stay_id", "itemid"])
+            .agg({"valuenum": np.nanmean})
+        )
+        sub_chart = sub_chart.reset_index()
+        sub_chart["start_time"] = t
+        if self.final_df.empty:
+            self.final_df = sub_chart
+        else:
+            self.final_df = self.final_df.append(sub_chart)
+
+    def smooth_meds_step(self, bucket, i, t):
+        sub_labs = (
+            self.labs[
+                (self.df["start_time"] >= i) & (self.df["start_time"] < i + bucket)
+            ]
+            .groupby(["hadm_id", "itemid"])
+            .agg({"subject_id": "max", "valuenum": np.nanmean})
+        )
+        sub_labs = sub_labs.reset_index()
+        sub_labs["start_time"] = t
+        if self.final_df.empty:
+            self.final_df = sub_labs
+        else:
+            self.final_df = self.final_df.append(sub_labs)
+
+    def smooth_meds(self):
+        f2_df = self.final_df.groupby(["hadm_id", "itemid"]).size()
+        df_per_adm = f2_df.groupby("hadm_id").sum().reset_index()[0].max()
+        dflength_per_adm = self.final_df.groupby("hadm_id").size().max()
+        return f2_df, df_per_adm, dflength_per_adm
+
+    def dict_step(self, hid, los, dataDic):
+        feat = self.final_df["itemid"].unique()
+        df2 = self.final_df[self.final_df["hadm_id"] == hid]
+        if df2.shape[0] == 0:
+            val = pd.DataFrame(np.zeros([los, len(feat)]), columns=feat)
+            val = val.fillna(0)
+            val.columns = pd.MultiIndex.from_product([["LAB"], val.columns])
+        else:
+            val = df2.pivot_table(
+                index="start_time", columns="itemid", values="valuenum"
+            )
+            df2["val"] = 1
+            df2 = df2.pivot_table(index="start_time", columns="itemid", values="val")
+            # print(df2.shape)
+            add_indices = pd.Index(range(los)).difference(df2.index)
+            add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
+            df2 = pd.concat([df2, add_df])
+            df2 = df2.sort_index()
+            df2 = df2.fillna(0)
+
+            val = pd.concat([val, add_df])
+            val = val.sort_index()
+            if self.impute == "Mean":
+                val = val.ffill()
+                val = val.bfill()
+                val = val.fillna(val.mean())
+            elif self.impute == "Median":
+                val = val.ffill()
+                val = val.bfill()
+                val = val.fillna(val.median())
+            val = val.fillna(0)
+
+            df2[df2 > 0] = 1
+            df2[df2 < 0] = 0
+
+            # print(df2.head())
+            dataDic[hid]["Lab"]["signal"] = df2.iloc[:, 0:].to_dict(orient="list")
+            dataDic[hid]["Lab"]["val"] = val.iloc[:, 0:].to_dict(orient="list")
+
+            feat_df = pd.DataFrame(columns=list(set(feat) - set(val.columns)))
+            val = pd.concat([val, feat_df], axis=1)
+
+            val = val[feat]
+            val = val.fillna(0)
+            val.columns = pd.MultiIndex.from_product([["LAB"], val.columns])
+        return val

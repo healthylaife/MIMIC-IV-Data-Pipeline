@@ -12,13 +12,15 @@ def generate_admission_cohort(cohort_output: str) -> pd.DataFrame:
     )
     for col in [CohortHeader.ADMIT_TIME, CohortHeader.DISCH_TIME]:
         data[col] = pd.to_datetime(data[col])
+
     data[CohortHeader.LOS] = (
-        int(
+        (
             data[CohortHeader.DISCH_TIME] - data[CohortHeader.ADMIT_TIME]
         ).dt.total_seconds()
         / 3600
-    )
+    ).astype(int)
     data = data[data[CohortHeader.LOS] > 0]
     data[CohortHeader.AGE] = data[CohortHeader.AGE].astype(int)
+
     logger.info("[ READ COHORT ]")
     return data

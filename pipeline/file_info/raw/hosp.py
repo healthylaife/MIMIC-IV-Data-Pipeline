@@ -91,15 +91,6 @@ def load_hosp_lab_events(chunksize: int, use_cols=None) -> pd.DataFrame:
     )
 
 
-def load_hosp_lab_events2(use_cols=None) -> pd.DataFrame:
-    return pd.read_csv(
-        HOSP_LAB_EVENTS_PATH,
-        compression="gzip",
-        parse_dates=["charttime"],
-        usecols=use_cols,
-    )
-
-
 class HospProceduresIcd(StrEnum):
     PATIENT_ID = "subject_id"
     HOSPITAL_ADMISSION_ID = "hadm_id"
