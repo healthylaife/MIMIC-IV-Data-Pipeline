@@ -127,3 +127,13 @@ class Diagnoses(Feature):
             DIAG_FEATURES_PATH, index=False
         )
         return summary
+
+    def generate_fun(self):
+        diag = pd.read_csv(self.summary_path(), compression="gzip")
+        diag = diag[
+            diag[DiagnosesHeader.HOSPITAL_ADMISSION_ID].isin(
+                self.cohort[CohortHeader.HOSPITAL_ADMISSION_ID]
+            )
+        ]
+        diag_per_adm = diag.groupby(DiagnosesHeader.HOSPITAL_ADMISSION_ID).size().max()
+        return diag, diag_per_adm

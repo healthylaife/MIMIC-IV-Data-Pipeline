@@ -18,6 +18,7 @@ from pipeline.file_info.raw.hosp import (
     HospLabEvents,
     load_hosp_admissions,
     load_hosp_lab_events,
+    load_hosp_lab_events2,
 )
 
 from pipeline.file_info.common import save_data
@@ -73,7 +74,9 @@ class Lab(Feature):
             HospLabEvents.VALUE_NUM,
             HospLabEvents.VALUE_UOM,
         ]
-
+        # breakpoint()
+        lab_events = load_hosp_lab_events2(use_cols=usecols)
+        return self.process_lab_chunk(lab_events, admissions)
         processed_chunks = [
             self.process_lab_chunk(chunk, admissions)
             for chunk in tqdm(
@@ -97,7 +100,9 @@ class Lab(Feature):
             chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].notna()],
             chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].isna()],
         )
+        # breakpoint()
         chunk_imputed = impute_hadm_ids(chunk_no_hadm.copy(), admissions)
+        # breakpoint()
         chunk_imputed[HospLabEvents.HOSPITAL_ADMISSION_ID] = chunk_imputed[
             INPUTED_HOSPITAL_ADMISSION_ID_HEADER
         ]

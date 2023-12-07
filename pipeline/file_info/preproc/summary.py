@@ -2,7 +2,6 @@ from pipeline.file_info.common import PREPROC_PATH
 
 SUMMARY_PATH = PREPROC_PATH / "summary"
 
-
 DIAG_FEATURES_PATH = SUMMARY_PATH / "diag_features.csv"
 DIAG_SUMMARY_PATH = SUMMARY_PATH / "diag_summary.csv"
 

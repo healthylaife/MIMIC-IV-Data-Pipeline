@@ -143,7 +143,7 @@ class Procedures(Feature):
 
     def summary(self):
         proc = pd.read_csv(
-            PREPROC_PROC_ICU_PATH if self.use_icu else PREPROC_PROC_PATH,
+            self.feature_path(),
             compression="gzip",
         )
         feature_name = (
@@ -168,3 +168,26 @@ class Procedures(Feature):
         summary.to_csv(PROC_SUMMARY_PATH, index=False)
         summary[feature_name].to_csv(PROC_FEATURES_PATH, index=False)
         return summary[feature_name]
+
+    def generate_fun(self):
+        proc = pd.read_csv(self.feature_path(), compression="gzip")
+        proc = proc[
+            proc[ProceduresHeader.HOSPITAL_ADMISSION_ID].isin(self.cohort["hadm_id"])
+        ]
+        proc[["start_days", "dummy", "start_hours"]] = proc[
+            "proc_time_from_admit"
+        ].str.split(" ", expand=True)
+        proc[["start_hours", "min", "sec"]] = proc["start_hours"].str.split(
+            ":", expand=True
+        )
+        proc["start_time"] = pd.to_numeric(proc["start_days"]) * 24 + pd.to_numeric(
+            proc["start_hours"]
+        )
+        proc = proc.drop(columns=["start_days", "dummy", "start_hours", "min", "sec"])
+        proc = proc[proc["start_time"] >= 0]
+
+        ###Remove where event time is after discharge time
+        proc = pd.merge(proc, self.cohort[["hadm_id", "los"]], on="hadm_id", how="left")
+        proc["sanity"] = proc["los"] - proc["start_time"]
+        proc = proc[proc["sanity"] > 0]
+        del proc["sanity"]

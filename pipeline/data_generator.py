@@ -4,14 +4,14 @@ from tqdm import tqdm
 import pickle
 import os
 from pipeline.prediction_task import PredictionTask, TargetType
-from pipeline.preproc_file_info import *
+import logging
+
 from pipeline.features_extractor import FeatureExtractor
-from pipeline.data_generation import (
-    generate_diag,
-    generate_proc,
-    generate_labs,
-    generate_admission_cohort,
-)
+from pipeline.file_info.preproc.cohort import generate_admission_cohort
+from pipeline.feature.chart_events import ChartEvents
+from pipeline.preprocessing.data_gen import generate_admission_cohort
+
+logger = logging.getLogger()
 
 
 class Generator:
@@ -25,7 +25,7 @@ class Generator:
         bucket: int = 1,
         predW: int = 0,
     ):
-        self.cohort_output = cohort_output
+        self.cohort = cohort
         self.feature_extractor = feature_extractor
         self.prediction_task = prediction_task
         self.impute = impute
@@ -34,8 +34,8 @@ class Generator:
         self.predW = predW
 
     def process_data(self):
-        self.cohort = generate_admission_cohort(self.cohort_output)
-        print("[ READ COHORT ]")
+        # self.cohort = generate_admission_cohort(self.cohort_output)
+
         self.generate_feat()
         print("[ READ ALL FEATURES ]")
         if self.prediction_task.target_type == TargetType.MORTALITY:
@@ -359,6 +359,7 @@ class Generator:
                 dyn_csv = pd.concat([dyn_csv, val], axis=1)
 
             ###PROCS
+
         if self.feat_proc:
             feat = proc["icd_code"].unique()
             df2 = proc[proc["hadm_id"] == hid]

@@ -81,12 +81,21 @@ class HospLabEvents(StrEnum):
     VALUE_UOM = "valueuom"
 
 
-def load_hosp_lab_events(chunksize, use_cols=None) -> pd.DataFrame:
+def load_hosp_lab_events(chunksize: int, use_cols=None) -> pd.DataFrame:
     return pd.read_csv(
         HOSP_LAB_EVENTS_PATH,
         compression="gzip",
         parse_dates=["charttime"],
         chunksize=chunksize,
+        usecols=use_cols,
+    )
+
+
+def load_hosp_lab_events2(use_cols=None) -> pd.DataFrame:
+    return pd.read_csv(
+        HOSP_LAB_EVENTS_PATH,
+        compression="gzip",
+        parse_dates=["charttime"],
         usecols=use_cols,
     )
 

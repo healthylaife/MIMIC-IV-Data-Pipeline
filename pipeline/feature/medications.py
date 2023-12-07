@@ -194,3 +194,46 @@ class Medications(Feature):
         summary.to_csv(MED_SUMMARY_PATH, index=False)
         summary[feature_name].to_csv(MED_FEATURES_PATH, index=False)
         return summary
+
+    def generate_fun(self):
+        meds = pd.read_csv(self.feature_path(), compression="gzip")
+        meds[["start_days", "dummy", "start_hours"]] = meds[
+            "start_hours_from_admit"
+        ].str.split(" ", expand=True)
+        meds[["start_hours", "min", "sec"]] = meds["start_hours"].str.split(
+            ":", -1, expand=True
+        )
+        meds["start_time"] = pd.to_numeric(meds["start_days"]) * 24 + pd.to_numeric(
+            meds["start_hours"]
+        )
+        meds[["start_days", "dummy", "start_hours"]] = meds[
+            "stop_hours_from_admit"
+        ].str.split(" ", expand=True)
+        meds[["start_hours", "min", "sec"]] = meds["start_hours"].str.split(
+            ":", expand=True
+        )
+        meds["stop_time"] = pd.to_numeric(meds["start_days"]) * 24 + pd.to_numeric(
+            meds["start_hours"]
+        )
+        meds = meds.drop(columns=["start_days", "dummy", "start_hours", "min", "sec"])
+        #####Sanity check
+        meds["sanity"] = meds["stop_time"] - meds["start_time"]
+        meds = meds[meds["sanity"] > 0]
+        del meds["sanity"]
+        #####Select hadm_id as in main file
+        meds = meds[meds["hadm_id"].isin(self.data["hadm_id"])]
+        meds = pd.merge(meds, self.data[["hadm_id", "los"]], on="hadm_id", how="left")
+
+        #####Remove where start time is after end of visit
+        meds["sanity"] = meds["los"] - meds["start_time"]
+        meds = meds[meds["sanity"] > 0]
+        del meds["sanity"]
+        ####Any stop_time after end of visit is set at end of visit
+        meds.loc[meds["stop_time"] > meds["los"], "stop_time"] = meds.loc[
+            meds["stop_time"] > meds["los"], "los"
+        ]
+        del meds["los"]
+
+        meds["dose_val_rx"] = meds["dose_val_rx"].apply(pd.to_numeric, errors="coerce")
+
+        return meds
