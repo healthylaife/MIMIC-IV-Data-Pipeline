@@ -38,7 +38,7 @@ class Procedures(Feature):
             load_icu_procedure_events() if self.use_icu else load_hosp_procedures_icd()
         )
         procedures = raw_procedures.merge(
-            self.cohort[
+            cohort[
                 [
                     CohortHeader.PATIENT_ID,
                     CohortHeader.HOSPITAL_ADMISSION_ID,
