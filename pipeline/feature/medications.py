@@ -81,50 +81,55 @@ class Medications(Feature):
             if self.use_icu
             else self.normalize_non_icu(medications)
         )
-        self.log_icu(medications) if self.use_icu else self.log_non_icu(medications)
+        self.log_medication_stats(medications)
         return medications
 
-    def normalize_non_icu(self, med: pd.DataFrame):
-        med[NonIcuMedicationHeader.DRUG] = (
-            med[NonIcuMedicationHeader.DRUG].fillna("").astype(str)
-        )
-        med[NonIcuMedicationHeader.DRUG] = med[NonIcuMedicationHeader.DRUG].apply(
-            lambda x: str(x).lower().strip().replace(" ", "_") if not "" else ""
-        )
+    def normalize_non_icu(self, med: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normalize medication data for non-ICU cases.
+
+        Args:
+            med (pd.DataFrame): The medication dataframe.
+
+        Returns:
+            pd.DataFrame: The normalized dataframe.
+        """
+        # Normalize the 'DRUG' column
         med[NonIcuMedicationHeader.DRUG] = (
             med[NonIcuMedicationHeader.DRUG]
-            .dropna()
-            .apply(lambda x: str(x).lower().strip())
+            .fillna("")
+            .astype(str)
+            .str.lower()
+            .str.strip()
+            .str.replace(" ", "_")
         )
         med[HospPrescriptions.NDC] = med[HospPrescriptions.NDC].fillna(-1)
-
-        # Ensures the decimal is removed from the ndc col
         med[HospPrescriptions.NDC] = med[HospPrescriptions.NDC].astype("Int64")
         med[NdcMappingHeader.NEW_NDC] = med[HospPrescriptions.NDC].apply(ndc_to_str)
         ndc_map = prepare_ndc_mapping()
-        med = med.merge(ndc_map, on=NdcMappingHeader.NEW_NDC)
-
-        # Function generates a list of EPCs, as a drug can have multiple EPCs
-        med[NonIcuMedicationHeader.EPC] = med.pharm_classes.apply(get_EPC)
+        med = med.merge(ndc_map, on=NdcMappingHeader.NEW_NDC, how="left")
+        med[NonIcuMedicationHeader.EPC] = med["pharm_classes"].apply(get_EPC)
         return med
 
-    def log_icu(self, med: pd.DataFrame) -> None:
-        logger.info(f"# of unique type of drug: {med[InputEvents.ITEMID].nunique()}")
-        logger.info(f"# Admissions:  {med[InputEvents.STAY_ID].nunique()}")
+    def log_medication_stats(self, med: pd.DataFrame) -> None:
+        """
+        Log statistics for medication data.
 
-        logger.info(f"# Total rows: {med.shape[0]}")
-        return med
-
-    def log_non_icu(self, med: pd.DataFrame) -> None:
-        logger.info(
-            f"Number of unique type of drug: {med[NonIcuMedicationHeader.DRUG].nunique()}"
-        )
-        logger.info(
-            f"Number of unique type of drug after grouping: {med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME].nunique()}"
-        )
-        logger.info(
-            f"# Admissions: {med[CohortHeader.HOSPITAL_ADMISSION_ID].nunique()}"
-        )
+        Args:
+            med (pd.DataFrame): The medication dataframe.
+        """
+        unique_drug_count = med[
+            InputEvents.ITEMID if self.use_icu else NonIcuMedicationHeader.DRUG
+        ].nunique()
+        unique_admission_count = med[
+            InputEvents.STAY_ID if self.use_icu else CohortHeader.HOSPITAL_ADMISSION_ID
+        ].nunique()
+        logger.info(f"Number of unique types of drugs: {unique_drug_count}")
+        if not self.use_icu:
+            logger.info(
+                f"Number of unique type of drug after grouping: {med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME].nunique()}"
+            )
+        logger.info(f"Number of admissions: {unique_admission_count}")
         logger.info(f"Total number of rows: {med.shape[0]}")
 
     def save(self) -> pd.DataFrame:

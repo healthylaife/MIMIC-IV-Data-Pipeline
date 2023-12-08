@@ -4,6 +4,8 @@ from pipeline.feature_selector import FeatureSelector
 from pipeline.features_preprocessor import FeaturePreprocessor
 from pipeline.prediction_task import TargetType, PredictionTask, DiseaseCode
 from pipeline.features_extractor import FeatureExtractor
+from pipeline.data_generator import DataGenerator
+
 
 if __name__ == "__main__":
     prediction_task = PredictionTask(
@@ -67,8 +69,8 @@ if __name__ == "__main__":
     )
     feat_preproc.preproc_events_features()
 
-    from pipeline.data_generator import DataGenerator
     from pipeline.preprocessing.data_gen import generate_admission_cohort
 
     cohort = generate_admission_cohort(feature_extractor.cohort_output)
     # data_generator = DataGenerator(
+    # data = data_generator.generate_data()
