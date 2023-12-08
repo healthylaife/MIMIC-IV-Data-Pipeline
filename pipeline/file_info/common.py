@@ -17,8 +17,8 @@ class IcdMap(StrEnum):
     DIAGNOISIS_TYPE = "diagnosis_type"
     DIAGNOISIS_CODE = "diagnosis_code"
     DIAGNOISIS_DESCRIPTION = "diagnosis_description"
-    ICD9CM = "icd9cm"
-    ICD10CM = "icd10cm"
+    ICD9 = "icd9cm"
+    ICD10 = "icd10cm"
     FLAGS = "flags"
 
 
