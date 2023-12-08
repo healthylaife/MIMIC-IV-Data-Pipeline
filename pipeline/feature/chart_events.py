@@ -8,7 +8,7 @@ from pipeline.file_info.preproc.feature import (
     PREPROC_CHART_ICU_PATH,
     ChartEventsHeader,
 )
-from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.cohort import IcuCohortHeader
 from pipeline.file_info.preproc.summary import CHART_FEATURES_PATH, CHART_SUMMARY_PATH
 from pipeline.file_info.raw.icu import (
     load_icu_chart_events,
@@ -68,7 +68,7 @@ class Chart(Feature):
             self.cohort, on=ChartEvents.STAY_ID
         )
         chunk[ChartEventsHeader.EVENT_TIME_FROM_ADMIT] = (
-            chunk[ChartEvents.CHARTTIME] - chunk[CohortHeader.IN_TIME]
+            chunk[ChartEvents.CHARTTIME] - chunk[IcuCohortHeader.IN_TIME]
         )
         return chunk.drop(["charttime", "intime"], axis=1).dropna().drop_duplicates()
 

@@ -11,7 +11,7 @@ from pipeline.file_info.preproc.feature import (
     PREPROC_LABS_PATH,
     LabEventsHeader,
 )
-from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.cohort import CohortHeader, NonIcuCohortHeader
 from pipeline.file_info.preproc.summary import LABS_FEATURES_PATH, LABS_SUMMARY_PATH
 from pipeline.file_info.raw.hosp import (
     HospAdmissions,
@@ -123,8 +123,8 @@ class Lab(Feature):
             self.cohort[
                 [
                     CohortHeader.HOSPITAL_ADMISSION_ID,
-                    CohortHeader.ADMIT_TIME,
-                    CohortHeader.DISCH_TIME,
+                    NonIcuCohortHeader.ADMIT_TIME,
+                    NonIcuCohortHeader.DISCH_TIME,
                 ]
             ],
             on=LabEventsHeader.HOSPITAL_ADMISSION_ID,

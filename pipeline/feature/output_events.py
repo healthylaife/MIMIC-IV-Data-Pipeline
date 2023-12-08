@@ -6,7 +6,7 @@ from pipeline.file_info.preproc.feature import (
     PREPROC_OUT_ICU_PATH,
     OutputEventsHeader,
 )
-from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.cohort import CohortHeader, IcuCohortHeader
 from pipeline.file_info.preproc.summary import OUT_FEATURES_PATH, OUT_SUMMARY_PATH
 from pipeline.file_info.raw.icu import load_icu_output_events, OuputputEvents
 from pipeline.file_info.common import save_data
@@ -33,12 +33,16 @@ class OutputEvents(Feature):
         raw_out = load_icu_output_events()
         out = raw_out.merge(
             self.cohort[
-                [CohortHeader.STAY_ID, CohortHeader.IN_TIME, CohortHeader.OUT_TIME]
+                [
+                    CohortHeader.STAY_ID,
+                    IcuCohortHeader.IN_TIME,
+                    IcuCohortHeader.OUT_TIME,
+                ]
             ],
             on=CohortHeader.STAY_ID,
         )
         out[OutputEventsHeader.EVENT_TIME_FROM_ADMIT] = (
-            out[OuputputEvents.CHART_TIME] - out[CohortHeader.IN_TIME]
+            out[OuputputEvents.CHART_TIME] - out[IcuCohortHeader.IN_TIME]
         )
         out = out.dropna()
 

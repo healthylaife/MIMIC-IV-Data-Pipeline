@@ -5,7 +5,11 @@ from pipeline.file_info.raw.hosp import (
 )
 from pipeline.file_info.raw.icu import IcuStays
 
-from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.cohort import (
+    CohortHeader,
+    IcuCohortHeader,
+    NonIcuCohortHeader,
+)
 from pipeline.prediction_task import TargetType
 import pipeline.conversion.icd as icd_conversion
 from pipeline.prediction_task import DiseaseCode
@@ -62,8 +66,8 @@ def make_icu_visits(
             CohortHeader.PATIENT_ID,
             CohortHeader.STAY_ID,
             CohortHeader.HOSPITAL_ADMISSION_ID,
-            CohortHeader.IN_TIME,
-            CohortHeader.OUT_TIME,
+            IcuCohortHeader.IN_TIME,
+            IcuCohortHeader.OUT_TIME,
             CohortHeader.LOS,
         ]
     ]
@@ -86,8 +90,8 @@ def make_no_icu_visits(
         [
             CohortHeader.PATIENT_ID,
             CohortHeader.HOSPITAL_ADMISSION_ID,
-            CohortHeader.ADMIT_TIME,
-            CohortHeader.DISCH_TIME,
+            NonIcuCohortHeader.ADMIT_TIME,
+            NonIcuCohortHeader.DISCH_TIME,
             CohortHeader.LOS,
         ]
     ]

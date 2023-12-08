@@ -16,7 +16,11 @@ from pipeline.file_info.preproc.feature import (
     PREPROC_MED_PATH,
     PreprocMedicationHeader,
 )
-from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.cohort import (
+    CohortHeader,
+    IcuCohortHeader,
+    NonIcuCohortHeader,
+)
 from pipeline.file_info.preproc.summary import MED_FEATURES_PATH, MED_SUMMARY_PATH
 from pipeline.file_info.raw.hosp import (
     HospPrescriptions,
@@ -52,10 +56,10 @@ class Medications(Feature):
             [
                 CohortHeader.HOSPITAL_ADMISSION_ID,
                 CohortHeader.STAY_ID,
-                CohortHeader.IN_TIME,
+                IcuCohortHeader.IN_TIME,
             ]
             if self.use_icu
-            else [CohortHeader.HOSPITAL_ADMISSION_ID, CohortHeader.ADMIT_TIME]
+            else [CohortHeader.HOSPITAL_ADMISSION_ID, NonIcuCohortHeader.ADMIT_TIME]
         )
         admissions = self.cohort[cohort_headers]
         raw_med = load_input_events() if self.use_icu else load_hosp_prescriptions()
@@ -65,7 +69,9 @@ class Medications(Feature):
             if self.use_icu
             else CohortHeader.HOSPITAL_ADMISSION_ID,
         )
-        admit_header = CohortHeader.IN_TIME if self.use_icu else CohortHeader.ADMIT_TIME
+        admit_header = (
+            IcuCohortHeader.IN_TIME if self.use_icu else NonIcuCohortHeader.ADMIT_TIME
+        )
 
         medications[MedicationsHeader.START_HOURS_FROM_ADMIT] = (
             medications[InputEvents.STARTTIME] - medications[admit_header]

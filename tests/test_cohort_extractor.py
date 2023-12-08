@@ -28,6 +28,33 @@ from pipeline.prediction_task import PredictionTask, TargetType
         (True, TargetType.MORTALITY, 0, None, "I50", 32, 22, 5),
     ],
 )
+
+# Index(['subject_id', 'hadm_id', 'stay_id', 'first_careunit', 'last_careunit',
+#        'intime', 'outtime', 'los', 'age', 'min_valid_year', 'dod', 'gender',
+#        'insurance', 'ethnicity', 'label'],
+
+# Index(['subject_id', 'hadm_id', 'stay_id', 'first_careunit', 'last_careunit',
+#        'intime', 'outtime', 'los', 'age', 'min_valid_year', 'dod', 'gender',
+#        'insurance', 'ethnicity', 'label'],
+#       dtype='object')
+
+# #Index(['subject_id', 'stay_id', 'hadm_id', 'intime', 'outtime', 'los', 'age',
+#        'min_valid_year', 'dod', 'gender', 'insurance', 'ethnicity', 'label'],
+#       dtype='object')
+
+# Index(['subject_id', 'hadm_id', 'admittime', 'dischtime', 'los', 'age',
+#        'min_valid_year', 'dod', 'gender', 'insurance', 'ethnicity', 'label'],
+#       dtype='object')
+
+# Index(['subject_id', 'hadm_id', 'admittime', 'dischtime', 'los', 'age',
+#        'min_valid_year', 'dod', 'gender', 'insurance', 'ethnicity', 'label'],
+#       dtype='object')
+
+# Index(['subject_id', 'hadm_id', 'admittime', 'dischtime', 'los', 'age',
+#        'min_valid_year', 'dod', 'gender', 'insurance', 'ethnicity', 'label'],
+#       dtype='object')
+
+
 def test_cohort_extractor(
     use_icu,
     target_type,

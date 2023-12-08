@@ -1,7 +1,12 @@
 import pandas as pd
 import numpy as np
 import datetime
-from pipeline.file_info.preproc.cohort import COHORT_PATH, CohortHeader
+from pipeline.file_info.preproc.cohort import (
+    COHORT_PATH,
+    CohortHeader,
+    NonIcuCohortHeader,
+    IcuCohortHeader,
+)
 import logging
 from pathlib import Path
 from pipeline.file_info.raw.hosp import HospAdmissions
@@ -22,8 +27,12 @@ class Cohort:
         self.icu = icu
         self.name = name
         self.summary_name = f"summary_{name}"
-        self.admit_col = CohortHeader.IN_TIME if self.icu else CohortHeader.ADMIT_TIME
-        self.disch_col = CohortHeader.OUT_TIME if self.icu else CohortHeader.DISCH_TIME
+        self.admit_col = (
+            IcuCohortHeader.IN_TIME if self.icu else NonIcuCohortHeader.ADMIT_TIME
+        )
+        self.disch_col = (
+            IcuCohortHeader.OUT_TIME if self.icu else NonIcuCohortHeader.DISCH_TIME
+        )
 
     def prepare_mort_labels(self, visits: pd.DataFrame):
         visits = visits.dropna(subset=[self.admit_col, self.disch_col])
@@ -97,12 +106,13 @@ class Cohort:
             COHORT_PATH / f"{self.name}.csv.gz",
             compression="gzip",
         )
-        for col in [CohortHeader.ADMIT_TIME, CohortHeader.DISCH_TIME]:
+        for col in [NonIcuCohortHeader.ADMIT_TIME, NonIcuCohortHeader.DISCH_TIME]:
             data[col] = pd.to_datetime(data[col])
 
         data[CohortHeader.LOS] = (
             (
-                data[CohortHeader.DISCH_TIME] - data[CohortHeader.ADMIT_TIME]
+                data[NonIcuCohortHeader.DISCH_TIME]
+                - data[NonIcuCohortHeader.ADMIT_TIME]
             ).dt.total_seconds()
             / 3600
         ).astype(int)

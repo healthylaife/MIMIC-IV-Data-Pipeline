@@ -9,7 +9,11 @@ from pipeline.file_info.preproc.feature import (
     PREPROC_PROC_ICU_PATH,
     PREPROC_PROC_PATH,
 )
-from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.cohort import (
+    CohortHeader,
+    IcuCohortHeader,
+    NonIcuCohortHeader,
+)
 from pipeline.file_info.preproc.summary import PROC_FEATURES_PATH, PROC_SUMMARY_PATH
 from pipeline.file_info.raw.hosp import HospProceduresIcd, load_hosp_procedures_icd
 from pipeline.file_info.raw.icu import load_icu_procedure_events
@@ -44,14 +48,14 @@ class Procedures(Feature):
                     CohortHeader.PATIENT_ID,
                     CohortHeader.HOSPITAL_ADMISSION_ID,
                     CohortHeader.STAY_ID,
-                    CohortHeader.IN_TIME,
-                    CohortHeader.OUT_TIME,
+                    IcuCohortHeader.IN_TIME,
+                    IcuCohortHeader.OUT_TIME,
                 ]
                 if self.use_icu
                 else [
                     CohortHeader.HOSPITAL_ADMISSION_ID,
-                    CohortHeader.ADMIT_TIME,
-                    CohortHeader.DISCH_TIME,
+                    NonIcuCohortHeader.ADMIT_TIME,
+                    NonIcuCohortHeader.DISCH_TIME,
                 ]
             ],
             on=CohortHeader.STAY_ID
@@ -281,28 +285,32 @@ class Procedures(Feature):
                 df2 = df2.fillna(0)
                 df2.columns = pd.MultiIndex.from_product([["PROC"], df2.columns])
         else:
-            feat=self.final_df['icd_code'].unique()
-            df2=self.final_df[self.final_df['hadm_id']==hid]
-            if df2.shape[0]==0:
-                df2=pd.DataFrame(np.zeros([los,len(feat)]),columns=feat)
-                df2=df2.fillna(0)
-                df2.columns=pd.MultiIndex.from_product([["PROC"], df2.columns])
+            feat = self.final_df["icd_code"].unique()
+            df2 = self.final_df[self.final_df["hadm_id"] == hid]
+            if df2.shape[0] == 0:
+                df2 = pd.DataFrame(np.zeros([los, len(feat)]), columns=feat)
+                df2 = df2.fillna(0)
+                df2.columns = pd.MultiIndex.from_product([["PROC"], df2.columns])
             else:
-                df2['val']=1
-                df2=df2.pivot_table(index='start_time',columns='icd_code',values='val')
+                df2["val"] = 1
+                df2 = df2.pivot_table(
+                    index="start_time", columns="icd_code", values="val"
+                )
                 add_indices = pd.Index(range(los)).difference(df2.index)
-                add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(np.nan)
-                df2=pd.concat([df2, add_df])
-                df2=df2.sort_index()
-                df2=df2.fillna(0)
-                df2[df2>0]=1
-                dataDic[hid]['Proc']=df2.to_dict(orient="list")
-                
-                feat_df=pd.DataFrame(columns=list(set(feat)-set(df2.columns)))
-                df2=pd.concat([df2,feat_df],axis=1)
+                add_df = pd.DataFrame(index=add_indices, columns=df2.columns).fillna(
+                    np.nan
+                )
+                df2 = pd.concat([df2, add_df])
+                df2 = df2.sort_index()
+                df2 = df2.fillna(0)
+                df2[df2 > 0] = 1
+                dataDic[hid]["Proc"] = df2.to_dict(orient="list")
 
-                df2=df2[feat]
-                df2=df2.fillna(0)
-                df2.columns=pd.MultiIndex.from_product([["PROC"], df2.columns])
+                feat_df = pd.DataFrame(columns=list(set(feat) - set(df2.columns)))
+                df2 = pd.concat([df2, feat_df], axis=1)
+
+                df2 = df2[feat]
+                df2 = df2.fillna(0)
+                df2.columns = pd.MultiIndex.from_product([["PROC"], df2.columns])
 
         return df2
