@@ -1,4 +1,5 @@
 import pandas as pd
+from pipeline.conversion.icd import IcdConverter
 from pipeline.file_info.raw.hosp import (
     HospPatients,
     HospAdmissions,
@@ -11,7 +12,6 @@ from pipeline.file_info.preproc.cohort import (
     NonIcuCohortHeader,
 )
 from pipeline.prediction_task import TargetType
-import pipeline.conversion.icd as icd_conversion
 from pipeline.prediction_task import DiseaseCode
 from typing import Optional
 import logging
@@ -103,14 +103,15 @@ def filter_visits(
     disease_selection: Optional[DiseaseCode],
 ) -> pd.DataFrame:
     """# Filter visits based on readmission due to a specific disease and on disease selection"""
-    diag = icd_conversion.preproc_icd_module()
+    icd_converter = IcdConverter()
+    diag = icd_converter.preproc_icd_module()
     if disease_readmission:
-        hids = icd_conversion.get_pos_ids(diag, disease_readmission)
+        hids = icd_converter.get_pos_ids(diag, disease_readmission)
         visits = visits[visits[CohortHeader.HOSPITAL_ADMISSION_ID].isin(hids)]
         logger.info(f"[ READMISSION DUE TO {disease_readmission} ]")
 
     if disease_selection:
-        hids = icd_conversion.get_pos_ids(diag, disease_selection)
+        hids = icd_converter.get_pos_ids(diag, disease_selection)
         visits = visits[visits[CohortHeader.HOSPITAL_ADMISSION_ID].isin(hids)]
 
     return visits

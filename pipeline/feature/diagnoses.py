@@ -1,4 +1,5 @@
 from enum import StrEnum
+from pipeline.conversion.icd import IcdConverter
 from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
@@ -12,7 +13,6 @@ from pipeline.file_info.preproc.cohort import CohortHeader, IcuCohortHeader
 from pipeline.file_info.preproc.feature import PreprocDiagnosesHeader
 from pipeline.file_info.preproc.summary import DIAG_FEATURES_PATH, DIAG_SUMMARY_PATH
 from pipeline.file_info.raw.hosp import load_hosp_diagnosis_icd
-from pipeline.conversion.icd import standardize_icd
 from pipeline.file_info.common import save_data
 from pathlib import Path
 
@@ -47,6 +47,7 @@ class Diagnoses(Feature):
 
     def make(self) -> pd.DataFrame:
         hosp_diagnose = load_hosp_diagnosis_icd()
+        icd_converter = IcdConverter()
         admissions_cohort_cols = (
             [
                 CohortHeader.HOSPITAL_ADMISSION_ID,
@@ -60,7 +61,7 @@ class Diagnoses(Feature):
             self.cohort[admissions_cohort_cols],
             on=DiagnosesHeader.HOSPITAL_ADMISSION_ID,
         )
-        diag = standardize_icd(diag)
+        diag = icd_converter.standardize_icd(diag)
         return diag
 
     def save(self) -> pd.DataFrame:
