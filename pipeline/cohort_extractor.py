@@ -62,14 +62,14 @@ class CohortExtractor:
         )
 
     def fill_outputs(self) -> None:
-        output_suffix = self.generate_output_suffix()
         disease_selection = (
             f"_{self.prediction_task.disease_selection}"
             if self.prediction_task.disease_selection
             else ""
         )
         self.cohort_output = (
-            self.cohort_output or f"cohort_{output_suffix}{disease_selection}"
+            self.cohort_output
+            or f"cohort_{self.generate_output_suffix()}{disease_selection}"
         )
 
     def load_hospital_data(self):
@@ -84,15 +84,15 @@ class CohortExtractor:
         else:
             return make_no_icu_visits(hosp_admissions, self.prediction_task.target_type)
 
-    def filter_and_merge_visits(self, visits):
+    def filter_and_merge_visits(self, visits, hosp_patients, hosp_admissions):
         visits = filter_visits(
             visits,
             self.prediction_task.disease_readmission,
             self.prediction_task.disease_selection,
         )
-        patients_data = make_patients(load_hosp_patients())
+        patients_data = make_patients(hosp_patients)
         patients_filtered = patients_data.loc[patients_data["age"] >= 18]
-        admissions_info = load_hosp_admissions()[
+        admissions_info = hosp_admissions[
             [
                 HospAdmissions.HOSPITAL_ADMISSION_ID,
                 HospAdmissions.INSURANCE,
@@ -110,7 +110,7 @@ class CohortExtractor:
 
         hosp_patients, hosp_admissions = self.load_hospital_data()
         visits = self.create_visits(hosp_patients, hosp_admissions)
-        visits = self.filter_and_merge_visits(visits)
+        visits = self.filter_and_merge_visits(visits, hosp_patients, hosp_admissions)
         self.fill_outputs()
         cohort = Cohort(
             icu=self.prediction_task.use_icu,
