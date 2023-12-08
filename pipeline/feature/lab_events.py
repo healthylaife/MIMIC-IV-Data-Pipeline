@@ -248,6 +248,8 @@ class Lab(Feature):
 
     def read_length(self):
         self.df = self.df[self.df["hadm_id"].isin(self.cohort["hadm_id"])]
+
+    def smooth_meds_step(self, bucket, i, t):
         self.df = pd.merge(
             self.df, self.cohort[["hadm_id", "select_time"]], on="hadm_id", how="left"
         )

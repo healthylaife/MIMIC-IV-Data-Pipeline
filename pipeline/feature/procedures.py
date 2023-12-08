@@ -122,7 +122,6 @@ class Procedures(Feature):
             ]
         ]
 
-        # TODO: CHECK SUMMARY? as for diag?
         return save_data(proc, self.feature_path(), "PROCEDURES")
 
     def preproc(self):
