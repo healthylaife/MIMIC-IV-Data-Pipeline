@@ -8,7 +8,7 @@ from pipeline.file_info.preproc.feature import (
     PREPROC_DIAG_ICU_PATH,
     PREPROC_DIAG_PATH,
 )
-from pipeline.file_info.preproc.cohort import CohortHeader
+from pipeline.file_info.preproc.cohort import CohortHeader, IcuCohortHeader
 from pipeline.file_info.preproc.feature import PreprocDiagnosesHeader
 from pipeline.file_info.preproc.summary import DIAG_FEATURES_PATH, DIAG_SUMMARY_PATH
 from pipeline.file_info.raw.hosp import load_hosp_diagnosis_icd
@@ -50,7 +50,7 @@ class Diagnoses(Feature):
         admissions_cohort_cols = (
             [
                 CohortHeader.HOSPITAL_ADMISSION_ID,
-                CohortHeader.STAY_ID,
+                IcuCohortHeader.STAY_ID,
                 CohortHeader.LABEL,
             ]
             if self.use_icu

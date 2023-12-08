@@ -64,7 +64,7 @@ def make_icu_visits(
     return filtered_visits[
         [
             CohortHeader.PATIENT_ID,
-            CohortHeader.STAY_ID,
+            IcuCohortHeader.STAY_ID,
             CohortHeader.HOSPITAL_ADMISSION_ID,
             IcuCohortHeader.IN_TIME,
             IcuCohortHeader.OUT_TIME,

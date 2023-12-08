@@ -55,7 +55,7 @@ class Medications(Feature):
         cohort_headers = (
             [
                 CohortHeader.HOSPITAL_ADMISSION_ID,
-                CohortHeader.STAY_ID,
+                IcuCohortHeader.STAY_ID,
                 IcuCohortHeader.IN_TIME,
             ]
             if self.use_icu
@@ -65,7 +65,7 @@ class Medications(Feature):
         raw_med = load_input_events() if self.use_icu else load_hosp_prescriptions()
         medications = raw_med.merge(
             admissions,
-            on=CohortHeader.STAY_ID
+            on=IcuCohortHeader.STAY_ID
             if self.use_icu
             else CohortHeader.HOSPITAL_ADMISSION_ID,
         )

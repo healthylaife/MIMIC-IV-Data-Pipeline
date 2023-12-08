@@ -47,7 +47,7 @@ class Procedures(Feature):
                 [
                     CohortHeader.PATIENT_ID,
                     CohortHeader.HOSPITAL_ADMISSION_ID,
-                    CohortHeader.STAY_ID,
+                    IcuCohortHeader.STAY_ID,
                     IcuCohortHeader.IN_TIME,
                     IcuCohortHeader.OUT_TIME,
                 ]
@@ -58,7 +58,7 @@ class Procedures(Feature):
                     NonIcuCohortHeader.DISCH_TIME,
                 ]
             ],
-            on=CohortHeader.STAY_ID
+            on=IcuCohortHeader.STAY_ID
             if self.use_icu
             else HospProceduresIcd.HOSPITAL_ADMISSION_ID,
         )

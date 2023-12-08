@@ -34,12 +34,12 @@ class OutputEvents(Feature):
         out = raw_out.merge(
             self.cohort[
                 [
-                    CohortHeader.STAY_ID,
+                    IcuCohortHeader.STAY_ID,
                     IcuCohortHeader.IN_TIME,
                     IcuCohortHeader.OUT_TIME,
                 ]
             ],
-            on=CohortHeader.STAY_ID,
+            on=IcuCohortHeader.STAY_ID,
         )
         out[OutputEventsHeader.EVENT_TIME_FROM_ADMIT] = (
             out[OuputputEvents.CHART_TIME] - out[IcuCohortHeader.IN_TIME]

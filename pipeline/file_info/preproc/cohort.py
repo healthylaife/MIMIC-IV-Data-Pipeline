@@ -11,10 +11,8 @@ COHORT_PATH = PREPROC_PATH / "cohort"
 class CohortHeader(StrEnum):
     PATIENT_ID = "subject_id"
     HOSPITAL_ADMISSION_ID = "hadm_id"
-    STAY_ID = "stay_id"
     FIRST_CARE_UNIT = "first_careunit"
     LAST_CARE_UNIT = "last_careunit"
-
     LOS = "los"
     AGE = "age"
     MIN_VALID_YEAR = "min_valid_year"
@@ -26,6 +24,7 @@ class CohortHeader(StrEnum):
 
 
 class IcuCohortHeader(StrEnum):
+    STAY_ID = "stay_id"
     IN_TIME = "intime"
     OUT_TIME = "outtime"
 
