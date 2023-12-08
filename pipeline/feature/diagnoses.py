@@ -47,7 +47,6 @@ class Diagnoses(Feature):
 
     def make(self) -> pd.DataFrame:
         hosp_diagnose = load_hosp_diagnosis_icd()
-        icd_converter = IcdConverter()
         admissions_cohort_cols = (
             [
                 CohortHeader.HOSPITAL_ADMISSION_ID,
@@ -61,7 +60,7 @@ class Diagnoses(Feature):
             self.cohort[admissions_cohort_cols],
             on=DiagnosesHeader.HOSPITAL_ADMISSION_ID,
         )
-        diag = icd_converter.standardize_icd(diag)
+        diag = IcdConverter().standardize_icd(diag)
         return diag
 
     def save(self) -> pd.DataFrame:
