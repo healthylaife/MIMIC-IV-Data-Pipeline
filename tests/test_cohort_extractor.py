@@ -44,7 +44,7 @@ def test_cohort_extractor(
     cohort_extractor = CohortExtractor(
         prediction_task=prediction_task,
     )
-    cohort = cohort_extractor.extract()
-    assert len(cohort) == expected_admission_records_count
-    assert cohort["subject_id"].nunique() == expected_patients_count
-    assert cohort["label"].sum() == expected_positive_cases_count
+    df = cohort_extractor.extract().df
+    assert len(df) == expected_admission_records_count
+    assert df["subject_id"].nunique() == expected_patients_count
+    assert df["label"].sum() == expected_positive_cases_count
