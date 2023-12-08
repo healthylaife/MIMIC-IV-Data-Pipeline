@@ -22,19 +22,15 @@ class Cohort:
         self.icu = icu
         self.name = name
         self.summary_name = f"summary_{name}"
-
-    def admit_header(self):
-        return CohortHeader.IN_TIME if self.icu else CohortHeader.ADMIT_TIME
-
-    def disch_header(self):
-        return CohortHeader.OUT_TIME if self.icu else CohortHeader.DISCH_TIME
+        self.admit_col = CohortHeader.IN_TIME if self.icu else CohortHeader.ADMIT_TIME
+        self.disch_col = CohortHeader.OUT_TIME if self.icu else CohortHeader.DISCH_TIME
 
     def prepare_mort_labels(self, visits: pd.DataFrame):
-        visits = visits.dropna(subset=[self.admit_header(), self.disch_header()])
+        visits = visits.dropna(subset=[self.admit_col, self.disch_col])
         visits[CohortHeader.DOD] = pd.to_datetime(visits[CohortHeader.DOD])
         visits[CohortHeader.LABEL] = np.where(
-            (visits[CohortHeader.DOD] >= visits[self.admit_header()])
-            & (visits[CohortHeader.DOD] <= visits[self.disch_header()]),
+            (visits[CohortHeader.DOD] >= visits[self.admit_col])
+            & (visits[CohortHeader.DOD] <= visits[self.disch_col]),
             1,
             0,
         )
@@ -46,11 +42,11 @@ class Cohort:
     def prepare_read_labels(self, visits: pd.DataFrame, nb_days: int):
         gap = datetime.timedelta(days=nb_days)
         visits["next_admit"] = (
-            visits.sort_values(by=[self.admit_header()])
-            .groupby(CohortHeader.PATIENT_ID)[self.admit_header()]
+            visits.sort_values(by=[self.admit_col])
+            .groupby(CohortHeader.PATIENT_ID)[self.admit_col]
             .shift(-1)
         )
-        visits["time_to_next"] = visits["next_admit"] - visits[self.disch_header()]
+        visits["time_to_next"] = visits["next_admit"] - visits[self.disch_col]
         visits[CohortHeader.LABEL] = (
             visits["time_to_next"].notnull() & (visits["time_to_next"] <= gap)
         ).astype(int)
@@ -62,7 +58,7 @@ class Cohort:
 
     def prepare_los_labels(self, visits: pd.DataFrame, nb_days):
         visits = visits.dropna(
-            subset=[self.admit_header(), self.disch_header(), CohortHeader.LOS]
+            subset=[self.admit_col, self.disch_col, CohortHeader.LOS]
         )
         visits[CohortHeader.LABEL] = (visits[CohortHeader.LOS] > nb_days).astype(int)
         logger.info(
@@ -77,7 +73,7 @@ class Cohort:
             df = self.prepare_read_labels(visits, prediction_task.nb_days)
         elif prediction_task.target_type == TargetType.LOS:
             df = self.prepare_los_labels(visits, prediction_task.nb_days)
-        df = df.sort_values(by=[CohortHeader.PATIENT_ID, self.admit_header()])
+        df = df.sort_values(by=[CohortHeader.PATIENT_ID, self.admit_col])
         self.df = df.rename(columns={HospAdmissions.RACE: CohortHeader.ETHICITY})
 
     def save(self):
