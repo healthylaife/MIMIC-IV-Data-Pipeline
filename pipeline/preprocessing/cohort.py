@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-
+import datetime
 from pipeline.file_info.preproc.cohort import COHORT_PATH, CohortHeader
 import logging
 from pathlib import Path
@@ -44,6 +44,7 @@ class Cohort:
         return visits
 
     def prepare_read_labels(self, visits: pd.DataFrame, nb_days: int):
+        gap = datetime.timedelta(days=nb_days)
         visits["next_admit"] = (
             visits.sort_values(by=[self.admit_header()])
             .groupby(CohortHeader.PATIENT_ID)[self.admit_header()]
@@ -51,7 +52,7 @@ class Cohort:
         )
         visits["time_to_next"] = visits["next_admit"] - visits[self.disch_header()]
         visits[CohortHeader.LABEL] = (
-            visits["time_to_next"].notnull() & (visits["time_to_next"] <= nb_days)
+            visits["time_to_next"].notnull() & (visits["time_to_next"] <= gap)
         ).astype(int)
         readmit_cases = visits[CohortHeader.LABEL].sum()
         logger.info(
