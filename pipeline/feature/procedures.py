@@ -31,6 +31,11 @@ class Procedures(Feature):
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
         self.feature_path = PREPROC_PROC_ICU_PATH if self.use_icu else PREPROC_PROC_PATH
+        self.adm_id = (
+            IcuCohortHeader.STAY_ID
+            if self.use_icu
+            else CohortHeader.HOSPITAL_ADMISSION_ID
+        )
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         logger.info("[EXTRACTING PROCEDURES DATA]")
@@ -154,7 +159,7 @@ class Procedures(Feature):
         freq = (
             proc.groupby(
                 [
-                    "stay_id" if self.use_icu else "hadm_id",
+                    self.adm_id,
                     feature_name,
                 ]
             )
@@ -195,14 +200,12 @@ class Procedures(Feature):
         return proc
 
     def mortality_length(self, include_time):
-        col = "stay_id" if self.use_icu else "hadm_id"
-        self.df = self.df[self.df[col].isin(self.df[col])]
-        self.df = self.df[self.df[col] <= include_time]
+        self.df = self.df[self.df[self.adm_id].isin(self.df[self.adm_id])]
+        self.df = self.df[self.df[self.adm_id] <= include_time]
 
     def los_length(self, include_time):
-        col = "stay_id" if self.use_icu else "hadm_id"
-        self.df = self.df[self.df[col].isin(self.cohort[col])]
-        self.df = self.df[self.df[col] <= include_time]
+        self.df = self.df[self.df[self.adm_id].isin(self.cohort[self.adm_id])]
+        self.df = self.df[self.df[self.adm_id] <= include_time]
 
     def read_length(self):
         col = "stay_id" if self.use_icu else "hadm_id"
@@ -234,15 +237,8 @@ class Procedures(Feature):
             if self.use_icu
             else ["hadm_id", "icd_code"]
         ).size()
-        df_per_adm = (
-            f2_df.groupby("stay_id" if self.use_icd else "hadm_id")
-            .sum()
-            .reset_index()[0]
-            .max()
-        )
-        dflength_per_adm = (
-            self.final_df.groupby("stay_id" if self.use_icd else "hadm_id").size().max()
-        )
+        df_per_adm = f2_df.groupby(self.adm_id).sum().reset_index()[0].max()
+        dflength_per_adm = self.final_df.groupby(self.adm_id).size().max()
         return f2_df, df_per_adm, dflength_per_adm
 
     def dict_step(self, hid, los, dataDic):
