@@ -44,18 +44,13 @@ class Lab(Feature):
         self.impute = impute_outlier
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-
-    def summary_path(self):
-        pass
-
-    def feature_path(self) -> Path:
-        return PREPROC_LABS_PATH
+        self.feature_path = PREPROC_LABS_PATH
 
     def save(self) -> pd.DataFrame:
         logger.info("[EXTRACTING LABS DATA]")
         labevents = self.make()
         labevents = labevents[[h.value for h in LabEventsHeader]]
-        return save_data(labevents, self.feature_path(), "LABS")
+        return save_data(labevents, self.feature_path, "LABS")
 
     def make(self) -> pd.DataFrame:
         """Process and transform lab events data."""

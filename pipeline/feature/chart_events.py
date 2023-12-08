@@ -38,12 +38,7 @@ class Chart(Feature):
         self.impute_outlier = impute_outlier
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-
-    def summary_path(self):
-        pass
-
-    def feature_path(self) -> Path:
-        return PREPROC_CHART_ICU_PATH
+        self.feature_path = PREPROC_CHART_ICU_PATH
 
     def make(self) -> pd.DataFrame:
         """Function for processing hospital observations from a pickled cohort, optimized for memory efficiency."""
@@ -76,10 +71,10 @@ class Chart(Feature):
         logger.info("[EXTRACTING CHART EVENTS DATA]")
         out = self.make()
         out = out[[h.value for h in ChartEventsHeader]]
-        return save_data(out, self.feature_path(), "OUTPUT")
+        return save_data(out, self.feature_path, "OUTPUT")
 
     def summary(self):
-        chart = pd.read_csv(self.feature_path(), compression="gzip")
+        chart = pd.read_csv(self.feature_path, compression="gzip")
         freq = (
             chart.groupby([ChartEventsHeader.STAY_ID, ChartEventsHeader.ITEM_ID])
             .size()

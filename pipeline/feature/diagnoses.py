@@ -38,12 +38,7 @@ class Diagnoses(Feature):
         self.cohort = cohort
         self.use_icu = use_icu
         self.icd_group_option = icd_group_option
-
-    def summary_path(self) -> Path:
-        pass
-
-    def feature_path(self):
-        return PREPROC_DIAG_ICU_PATH if self.use_icu else PREPROC_DIAG_PATH
+        self.feature_path = PREPROC_DIAG_ICU_PATH if self.use_icu else PREPROC_DIAG_PATH
 
     def make(self) -> pd.DataFrame:
         hosp_diagnose = load_hosp_diagnosis_icd()
@@ -71,11 +66,11 @@ class Diagnoses(Feature):
             cols = cols + [h.value for h in DiagnosesIcuHeader]
 
         diag = diag[cols]
-        return save_data(diag, self.feature_path(), "DIAGNOSES")
+        return save_data(diag, self.feature_path, "DIAGNOSES")
 
     def preproc(self) -> pd.DataFrame:
         logger.info(f"[PROCESSING DIAGNOSIS DATA]")
-        path = self.feature_path()
+        path = self.feature_path
         diag = pd.read_csv(path, compression="gzip")
         if self.icd_group_option == IcdGroupOption.KEEP:
             diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = diag[DiagnosesHeader.ICD_CODE]
@@ -88,11 +83,11 @@ class Diagnoses(Feature):
             cols_to_keep = cols_to_keep + [h.value for h in DiagnosesIcuHeader]
         diag = diag[cols_to_keep]
         logger.info(f"Total number of rows: {diag.shape[0]}")
-        return save_data(diag, self.feature_path(), "DIAGNOSES")
+        return save_data(diag, self.feature_path, "DIAGNOSES")
 
     def summary(self):
         diag = pd.read_csv(
-            self.feature_path(),
+            self.feature_path,
             compression="gzip",
         )
         freq = (

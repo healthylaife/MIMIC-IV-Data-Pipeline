@@ -10,20 +10,6 @@ class Feature(ABC):
     """
 
     @abstractmethod
-    def summary_path(self) -> Path:
-        """
-        Path where the summary of the feature is stored.
-        """
-        pass
-
-    @abstractmethod
-    def feature_path(self) -> Path:
-        """
-        Path where the feature data is stored.
-        """
-        pass
-
-    @abstractmethod
     def make(self) -> pd.DataFrame:
         """
         Generate the feature data and return it as a DataFrame.

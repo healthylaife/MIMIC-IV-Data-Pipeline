@@ -20,12 +20,7 @@ class OutputEvents(Feature):
         self.cohort = cohort
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-
-    def summary_path(self):
-        pass
-
-    def feature_path(self) -> Path:
-        return PREPROC_OUT_ICU_PATH
+        self.feature_path = PREPROC_OUT_ICU_PATH
 
     def make(self) -> pd.DataFrame:
         """Function for getting hosp observations pertaining to a pickled cohort.
@@ -63,7 +58,7 @@ class OutputEvents(Feature):
         pass
 
     def summary(self):
-        out = pd.read_csv(self.feature_path(), compression="gzip")
+        out = pd.read_csv(self.feature_path, compression="gzip")
         freq = (
             out.groupby([OutputEventsHeader.STAY_ID, OutputEventsHeader.ITEM_ID])
             .size()

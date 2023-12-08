@@ -43,12 +43,7 @@ class Medications(Feature):
         self.group_code = group_code
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-
-    def summary_path(self) -> Path:
-        pass
-
-    def feature_path(self) -> Path:
-        return PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
+        self.feature_path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
 
     def make(self) -> pd.DataFrame:
         logger.info(f"[EXTRACTING MEDICATIONS DATA]")
@@ -145,11 +140,11 @@ class Medications(Feature):
         ]
         med = self.make()
         med = med[cols]
-        return save_data(med, self.feature_path(), "MEDICATIONS")
+        return save_data(med, self.feature_path, "MEDICATIONS")
 
     def preproc(self):
         logger.info("[PROCESSING MEDICATIONS DATA]")
-        path = self.feature_path()
+        path = self.feature_path
         med = pd.read_csv(path, compression="gzip")
         med[PreprocMedicationHeader.DRUG_NAME] = (
             med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME]
@@ -164,7 +159,7 @@ class Medications(Feature):
         )
         med.dropna()
         logger.info(f"Total number of rows: {med.shape[0]}")
-        return save_data(med, self.feature_path(), "MEDICATIONS")
+        return save_data(med, self.feature_path, "MEDICATIONS")
 
     def summary(self):
         path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
@@ -210,7 +205,7 @@ class Medications(Feature):
         return summary
 
     def generate_fun(self):
-        meds = pd.read_csv(self.feature_path(), compression="gzip")
+        meds = pd.read_csv(self.feature_path, compression="gzip")
         meds[["start_days", "dummy", "start_hours"]] = meds[
             "start_hours_from_admit"
         ].str.split(" ", expand=True)

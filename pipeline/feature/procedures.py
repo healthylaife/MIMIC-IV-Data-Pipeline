@@ -30,12 +30,7 @@ class Procedures(Feature):
         self.keep_icd9 = keep_icd9
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-
-    def summary_path(self) -> Path:
-        pass
-
-    def feature_path(self) -> Path:
-        return PREPROC_PROC_ICU_PATH if self.use_icu else PREPROC_PROC_PATH
+        self.feature_path = PREPROC_PROC_ICU_PATH if self.use_icu else PREPROC_PROC_PATH
 
     def make(self) -> pd.DataFrame:
         logger.info("[EXTRACTING PROCEDURES DATA]")
@@ -122,7 +117,7 @@ class Procedures(Feature):
             ]
         ]
 
-        return save_data(proc, self.feature_path(), "PROCEDURES")
+        return save_data(proc, self.feature_path, "PROCEDURES")
 
     def preproc(self):
         logger.info("[PROCESSING PROCEDURES DATA]")
@@ -145,11 +140,11 @@ class Procedures(Feature):
         if not self.keep_icd9:
             proc = proc.dropna()
         logger.info(f"Total number of rows: {proc.shape[0]}")
-        return save_data(proc, self.feature_path(), "PROCEDURES")
+        return save_data(proc, self.feature_path, "PROCEDURES")
 
     def summary(self):
         proc = pd.read_csv(
-            self.feature_path(),
+            self.feature_path,
             compression="gzip",
         )
         feature_name = (
