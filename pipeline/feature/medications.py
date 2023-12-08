@@ -45,7 +45,7 @@ class Medications(Feature):
         self.final_df = pd.DataFrame()
         self.feature_path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
 
-    def make(self) -> pd.DataFrame:
+    def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         logger.info(f"[EXTRACTING MEDICATIONS DATA]")
         cohort_headers = (
             [
@@ -83,6 +83,12 @@ class Medications(Feature):
             else self.normalize_non_icu(medications)
         )
         self.log_medication_stats(medications)
+        cols = [h.value for h in MedicationsHeader] + [
+            h.value
+            for h in (IcuMedicationHeader if self.use_icu else NonIcuMedicationHeader)
+        ]
+        medications = medications[cols]
+        self.df = medications
         return medications
 
     def normalize_non_icu(self, med: pd.DataFrame) -> pd.DataFrame:
@@ -134,13 +140,7 @@ class Medications(Feature):
         logger.info(f"Total number of rows: {med.shape[0]}")
 
     def save(self) -> pd.DataFrame:
-        cols = [h.value for h in MedicationsHeader] + [
-            h.value
-            for h in (IcuMedicationHeader if self.use_icu else NonIcuMedicationHeader)
-        ]
-        med = self.make()
-        med = med[cols]
-        return save_data(med, self.feature_path, "MEDICATIONS")
+        return save_data(self.df, self.feature_path, "MEDICATIONS")
 
     def preproc(self):
         logger.info("[PROCESSING MEDICATIONS DATA]")

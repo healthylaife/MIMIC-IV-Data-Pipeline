@@ -47,13 +47,11 @@ class Lab(Feature):
         self.feature_path = PREPROC_LABS_PATH
 
     def save(self) -> pd.DataFrame:
-        logger.info("[EXTRACTING LABS DATA]")
-        labevents = self.make()
-        labevents = labevents[[h.value for h in LabEventsHeader]]
-        return save_data(labevents, self.feature_path, "LABS")
+        return save_data(self.df, self.feature_path, "LABS")
 
-    def make(self) -> pd.DataFrame:
+    def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         """Process and transform lab events data."""
+        logger.info("[EXTRACTING LABS DATA]")
         admissions = load_hosp_admissions()[
             [
                 HospAdmissions.PATIENT_ID,
@@ -76,8 +74,10 @@ class Lab(Feature):
                 load_hosp_lab_events(chunksize=self.chunksize, use_cols=usecols)
             )
         ]
-
-        return pd.concat(processed_chunks, ignore_index=True)
+        labevents = pd.concat(processed_chunks, ignore_index=True)
+        labevents = labevents[[h.value for h in LabEventsHeader]]
+        self.df = labevents
+        return labevents
 
     def process_lab_chunk(
         self, chunk: pd.DataFrame, admissions: pd.DataFrame

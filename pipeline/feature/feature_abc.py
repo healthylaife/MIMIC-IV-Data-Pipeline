@@ -10,7 +10,7 @@ class Feature(ABC):
     """
 
     @abstractmethod
-    def make(self) -> pd.DataFrame:
+    def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         """
         Generate the feature data and return it as a DataFrame.
         """

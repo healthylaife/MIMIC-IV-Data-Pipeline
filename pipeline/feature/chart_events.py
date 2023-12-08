@@ -40,22 +40,24 @@ class Chart(Feature):
         self.final_df = pd.DataFrame()
         self.feature_path = PREPROC_CHART_ICU_PATH
 
-    def make(self) -> pd.DataFrame:
+    def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         """Function for processing hospital observations from a pickled cohort, optimized for memory efficiency."""
+        logger.info("[EXTRACTING CHART EVENTS DATA]")
+
         processed_chunks = [
             self.process_chunk_chart_events(chunk)
             for chunk in tqdm(load_icu_chart_events(self.chunksize))
         ]
 
-        df_cohort = pd.concat(processed_chunks, ignore_index=True)
-        df_cohort = drop_wrong_uom(df_cohort, 0.95)
+        out = pd.concat(processed_chunks, ignore_index=True)
+        out = drop_wrong_uom(out, 0.95)
         """Log statistics about the chart events."""
-        logger.info(
-            f"# Unique Events: {df_cohort[ChartEventsHeader.ITEM_ID].nunique()}"
-        )
-        logger.info(f"# Admissions: {df_cohort[ChartEventsHeader.STAY_ID].nunique()}")
-        logger.info(f"Total rows: {df_cohort.shape[0]}")
-        return df_cohort
+        logger.info(f"# Unique Events: {out[ChartEventsHeader.ITEM_ID].nunique()}")
+        logger.info(f"# Admissions: {out[ChartEventsHeader.STAY_ID].nunique()}")
+        logger.info(f"Total rows: {out.shape[0]}")
+        out = out[[h.value for h in ChartEventsHeader]]
+        self.df = out
+        return out
 
     def process_chunk_chart_events(self, chunk: pd.DataFrame) -> pd.DataFrame:
         """Process a single chunk of chart events."""
@@ -68,10 +70,7 @@ class Chart(Feature):
         return chunk.drop(["charttime", "intime"], axis=1).dropna().drop_duplicates()
 
     def save(self) -> pd.DataFrame:
-        logger.info("[EXTRACTING CHART EVENTS DATA]")
-        out = self.make()
-        out = out[[h.value for h in ChartEventsHeader]]
-        return save_data(out, self.feature_path, "OUTPUT")
+        return save_data(self.df, self.feature_path, "OUTPUT")
 
     def summary(self):
         chart = pd.read_csv(self.feature_path, compression="gzip")

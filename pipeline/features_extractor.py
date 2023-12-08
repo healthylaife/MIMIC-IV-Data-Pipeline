@@ -61,7 +61,10 @@ class FeatureExtractor:
                 Lab(cohort),
             ),
         ]
-        features = [
-            feature.save() for condition, feature in feature_conditions if condition
-        ]
+        features = []
+        for condition, feature in feature_conditions:
+            if condition:
+                features.append(feature.extract_from(cohort))
+                feature.save()
+
         return features

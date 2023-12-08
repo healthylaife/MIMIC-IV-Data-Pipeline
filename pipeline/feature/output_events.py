@@ -22,9 +22,10 @@ class OutputEvents(Feature):
         self.final_df = pd.DataFrame()
         self.feature_path = PREPROC_OUT_ICU_PATH
 
-    def make(self) -> pd.DataFrame:
+    def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         """Function for getting hosp observations pertaining to a pickled cohort.
         Function is structured to save memory when reading and transforming data."""
+        logger.info("[EXTRACTING OUTPUT EVENTS DATA]")
         raw_out = load_icu_output_events()
         out = raw_out.merge(
             self.cohort[
@@ -45,14 +46,12 @@ class OutputEvents(Feature):
         logger.info(f"# Unique Events: {out[OuputputEvents.ITEM_ID].nunique()}")
         logger.info(f"# Admissions: {out[OuputputEvents.STAY_ID].nunique()}")
         logger.info(f"Total rows: {out.shape[0]}")
-
+        out = out[[h.value for h in OutputEventsHeader]]
+        self.df = out
         return out
 
     def save(self) -> pd.DataFrame:
-        logger.info("[EXTRACTING OUTPUT EVENTS DATA]")
-        out = self.make()
-        out = out[[h.value for h in OutputEventsHeader]]
-        return save_data(out, PREPROC_OUT_ICU_PATH, "OUTPUT")
+        return save_data(self.df, PREPROC_OUT_ICU_PATH, "OUTPUT")
 
     def preproc(self):
         pass

@@ -32,7 +32,7 @@ class Procedures(Feature):
         self.final_df = pd.DataFrame()
         self.feature_path = PREPROC_PROC_ICU_PATH if self.use_icu else PREPROC_PROC_PATH
 
-    def make(self) -> pd.DataFrame:
+    def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         logger.info("[EXTRACTING PROCEDURES DATA]")
         raw_procedures = (
             load_icu_procedure_events() if self.use_icu else load_hosp_procedures_icd()
@@ -75,6 +75,16 @@ class Procedures(Feature):
         )
         procedures = procedures.dropna()
         self.log_icu(procedures) if self.use_icu else self.log_non_icu(procedures)
+        procedures = procedures[
+            [h.value for h in ProceduresHeader]
+            + [
+                h.value
+                for h in (
+                    IcuProceduresHeader if self.use_icu else NonIcuProceduresHeader
+                )
+            ]
+        ]
+        self.df = procedures
         return procedures
 
     def log_icu(self, procedures: pd.DataFrame) -> None:
@@ -106,18 +116,7 @@ class Procedures(Feature):
         logger.info(f"Total number of rows: {procedures.shape[0]}")
 
     def save(self) -> pd.DataFrame:
-        proc = self.make()
-        proc = proc[
-            [h.value for h in ProceduresHeader]
-            + [
-                h.value
-                for h in (
-                    IcuProceduresHeader if self.use_icu else NonIcuProceduresHeader
-                )
-            ]
-        ]
-
-        return save_data(proc, self.feature_path, "PROCEDURES")
+        return save_data(self.df, self.feature_path, "PROCEDURES")
 
     def preproc(self):
         logger.info("[PROCESSING PROCEDURES DATA]")

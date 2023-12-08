@@ -40,7 +40,8 @@ class Diagnoses(Feature):
         self.icd_group_option = icd_group_option
         self.feature_path = PREPROC_DIAG_ICU_PATH if self.use_icu else PREPROC_DIAG_PATH
 
-    def make(self) -> pd.DataFrame:
+    def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
+        logger.info("[EXTRACTING DIAGNOSIS DATA]")
         hosp_diagnose = load_hosp_diagnosis_icd()
         admissions_cohort_cols = (
             [
@@ -56,17 +57,16 @@ class Diagnoses(Feature):
             on=DiagnosesHeader.HOSPITAL_ADMISSION_ID,
         )
         diag = IcdConverter().standardize_icd(diag)
-        return diag
-
-    def save(self) -> pd.DataFrame:
-        logger.info("[EXTRACTING DIAGNOSIS DATA]")
-        diag = self.make()
         cols = [h.value for h in DiagnosesHeader]
         if self.use_icu:
             cols = cols + [h.value for h in DiagnosesIcuHeader]
 
         diag = diag[cols]
-        return save_data(diag, self.feature_path, "DIAGNOSES")
+        self.df = diag
+        return diag
+
+    def save(self) -> pd.DataFrame:
+        return save_data(self.df, self.feature_path, "DIAGNOSES")
 
     def preproc(self) -> pd.DataFrame:
         logger.info(f"[PROCESSING DIAGNOSIS DATA]")
