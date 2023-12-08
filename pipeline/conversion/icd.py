@@ -20,7 +20,7 @@ def get_conversions_icd_9_10() -> dict:
 
 def get_pos_ids(diag: pd.DataFrame, ICD10_code: str) -> pd.Series:
     """Extracts unique hospital admission IDs where 'root' contains a specific ICD-10 code."""
-    return diag[diag["root"].str.contains(ICD10_code, na=False)][
+    return diag[diag[HospDiagnosesIcd.ROOT].str.contains(ICD10_code, na=False)][
         HospDiagnosesIcd.HOSPITAL_ADMISSION_ID
     ].unique()
 
@@ -54,5 +54,5 @@ def preproc_icd_module() -> tuple:
     ]
     diag = standardize_icd(diag)
     # Keep patient ids that have at least 1 record of the given ICD10 code category
-    diag.dropna(subset=["root"], inplace=True)
+    diag.dropna(subset=[HospDiagnosesIcd.ROOT], inplace=True)
     return diag
