@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from pathlib import Path
 
+# feature name pour les log
+# extract_path, extract_summary_path, preproc_path, summary_path, (cleaned_path?)
+
 
 class Feature(ABC):
     """
