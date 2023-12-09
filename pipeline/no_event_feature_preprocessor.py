@@ -11,6 +11,13 @@ from typing import List
 from pathlib import Path
 
 from pipeline.feature.chart_events import Chart
+from pipeline.file_info.common import save_data
+from pipeline.file_info.preproc.feature import (
+    EXTRACT_DIAG_ICU_PATH,
+    EXTRACT_DIAG_PATH,
+    PREPROC_DIAG_ICU_PATH,
+    PREPROC_DIAG_PATH,
+)
 
 logger = logging.getLogger()
 
@@ -32,9 +39,24 @@ class NoEventFeaturePreprocessor:
         no_event_preproc_features = []
         empty_cohort = pd.DataFrame()
         if self.feature_extractor.for_diagnoses:
+            extract_diag_df = pd.read_csv(
+                EXTRACT_DIAG_ICU_PATH
+                if self.feature_extractor.use_icu
+                else EXTRACT_DIAG_PATH,
+                compression="gzip",
+            )
             dia = Diagnoses(
                 cohort=empty_cohort,
                 use_icu=self.feature_extractor.use_icu,
+                df=extract_diag_df,
+            )
+            dia.preproc(self.group_diag_icd)
+            save_data(
+                dia.df,
+                PREPROC_DIAG_ICU_PATH
+                if self.feature_extractor.use_icu
+                else PREPROC_DIAG_PATH,
+                "DIAGNOSES",
             )
             no_event_preproc_features.append(dia.preproc(self.group_diag_icd))
         if not self.feature_extractor.use_icu:

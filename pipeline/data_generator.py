@@ -39,15 +39,12 @@ class DataGenerator:
 
         # FEATURES [DICT NAME FEATURE]?, REMOVE FEATURE EXTRACTOR?
 
-
-
     def process_data(self):
         features = []
         if self.feature_extractor.for_diagnoses:
             dia = Diagnoses(
                 cohort=pd.DataFrame(),
                 use_icu=self.feature_extractor.use_icu,
-                # icd_group_option=self.group_diag_icd,
             )
             features.append(dia.generate_fun())
             print("[ ======READING DIAGNOSIS ]")

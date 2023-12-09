@@ -123,9 +123,6 @@ class Procedures(Feature):
         )
         logger.info(f"Total number of rows: {procedures.shape[0]}")
 
-    def save(self) -> pd.DataFrame:
-        return save_data(self.df, self.feature_path, "PROCEDURES")
-
     def preproc(self, keep_icd9: bool):
         logger.info("[PROCESSING PROCEDURES DATA]")
         proc = pd.read_csv(

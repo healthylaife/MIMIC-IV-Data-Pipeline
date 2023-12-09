@@ -46,9 +46,6 @@ class Lab(Feature):
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_LABS_PATH
 
-    def save(self) -> pd.DataFrame:
-        return save_data(self.df, self.feature_path, "LABS")
-
     def df(self):
         return self.df
 

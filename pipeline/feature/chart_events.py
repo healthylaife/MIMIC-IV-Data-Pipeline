@@ -74,9 +74,6 @@ class Chart(Feature):
         )
         return chunk.drop(["charttime", "intime"], axis=1).dropna().drop_duplicates()
 
-    def save(self) -> pd.DataFrame:
-        return save_data(self.df, self.feature_path, "OUTPUT")
-
     def summary(self):
         chart = pd.read_csv(self.feature_path, compression="gzip")
         freq = (

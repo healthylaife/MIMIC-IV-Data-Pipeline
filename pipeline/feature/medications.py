@@ -144,9 +144,6 @@ class Medications(Feature):
         logger.info(f"Number of admissions: {unique_admission_count}")
         logger.info(f"Total number of rows: {med.shape[0]}")
 
-    def save(self) -> pd.DataFrame:
-        return save_data(self.df, self.feature_path, "MEDICATIONS")
-
     def preproc(self, group_code: bool):
         logger.info("[PROCESSING MEDICATIONS DATA]")
         med = pd.read_csv(self.feature_path, compression="gzip")

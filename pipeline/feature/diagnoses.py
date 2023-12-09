@@ -37,6 +37,7 @@ class Diagnoses(Feature):
         cohort: pd.DataFrame,
         use_icu: bool,
         icd_group_option: IcdGroupOption | None = None,
+        df: pd.DataFrame = pd.DataFrame,
     ):
         self.cohort = cohort
         self.use_icu = use_icu
@@ -45,6 +46,7 @@ class Diagnoses(Feature):
         self.preproc_feature_path = (
             PREPROC_DIAG_ICU_PATH if self.use_icu else PREPROC_DIAG_PATH
         )
+        self.df = df
 
     def df(self):
         return self.df
@@ -73,9 +75,6 @@ class Diagnoses(Feature):
         ]
         self.df = diag
         return diag
-
-    def save(self) -> pd.DataFrame:
-        return save_data(self.df, self.feature_path, "DIAGNOSES")
 
     def preproc(self, group_diag_icd: IcdGroupOption) -> pd.DataFrame:
         logger.info(f"[PROCESSING DIAGNOSIS DATA]")

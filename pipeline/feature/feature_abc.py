@@ -25,13 +25,6 @@ class Feature(ABC):
         pass
 
     @abstractmethod
-    def save(self) -> None:
-        """
-        Save the feature data to a file.
-        """
-        pass
-
-    @abstractmethod
     def preproc(self) -> None:
         """
         Preprocess the feature data.

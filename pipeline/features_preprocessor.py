@@ -8,7 +8,6 @@ from pipeline.feature.procedures import Procedures
 from pipeline.feature_selector import FeatureSelector
 from pipeline.features_extractor import FeatureExtractor
 from typing import List
-from pathlib import Path
 
 from pipeline.feature.chart_events import Chart
 from pipeline.no_event_feature_preprocessor import NoEventFeaturePreprocessor

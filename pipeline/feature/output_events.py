@@ -53,9 +53,6 @@ class OutputEvents(Feature):
         self.df = out
         return out
 
-    def save(self) -> pd.DataFrame:
-        return save_data(self.df, EXTRACT_OUT_ICU_PATH, "OUTPUT")
-
     def preproc(self):
         pass
 
