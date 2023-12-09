@@ -1,5 +1,7 @@
 import pandas as pd
 import logging
+
+from tqdm import tqdm
 from pipeline.feature.diagnoses import Diagnoses, IcdGroupOption
 from pipeline.feature.lab_events import Lab
 from pipeline.feature.medications import Medications
@@ -10,7 +12,42 @@ from pipeline.features_extractor import FeatureExtractor
 from typing import List
 
 from pipeline.feature.chart_events import Chart
+from pipeline.file_info.common import save_data
+from pipeline.file_info.preproc.feature import (
+    EXTRACT_CHART_ICU_PATH,
+    EXTRACT_LABS_PATH,
+    EXTRACT_MED_ICU_PATH,
+    EXTRACT_MED_PATH,
+    EXTRACT_OUT_ICU_PATH,
+    EXTRACT_PROC_ICU_PATH,
+    EXTRACT_PROC_PATH,
+    PREPROC_DIAG_ICU_PATH,
+    PREPROC_DIAG_PATH,
+    ChartEventsHeader,
+    IcuMedicationHeader,
+    IcuProceduresHeader,
+    LabEventsHeader,
+    NonIcuProceduresHeader,
+    OutputEventsHeader,
+    PreprocDiagnosesHeader,
+    PreprocMedicationHeader,
+)
+from pipeline.file_info.preproc.summary import (
+    CHART_FEATURES_PATH,
+    CHART_SUMMARY_PATH,
+    DIAG_FEATURES_PATH,
+    DIAG_SUMMARY_PATH,
+    LABS_FEATURES_PATH,
+    LABS_SUMMARY_PATH,
+    MED_FEATURES_PATH,
+    MED_SUMMARY_PATH,
+    OUT_FEATURES_PATH,
+    OUT_SUMMARY_PATH,
+    PROC_FEATURES_PATH,
+    PROC_SUMMARY_PATH,
+)
 from pipeline.no_event_feature_preprocessor import NoEventFeaturePreprocessor
+from pipeline.summarizer import Summarizer
 
 logger = logging.getLogger()
 
@@ -58,7 +95,6 @@ class FeaturePreprocessor:
         event_preproc_features: List[pd.DataFrame] = []
         if self.clean_chart and self.feature_extractor.use_icu:
             chart = Chart(
-                cohort=pd.DataFrame(),
                 thresh=self.thresh,
                 left_thresh=self.left_thresh,
                 impute_outlier=self.impute_outlier_chart,
@@ -66,19 +102,12 @@ class FeaturePreprocessor:
             event_preproc_features.append(chart.preproc())
         if self.clean_labs and not self.feature_extractor.use_icu:
             lab = Lab(
-                cohort=pd.DataFrame(),
                 thresh=self.thresh,
                 left_thresh=self.left_thresh,
                 impute_outlier=self.impute_labs,
             )
             event_preproc_features.append(lab.preproc())
         return event_preproc_features
-
-    def preprocess(self):
-        self.preprocess_no_event_features()
-        self.save_summaries()
-        self.feature_selection()
-        self.preproc_events_features()
 
     # select colunns!!!
     def preprocess_no_event_features(self):
@@ -93,35 +122,11 @@ class FeaturePreprocessor:
     # check summary path... where are they use in the origiinal code? cleaning? data gen?
 
     def save_summaries(self):
-        summaries = []
-        if self.feature_extractor.for_diagnoses:
-            dia = Diagnoses(
-                cohort=pd.DataFrame(),
-                use_icu=self.feature_extractor.use_icu,
-                icd_group_option=self.group_diag_icd,
-            )
-            summaries.append(dia.summary())
-        if self.feature_extractor.for_medications:
-            med = Medications(
-                cohort=pd.DataFrame(),
-                use_icu=self.feature_extractor.use_icu,
-                group_code=self.group_med_code,
-            )
-            summaries.append(med.summary())
-        if self.feature_extractor.for_procedures:
-            proc = Procedures(
-                cohort=pd.DataFrame(),
-                use_icu=self.feature_extractor.use_icu,
-                keep_icd9=self.keep_proc_icd9,
-            )
-            summaries.append(proc.summary())
-        if self.feature_extractor.for_output_events:
-            out = OutputEvents(cohort=pd.DataFrame())
-            summaries.append(out.summary())
-        if self.feature_extractor.for_chart_events:
-            chart = Chart(cohort=pd.DataFrame())
-            summaries.append(chart.summary())
-        if self.feature_extractor.for_labs:
-            lab = Lab(cohort=pd.DataFrame())
-            summaries.append(lab.summary)
-        return summaries
+        summarizer = Summarizer(self.feature_extractor)
+        return summarizer.save_summaries()
+
+    def preprocess(self):
+        self.preprocess_no_event_features()
+        self.save_summaries()
+        self.feature_selection()
+        self.preproc_events_features()

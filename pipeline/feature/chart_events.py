@@ -25,7 +25,8 @@ logger = logging.getLogger()
 class Chart(Feature):
     def __init__(
         self,
-        cohort: pd.DataFrame,
+        df: pd.DataFrame = pd.DataFrame(),
+        cohort: pd.DataFrame = pd.DataFrame(),
         chunksize: int = 10000000,
         thresh=1,
         left_thresh=0,
@@ -36,7 +37,7 @@ class Chart(Feature):
         self.thresh = thresh
         self.left_thresh = left_thresh
         self.impute_outlier = impute_outlier
-        self.df = pd.DataFrame()
+        self.df = df
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_CHART_ICU_PATH
 
@@ -75,7 +76,7 @@ class Chart(Feature):
         return chunk.drop(["charttime", "intime"], axis=1).dropna().drop_duplicates()
 
     def summary(self):
-        chart = pd.read_csv(self.feature_path, compression="gzip")
+        chart: pd.DataFrame = self.df
         freq = (
             chart.groupby([ChartEventsHeader.STAY_ID, ChartEventsHeader.ITEM_ID])
             .size()
@@ -101,8 +102,7 @@ class Chart(Feature):
         summary = pd.merge(missing, total, on=ChartEventsHeader.ITEM_ID, how="right")
         summary = pd.merge(freq, summary, on=ChartEventsHeader.ITEM_ID, how="right")
         summary = summary.fillna(0)
-        summary.to_csv(CHART_SUMMARY_PATH, index=False)
-        summary[ChartEventsHeader.ITEM_ID].to_csv(CHART_FEATURES_PATH, index=False)
+        return summary
 
     def preproc(self):
         logger.info("[PROCESSING CHART EVENTS DATA]")

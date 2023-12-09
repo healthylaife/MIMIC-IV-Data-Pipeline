@@ -15,6 +15,9 @@ from pipeline.file_info.common import save_data
 from pipeline.file_info.preproc.feature import (
     EXTRACT_DIAG_ICU_PATH,
     EXTRACT_DIAG_PATH,
+    EXTRACT_MED_ICU_PATH,
+    EXTRACT_MED_PATH,
+    EXTRACT_PROC_PATH,
     PREPROC_DIAG_ICU_PATH,
     PREPROC_DIAG_PATH,
 )
@@ -37,39 +40,38 @@ class NoEventFeaturePreprocessor:
 
     def preprocess(self):
         no_event_preproc_features = []
-        empty_cohort = pd.DataFrame()
         if self.feature_extractor.for_diagnoses:
-            extract_diag_df = pd.read_csv(
+            extract_dia = pd.read_csv(
                 EXTRACT_DIAG_ICU_PATH
                 if self.feature_extractor.use_icu
                 else EXTRACT_DIAG_PATH,
                 compression="gzip",
             )
             dia = Diagnoses(
-                cohort=empty_cohort,
                 use_icu=self.feature_extractor.use_icu,
-                df=extract_diag_df,
+                df=extract_dia,
             )
-            dia.preproc(self.group_diag_icd)
+            preproc_dia = dia.preproc(self.group_diag_icd)
             save_data(
-                dia.df,
+                preproc_dia,
                 PREPROC_DIAG_ICU_PATH
                 if self.feature_extractor.use_icu
                 else PREPROC_DIAG_PATH,
                 "DIAGNOSES",
             )
-            no_event_preproc_features.append(dia.preproc(self.group_diag_icd))
+            no_event_preproc_features.append(preproc_dia)
         if not self.feature_extractor.use_icu:
             if self.feature_extractor.for_medications:
-                med = Medications(
-                    cohort=empty_cohort,
-                    use_icu=self.feature_extractor.use_icu,
-                )
-                no_event_preproc_features.append(med.preproc(self.group_med_code))
+                extract_med = pd.read_csv(EXTRACT_MED_PATH, compression="gzip")
+                med = Medications(use_icu=False, df=extract_med)
+                preproc_med = med.preproc(self.group_med_code)
+                save_data(preproc_med, EXTRACT_MED_PATH, "MEDICATIONS")
+
+                no_event_preproc_features.append(preproc_med)
             if self.feature_extractor.for_procedures:
-                proc = Procedures(
-                    cohort=empty_cohort,
-                    use_icu=self.feature_extractor.use_icu,
-                )
-                no_event_preproc_features.append(proc.preproc(self.keep_proc_icd9))
+                extract_proc = pd.read_csv(EXTRACT_PROC_PATH, compression="gzip")
+                proc = Procedures(use_icu=False, df=extract_proc)
+                preproc_proc = proc.preproc(self.keep_proc_icd9)
+                save_data(preproc_proc, EXTRACT_PROC_PATH, "PROCEDURES")
+                no_event_preproc_features.append(preproc_proc)
         return no_event_preproc_features

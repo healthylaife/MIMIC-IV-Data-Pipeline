@@ -62,7 +62,7 @@ class DataGenerator:
             features.append(med.generate_fun())
         if self.feature_extractor.for_labs:
             print("[ ======READING LABS ]")
-            labs = Lab(cohort=pd.DataFrame())
+            labs = Lab()
             features.append(labs.generate_fun())
 
         if self.feature_extractor.for_labs:

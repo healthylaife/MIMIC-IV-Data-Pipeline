@@ -31,18 +31,19 @@ logger = logging.getLogger()
 class Lab(Feature):
     def __init__(
         self,
-        cohort: pd.DataFrame,
+        df: pd.DataFrame = pd.DataFrame(),
+        cohort: pd.DataFrame = pd.DataFrame(),
         chunksize: int = 10000000,
         thresh=1,
         left_thresh=0,
         impute_outlier=False,
     ):
         self.cohort = cohort
+        self.df = df
         self.chunksize = chunksize
         self.thresh = thresh
         self.left_thresh = left_thresh
         self.impute = impute_outlier
-        self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_LABS_PATH
 
@@ -151,18 +152,7 @@ class Lab(Feature):
         return labs
 
     def summary(self):
-        labs = pd.DataFrame()
-        for chunk in tqdm(
-            pd.read_csv(
-                EXTRACT_LABS_PATH,
-                compression="gzip",
-                chunksize=self.chunksize,
-            )
-        ):
-            if labs.empty:
-                labs = chunk
-            else:
-                labs = labs.append(chunk, ignore_index=True)
+        labs: pd.DataFrame = self.df
         freq = (
             labs.groupby(
                 [LabEventsHeader.HOSPITAL_ADMISSION_ID, LabEventsHeader.ITEM_ID]
@@ -189,9 +179,8 @@ class Lab(Feature):
         summary = pd.merge(freq, summary, on=LabEventsHeader.ITEM_ID, how="right")
         summary["missing%"] = 100 * (summary["missing_count"] / summary["total_count"])
         summary = summary.fillna(0)
-        summary.to_csv(LABS_SUMMARY_PATH, index=False)
-        summary[LabEventsHeader.ITEM_ID].to_csv(LABS_FEATURES_PATH, index=False)
-        return summary[LabEventsHeader.ITEM_ID]
+
+        return summary
 
     def generate_fun(self):
         chunksize = self.chunksize

@@ -24,11 +24,17 @@ logger = logging.getLogger()
 
 
 class Procedures(Feature):
-    def __init__(self, cohort: pd.DataFrame, use_icu: bool, keep_icd9: bool = True):
+    def __init__(
+        self,
+        use_icu: bool,
+        df: pd.DataFrame = pd.DataFrame,
+        cohort: pd.DataFrame = pd.DataFrame,
+        keep_icd9: bool = True,
+    ):
         self.cohort = cohort
         self.use_icu = use_icu
         self.keep_icd9 = keep_icd9
-        self.df = pd.DataFrame()
+        self.df = df
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_PROC_ICU_PATH if self.use_icu else EXTRACT_PROC_PATH
         self.adm_id = (
@@ -125,10 +131,7 @@ class Procedures(Feature):
 
     def preproc(self, keep_icd9: bool):
         logger.info("[PROCESSING PROCEDURES DATA]")
-        proc = pd.read_csv(
-            EXTRACT_PROC_PATH,
-            compression="gzip",
-        )
+        proc = self.df.copy()
         if not keep_icd9:
             proc = proc.loc[proc[NonIcuProceduresHeader.ICD_VERSION] == 10]
         proc = proc[
@@ -145,25 +148,18 @@ class Procedures(Feature):
             proc = proc.dropna()
         self.keep_icd9 = keep_icd9
         logger.info(f"Total number of rows: {proc.shape[0]}")
-        return save_data(proc, self.feature_path, "PROCEDURES")
+        self.df = proc
+        return self.df
 
     def summary(self):
-        proc = pd.read_csv(
-            self.feature_path,
-            compression="gzip",
-        )
+        proc: pd.DataFrame = self.df
         feature_name = (
             IcuProceduresHeader.ITEM_ID
             if self.use_icu
             else NonIcuProceduresHeader.ICD_CODE
         )
         freq = (
-            proc.groupby(
-                [
-                    self.adm_id,
-                    feature_name,
-                ]
-            )
+            proc.groupby([self.adm_id, feature_name])
             .size()
             .reset_index(name="mean_frequency")
         )
@@ -171,9 +167,7 @@ class Procedures(Feature):
         total = proc.groupby(feature_name).size().reset_index(name="total_count")
         summary = pd.merge(freq, total, on=feature_name, how="right")
         summary = summary.fillna(0)
-        summary.to_csv(PROC_SUMMARY_PATH, index=False)
-        summary[feature_name].to_csv(PROC_FEATURES_PATH, index=False)
-        return summary[feature_name]
+        return summary
 
     def generate_fun(self):
         proc = pd.read_csv(self.feature_path(), compression="gzip")

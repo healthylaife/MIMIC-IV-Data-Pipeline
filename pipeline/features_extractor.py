@@ -71,37 +71,37 @@ class FeatureExtractor:
         feature_conditions: List[Tuple[bool, Feature, Path, str]] = [
             (
                 self.for_diagnoses,
-                Diagnoses(cohort, self.use_icu),
+                Diagnoses(use_icu=self.use_icu),
                 EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH,
                 "DIAGNOSES",
             ),
             (
                 self.for_procedures,
-                Procedures(cohort, self.use_icu),
+                Procedures(use_icu=self.use_icu),
                 EXTRACT_PROC_ICU_PATH if self.use_icu else EXTRACT_PROC_PATH,
                 "PROCEDURES",
             ),
             (
                 self.for_medications,
-                Medications(cohort, self.use_icu),
+                Medications(use_icu=self.use_icu),
                 EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH,
                 "MEDICATIONS",
             ),
             (
                 self.for_output_events and self.use_icu,
-                OutputEvents(cohort),
+                OutputEvents(),
                 EXTRACT_OUT_ICU_PATH,
                 "OUTPUT EVENTS",
             ),
             (
                 self.for_chart_events and self.use_icu,
-                Chart(cohort),
+                Chart(),
                 EXTRACT_CHART_ICU_PATH,
                 "CHART EVENTS",
             ),
             (
                 self.for_labs and not self.use_icu,
-                Lab(cohort),
+                Lab(),
                 EXTRACT_LABS_PATH,
                 "LAB EVENTS",
             ),

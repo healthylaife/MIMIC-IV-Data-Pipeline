@@ -34,10 +34,10 @@ MEAN_FREQUENCY_HEADER = "mean_frequency"
 class Diagnoses(Feature):
     def __init__(
         self,
-        cohort: pd.DataFrame,
         use_icu: bool,
+        cohort: pd.DataFrame = pd.DataFrame(),
         icd_group_option: IcdGroupOption | None = None,
-        df: pd.DataFrame = pd.DataFrame,
+        df: pd.DataFrame = pd.DataFrame(),
     ):
         self.cohort = cohort
         self.use_icu = use_icu
@@ -48,7 +48,7 @@ class Diagnoses(Feature):
         )
         self.df = df
 
-    def df(self):
+    def df(self) -> pd.DataFrame:
         return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
@@ -78,57 +78,41 @@ class Diagnoses(Feature):
 
     def preproc(self, group_diag_icd: IcdGroupOption) -> pd.DataFrame:
         logger.info(f"[PROCESSING DIAGNOSIS DATA]")
-        diag = pd.read_csv(self.feature_path, compression="gzip")
         preproc_code = {
             IcdGroupOption.KEEP: DiagnosesHeader.ICD_CODE,
             IcdGroupOption.CONVERT: DiagnosesHeader.ROOT_ICD10,
             IcdGroupOption.GROUP: DiagnosesHeader.ROOT,
         }.get(group_diag_icd)
-        diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = diag[preproc_code]
-        diag = diag[
+        self.df[PreprocDiagnosesHeader.NEW_ICD_CODE] = self.df[preproc_code]
+        self.df = self.df[
             [c for c in PreprocDiagnosesHeader]
             + ([DiagnosesIcuHeader.STAY_ID] if self.use_icu else [])
         ]
         self.icd_group_option = group_diag_icd
-        logger.info(f"Total number of rows: {diag.shape[0]}")
-        return save_data(diag, self.preproc_feature_path, "DIAGNOSES")
+        logger.info(f"Total number of rows: {self.df.shape[0]}")
+        return self.df
 
     def summary(self):
-        diag = pd.read_csv(
-            self.preproc_feature_path,
-            compression="gzip",
+        diag: pd.DataFrame = self.df
+        group_column = (
+            DiagnosesIcuHeader.STAY_ID
+            if self.use_icu
+            else DiagnosesHeader.HOSPITAL_ADMISSION_ID
         )
-        freq = (
-            diag.groupby(
-                [
-                    DiagnosesIcuHeader.STAY_ID
-                    if self.use_icu
-                    else DiagnosesHeader.HOSPITAL_ADMISSION_ID,
-                    PreprocDiagnosesHeader.NEW_ICD_CODE,
-                ]
-            )
-            .size()
-            .reset_index(name="mean_frequency")
-        )
-        freq = (
-            freq.groupby(PreprocDiagnosesHeader.NEW_ICD_CODE)[MEAN_FREQUENCY_HEADER]
-            .mean()
-            .reset_index()
-        )
+        freq = diag.groupby([group_column, PreprocDiagnosesHeader.NEW_ICD_CODE]).size()
+        freq = freq.reset_index(name="mean_frequency")
+        mean_freq = freq.groupby(PreprocDiagnosesHeader.NEW_ICD_CODE)[
+            "mean_frequency"
+        ].mean()
         total = (
             diag.groupby(PreprocDiagnosesHeader.NEW_ICD_CODE)
             .size()
             .reset_index(name="total_count")
         )
         summary = pd.merge(
-            freq, total, on=PreprocDiagnosesHeader.NEW_ICD_CODE, how="right"
+            mean_freq, total, on=PreprocDiagnosesHeader.NEW_ICD_CODE, how="right"
         )
         summary = summary.fillna(0)
-
-        summary.to_csv(DIAG_SUMMARY_PATH, index=False)
-        summary[PreprocDiagnosesHeader.NEW_ICD_CODE].to_csv(
-            DIAG_FEATURES_PATH, index=False
-        )
         return summary
 
     def generate_fun(self):

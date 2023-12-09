@@ -10,15 +10,16 @@ from pipeline.file_info.preproc.cohort import CohortHeader, IcuCohortHeader
 from pipeline.file_info.preproc.summary import OUT_FEATURES_PATH, OUT_SUMMARY_PATH
 from pipeline.file_info.raw.icu import load_icu_output_events, OuputputEvents
 from pipeline.file_info.common import save_data
-from pathlib import Path
 
 logger = logging.getLogger()
 
 
 class OutputEvents(Feature):
-    def __init__(self, cohort: pd.DataFrame):
+    def __init__(
+        self, df: pd.DataFrame = pd.DataFrame(), cohort: pd.DataFrame = pd.DataFrame()
+    ):
         self.cohort = cohort
-        self.df = pd.DataFrame()
+        self.df = df
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_OUT_ICU_PATH
 
@@ -57,7 +58,7 @@ class OutputEvents(Feature):
         pass
 
     def summary(self):
-        out = pd.read_csv(self.feature_path, compression="gzip")
+        out: pd.DataFrame = self.df
         freq = (
             out.groupby([OutputEventsHeader.STAY_ID, OutputEventsHeader.ITEM_ID])
             .size()
@@ -71,9 +72,7 @@ class OutputEvents(Feature):
         )
         summary = pd.merge(freq, total, on=OutputEventsHeader.ITEM_ID, how="right")
         summary = summary.fillna(0)
-        summary.to_csv(OUT_SUMMARY_PATH, index=False)
-        summary[OutputEventsHeader.ITEM_ID].to_csv(OUT_FEATURES_PATH, index=False)
-        return summary[OutputEventsHeader.ITEM_ID]
+        return summary
 
     def generate_fun(self):
         out = pd.read_csv(self.feature_path, compression="gzip")

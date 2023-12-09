@@ -39,16 +39,22 @@ logger = logging.getLogger()
 
 
 class Medications(Feature):
-    def __init__(self, cohort: pd.DataFrame, use_icu: bool, group_code: bool = False):
+    def __init__(
+        self,
+        use_icu: bool,
+        cohort: pd.DataFrame = pd.DataFrame(),
+        df: pd.DataFrame = pd.DataFrame(),
+        group_code: bool = False,
+    ):
         self.cohort = cohort
         self.use_icu = use_icu
         self.group_code = group_code
-        self.df = pd.DataFrame()
+        self.df = df
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH
         self.preproc_path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
 
-    def df(self):
+    def df(self) -> pd.DataFrame:
         return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
@@ -146,52 +152,45 @@ class Medications(Feature):
 
     def preproc(self, group_code: bool):
         logger.info("[PROCESSING MEDICATIONS DATA]")
-        med = pd.read_csv(self.feature_path, compression="gzip")
-        med[PreprocMedicationHeader.DRUG_NAME] = (
-            med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME]
+        self.df[PreprocMedicationHeader.DRUG_NAME] = (
+            self.df[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME]
             if group_code
-            else med[NonIcuMedicationHeader.DRUG]
+            else self.df[NonIcuMedicationHeader.DRUG]
         )
-        med = med.drop(
+        self.df = self.df.drop(
             columns=[
                 NonIcuMedicationHeader.NON_PROPRIEATARY_NAME,
                 NonIcuMedicationHeader.DRUG,
             ]
         )
-        med.dropna()
+        self.df.dropna()
         self.group_code = group_code
-        logger.info(f"Total number of rows: {med.shape[0]}")
-        return save_data(med, self.feature_path, "MEDICATIONS")
+        logger.info(f"Total number of rows: {self.df.shape[0]}")
+        return self.df  # save_data(med, self.feature_path, "MEDICATIONS")
 
-    def summary(self):
-        med = pd.read_csv(self.feature_path, compression="gzip")
+    def summary(self) -> pd.DataFrame:
+        med: pd.DataFrame = self.df
         feature_name = (
             IcuMedicationHeader.ITEM_ID.value
             if self.use_icu
             else PreprocMedicationHeader.DRUG_NAME.value
         )
-        freq = (
-            med.groupby(
-                [IcuMedicationHeader.STAY_ID, IcuMedicationHeader.ITEM_ID]
-                if self.use_icu
-                else [
-                    MedicationsHeader.HOSPITAL_ADMISSION_ID,
-                    PreprocMedicationHeader.DRUG_NAME,
-                ]
-            )
-            .size()
-            .reset_index(name="mean_frequency")
-        )
-
-        missing = (
-            med[
-                med[
-                    IcuMedicationHeader.AMOUNT
-                    if self.use_icu
-                    else NonIcuMedicationHeader.DOSE_VAL_RX
-                ]
-                == 0
+        group_columns = (
+            [IcuMedicationHeader.STAY_ID, IcuMedicationHeader.ITEM_ID]
+            if self.use_icu
+            else [
+                MedicationsHeader.HOSPITAL_ADMISSION_ID,
+                PreprocMedicationHeader.DRUG_NAME,
             ]
+        )
+        freq = med.groupby(group_columns).size().reset_index(name="mean_frequency")
+        amount_column = (
+            IcuMedicationHeader.AMOUNT
+            if self.use_icu
+            else NonIcuMedicationHeader.DOSE_VAL_RX
+        )
+        missing = (
+            med[med[amount_column] == 0]
             .groupby(feature_name)
             .size()
             .reset_index(name="missing_count")
