@@ -16,7 +16,6 @@ from pipeline.file_info.preproc.feature import (
     IcuProceduresHeader,
     NonIcuProceduresHeader,
 )
-from pipeline.features_extractor import FeatureExtractor
 from typing import List
 from pathlib import Path
 
@@ -28,11 +27,11 @@ from pipeline.file_info.preproc.summary import (
     OUT_FEATURES_PATH,
     PROC_FEATURES_PATH,
 )
-from pipeline.feature.chart_events import Chart
 
 logger = logging.getLogger()
 
 
+# TODO REPLACE HARD CODED COLUMN AND CLASS NAMES
 class FeatureSelector:
     def __init__(
         self,
@@ -128,11 +127,13 @@ class FeatureSelector:
         self.log_and_save(data_df, data_path, data_type)
         return data_df
 
+    # TODO: to move in fileinfo and to reuse: in file info
     def concat_csv_chunks(self, file_path: Path, chunksize: int):
         """Concatenate chunks from a CSV file."""
         chunks = pd.read_csv(file_path, compression="gzip", chunksize=chunksize)
         return pd.concat(chunks, ignore_index=True)
 
+    # TODO same as above
     def log_and_save(self, df: pd.DataFrame, path: Path, data_type: str):
         """Log information and save DataFrame to a CSV file."""
         logger.info(f"Total number of rows in {data_type}: {df.shape[0]}")

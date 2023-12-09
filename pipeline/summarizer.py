@@ -2,13 +2,14 @@ import pandas as pd
 import logging
 
 from tqdm import tqdm
+from pipeline.feature.feature_abc import Feature
 from pipeline.feature.diagnoses import Diagnoses
 from pipeline.feature.lab_events import Lab
 from pipeline.feature.medications import Medications
 from pipeline.feature.output_events import OutputEvents
 from pipeline.feature.procedures import Procedures
 from pipeline.features_extractor import FeatureExtractor
-from typing import List
+from typing import List, Type
 
 from pipeline.feature.chart_events import Chart
 from pipeline.file_info.common import save_data
@@ -46,6 +47,7 @@ from pipeline.file_info.preproc.summary import (
     PROC_SUMMARY_PATH,
 )
 from pipeline.no_event_feature_preprocessor import NoEventFeaturePreprocessor
+from pathlib import Path
 
 logger = logging.getLogger()
 
@@ -57,96 +59,107 @@ class Summarizer:
     ):
         self.feature_extractor = feature_extractor
 
+    def process_feature(
+        self,
+        feature_class: Type[Feature],
+        path: Path,
+        summary_path: Path,
+        feature_name: str,
+        features_path: str,
+        use_icu: bool = True,
+    ) -> pd.DataFrame:
+        """
+        Process a feature, save its summary, and export relevant data to a CSV file.
+        """
+        feature = (
+            feature_class(
+                use_icu=self.feature_extractor.use_icu,
+                df=pd.read_csv(path, compression="gzip"),
+            )
+            if use_icu
+            else feature_class(df=pd.read_csv(path, compression="gzip"))
+        )
+        summary = feature.summary()
+        save_data(summary, summary_path, f"{feature_class.__name__.upper()} SUMMARY")
+        summary[feature_name].to_csv(features_path, index=False)
+        return summary
+
     def save_summaries(self) -> List[pd.DataFrame]:
         summaries = []
         if self.feature_extractor.for_diagnoses:
-            preproc_diag = pd.read_csv(
+            summary = self.process_feature(
+                Diagnoses,
                 PREPROC_DIAG_ICU_PATH
                 if self.feature_extractor.use_icu
                 else PREPROC_DIAG_PATH,
-                compression="gzip",
-            )
-            dia = Diagnoses(
-                use_icu=self.feature_extractor.use_icu,
-                df=preproc_diag,
-            )
-            summary = dia.summary()
-            save_data(summary, DIAG_SUMMARY_PATH, "DIAGNOSES SUMARY")
-            summary[PreprocDiagnosesHeader.NEW_ICD_CODE].to_csv(
-                DIAG_FEATURES_PATH, index=False
+                DIAG_SUMMARY_PATH,
+                PreprocDiagnosesHeader.NEW_ICD_CODE,
+                DIAG_FEATURES_PATH,
             )
             summaries.append(summary)
         if self.feature_extractor.for_medications:
-            extract_med = pd.read_csv(
+            summary = self.process_feature(
+                Medications,
                 EXTRACT_MED_ICU_PATH
                 if self.feature_extractor.use_icu
                 else EXTRACT_MED_PATH,
-                compression="gzip",
-            )
-            med = Medications(
-                use_icu=self.feature_extractor.use_icu,
-                df=extract_med,
-            )
-            summary = med.summary()
-            save_data(summary, MED_SUMMARY_PATH, "MEDICATIONS SUMARY")
-            feature_name = (
+                MED_SUMMARY_PATH,
                 IcuMedicationHeader.ITEM_ID
                 if self.feature_extractor.use_icu
-                else PreprocMedicationHeader.DRUG_NAME
+                else PreprocMedicationHeader.DRUG_NAME,
+                MED_FEATURES_PATH,
             )
-            summary[feature_name].to_csv(MED_FEATURES_PATH, index=False)
             summaries.append(summary)
+
         if self.feature_extractor.for_procedures:
-            extract_proc = pd.read_csv(
+            summary = self.process_feature(
+                Procedures,
                 EXTRACT_PROC_ICU_PATH
                 if self.feature_extractor.use_icu
                 else EXTRACT_PROC_PATH,
-                compression="gzip",
-            )
-            proc = Procedures(
-                use_icu=self.feature_extractor.use_icu,
-                df=extract_proc,
-            )
-            summary = proc.summary()
-
-            save_data(summary, PROC_SUMMARY_PATH, "PROCEDURES SUMARY")
-            feature_name = (
+                PROC_SUMMARY_PATH,
                 IcuProceduresHeader.ITEM_ID
                 if self.feature_extractor.use_icu
-                else NonIcuProceduresHeader.ICD_CODE
+                else NonIcuProceduresHeader.ICD_CODE,
+                PROC_FEATURES_PATH,
             )
-            summary[feature_name].to_csv(PROC_FEATURES_PATH, index=False)
             summaries.append(summary)
+
         if self.feature_extractor.for_output_events:
-            extract_out = pd.read_csv(EXTRACT_OUT_ICU_PATH, compression="gzip")
-            out = OutputEvents(df=extract_out)
-            summary = out.summary()
-            save_data(summary, OUT_SUMMARY_PATH, "OUTPUT EVENTS SUMARY")
-            summary[OutputEventsHeader.ITEM_ID].to_csv(OUT_FEATURES_PATH, index=False)
+            summary = self.process_feature(
+                OutputEvents,
+                EXTRACT_OUT_ICU_PATH,
+                OUT_SUMMARY_PATH,
+                OutputEventsHeader.ITEM_ID,
+                OUT_FEATURES_PATH,
+                use_icu=False,
+            )
             summaries.append(summary)
+
         if self.feature_extractor.for_chart_events:
-            extract_chart = pd.read_csv(EXTRACT_CHART_ICU_PATH, compression="gzip")
-            chart = Chart(df=extract_chart)
-            summary = chart.summary()
-            save_data(summary, CHART_SUMMARY_PATH, "CHART EVENTS SUMARY")
-            summary[ChartEventsHeader.ITEM_ID].to_csv(CHART_FEATURES_PATH, index=False)
+            summary = self.process_feature(
+                Chart,
+                EXTRACT_CHART_ICU_PATH,
+                CHART_SUMMARY_PATH,
+                ChartEventsHeader.ITEM_ID,
+                CHART_FEATURES_PATH,
+                use_icu=False,
+            )
             summaries.append(summary)
+
         if self.feature_extractor.for_labs:
-            labs = pd.DataFrame()
-            for chunk in tqdm(
-                pd.read_csv(
-                    EXTRACT_LABS_PATH,
-                    compression="gzip",
-                    chunksize=10000000,
-                )
-            ):
-                if labs.empty:
-                    labs = chunk
-                else:
-                    labs = labs.append(chunk, ignore_index=True)
+            # Special handling for labs by chunk
+            labs = pd.concat(
+                tqdm(
+                    pd.read_csv(
+                        EXTRACT_LABS_PATH, compression="gzip", chunksize=10000000
+                    )
+                ),
+                ignore_index=True,
+            )
             lab = Lab(df=labs)
             summary = lab.summary()
-            summary.to_csv(LABS_SUMMARY_PATH, index=False)
+            save_data(summary, LABS_SUMMARY_PATH, "LABS SUMMARY")
             summary[LabEventsHeader.ITEM_ID].to_csv(LABS_FEATURES_PATH, index=False)
-            summaries.append(lab.summary)
+            summaries.append(summary)
         return summaries

@@ -1,17 +1,15 @@
 import pandas as pd
 import logging
 
-from tqdm import tqdm
 from pipeline.feature.diagnoses import Diagnoses, IcdGroupOption
 from pipeline.feature.lab_events import Lab
-from pipeline.feature.medications import Medications
-from pipeline.feature.output_events import OutputEvents
-from pipeline.feature.procedures import Procedures
 from pipeline.feature_selector import FeatureSelector
 from pipeline.features_extractor import FeatureExtractor
 from typing import List
 
 from pipeline.feature.chart_events import Chart
+from pipeline.file_info.common import save_data
+from pipeline.file_info.preproc.feature import EXTRACT_CHART_ICU_PATH, EXTRACT_LABS_PATH
 
 from pipeline.no_event_feature_preprocessor import NoEventFeaturePreprocessor
 from pipeline.summarizer import Summarizer
@@ -45,6 +43,19 @@ class FeaturePreprocessor:
         self.thresh = thresh
         self.left_thresh = left_thresh
 
+    def preprocess_no_event_features(self):
+        preprocessor = NoEventFeaturePreprocessor(
+            self.feature_extractor,
+            self.group_diag_icd,
+            self.group_med_code,
+            self.keep_proc_icd9,
+        )
+        return preprocessor.preprocess()
+
+    def save_summaries(self):
+        summarizer = Summarizer(self.feature_extractor)
+        return summarizer.save_summaries()
+
     def feature_selection(self) -> List[pd.DataFrame]:
         feature_selector = FeatureSelector(
             use_icu=self.feature_extractor.use_icu,
@@ -60,33 +71,27 @@ class FeaturePreprocessor:
     def preproc_events_features(self) -> List[pd.DataFrame]:
         event_preproc_features: List[pd.DataFrame] = []
         if self.clean_chart and self.feature_extractor.use_icu:
-            chart = Chart(
-                thresh=self.thresh,
-                left_thresh=self.left_thresh,
-                impute_outlier=self.impute_outlier_chart,
+            extract_chart = pd.read_csv(EXTRACT_CHART_ICU_PATH, compression="gzip")
+            chart = Chart(df=extract_chart)
+            breakpoint()
+            preproc_chart = chart.impute_outlier(
+                self.impute_outlier_chart,
+                self.thresh,
+                self.left_thresh,
             )
-            event_preproc_features.append(chart.preproc())
+            save_data(preproc_chart, EXTRACT_CHART_ICU_PATH, "CHART EVENTS")
+            event_preproc_features.append(preproc_chart)
         if self.clean_labs and not self.feature_extractor.use_icu:
-            lab = Lab(
+            extract_labs = pd.read_csv(EXTRACT_LABS_PATH, compression="gzip")
+            lab = Lab(df=extract_labs)
+            preproc_lab = lab.impute_outlier(
+                impute=self.impute_labs,
                 thresh=self.thresh,
                 left_thresh=self.left_thresh,
-                impute_outlier=self.impute_labs,
             )
+            save_data(preproc_lab, EXTRACT_LABS_PATH, "LABS EVENTS")
             event_preproc_features.append(lab.preproc())
         return event_preproc_features
-
-    def preprocess_no_event_features(self):
-        preprocessor = NoEventFeaturePreprocessor(
-            self.feature_extractor,
-            self.group_diag_icd,
-            self.group_med_code,
-            self.keep_proc_icd9,
-        )
-        return preprocessor.preprocess()
-
-    def save_summaries(self):
-        summarizer = Summarizer(self.feature_extractor)
-        return summarizer.save_summaries()
 
     def preprocess(self):
         self.preprocess_no_event_features()

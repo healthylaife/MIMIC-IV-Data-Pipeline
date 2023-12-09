@@ -28,20 +28,14 @@ class Chart(Feature):
         df: pd.DataFrame = pd.DataFrame(),
         cohort: pd.DataFrame = pd.DataFrame(),
         chunksize: int = 10000000,
-        thresh=1,
-        left_thresh=0,
-        impute_outlier=False,
     ):
+        self.df = df
         self.cohort = cohort
         self.chunksize = chunksize
-        self.thresh = thresh
-        self.left_thresh = left_thresh
-        self.impute_outlier = impute_outlier
-        self.df = df
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_CHART_ICU_PATH
 
-    def df(self):
+    def df(self) -> pd.DataFrame:
         return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
@@ -105,24 +99,22 @@ class Chart(Feature):
         return summary
 
     def preproc(self):
+        pass
+
+    def impute_outlier(self, impute, thresh, left_thresh):
         logger.info("[PROCESSING CHART EVENTS DATA]")
-        chart = pd.read_csv(EXTRACT_CHART_ICU_PATH, compression="gzip")
-        chart = outlier_imputation(
-            chart,
-            "itemid",
-            "valuenum",
-            self.thresh,
-            self.left_thresh,
-            self.impute_outlier,
+        self.df = outlier_imputation(
+            self.df,
+            ChartEventsHeader.ITEM_ID,
+            ChartEventsHeader.VALUE_NUM,
+            thresh,
+            left_thresh,
+            impute,
         )
 
-        logger.info("Total number of rows", chart.shape[0])
-        chart.to_csv(
-            EXTRACT_CHART_ICU_PATH,
-            compression="gzip",
-            index=False,
-        )
+        logger.info("Total number of rows", self.df.shape[0])
         logger.info("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
+        return self.df
 
     def generate_fun(self):
         chunksize = 5000000

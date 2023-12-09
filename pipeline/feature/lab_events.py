@@ -12,7 +12,6 @@ from pipeline.file_info.preproc.feature import (
     LabEventsHeader,
 )
 from pipeline.file_info.preproc.cohort import CohortHeader, NonIcuCohortHeader
-from pipeline.file_info.preproc.summary import LABS_FEATURES_PATH, LABS_SUMMARY_PATH
 from pipeline.file_info.raw.hosp import (
     HospAdmissions,
     HospLabEvents,
@@ -21,8 +20,6 @@ from pipeline.file_info.raw.hosp import (
 )
 import numpy as np
 from pipeline.file_info.common import save_data
-from pathlib import Path
-
 from pipeline.conversion.uom import drop_wrong_uom
 
 logger = logging.getLogger()
@@ -34,16 +31,10 @@ class Lab(Feature):
         df: pd.DataFrame = pd.DataFrame(),
         cohort: pd.DataFrame = pd.DataFrame(),
         chunksize: int = 10000000,
-        thresh=1,
-        left_thresh=0,
-        impute_outlier=False,
     ):
         self.cohort = cohort
         self.df = df
         self.chunksize = chunksize
-        self.thresh = thresh
-        self.left_thresh = left_thresh
-        self.impute = impute_outlier
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_LABS_PATH
 
@@ -134,22 +125,21 @@ class Lab(Feature):
         return chunk.dropna()
 
     def preproc(self):
+        pass
+
+    def impute_outlier(self, impute, thresh, left_thresh):
         print("[PROCESSING LABS DATA]")
-        labs = pd.read_csv(EXTRACT_LABS_PATH, compression="gzip")
-        labs = outlier_imputation(
-            labs,
-            "itemid",
-            "valuenum",
-            self.thresh,
-            self.left_thresh,
-            self.impute,
+        self.df = outlier_imputation(
+            self.df,
+            HospLabEvents.ITEM_ID,
+            HospLabEvents.VALUE_NUM,
+            thresh,
+            left_thresh,
+            impute,
         )
-
-        print("Total number of rows", labs.shape[0])
-        labs.to_csv(EXTRACT_LABS_PATH, compression="gzip", index=False)
+        print("Total number of rows", self.df.shape[0])
         print("[SUCCESSFULLY SAVED LABS DATA]")
-
-        return labs
+        return self.df
 
     def summary(self):
         labs: pd.DataFrame = self.df
