@@ -12,40 +12,7 @@ from pipeline.features_extractor import FeatureExtractor
 from typing import List
 
 from pipeline.feature.chart_events import Chart
-from pipeline.file_info.common import save_data
-from pipeline.file_info.preproc.feature import (
-    EXTRACT_CHART_ICU_PATH,
-    EXTRACT_LABS_PATH,
-    EXTRACT_MED_ICU_PATH,
-    EXTRACT_MED_PATH,
-    EXTRACT_OUT_ICU_PATH,
-    EXTRACT_PROC_ICU_PATH,
-    EXTRACT_PROC_PATH,
-    PREPROC_DIAG_ICU_PATH,
-    PREPROC_DIAG_PATH,
-    ChartEventsHeader,
-    IcuMedicationHeader,
-    IcuProceduresHeader,
-    LabEventsHeader,
-    NonIcuProceduresHeader,
-    OutputEventsHeader,
-    PreprocDiagnosesHeader,
-    PreprocMedicationHeader,
-)
-from pipeline.file_info.preproc.summary import (
-    CHART_FEATURES_PATH,
-    CHART_SUMMARY_PATH,
-    DIAG_FEATURES_PATH,
-    DIAG_SUMMARY_PATH,
-    LABS_FEATURES_PATH,
-    LABS_SUMMARY_PATH,
-    MED_FEATURES_PATH,
-    MED_SUMMARY_PATH,
-    OUT_FEATURES_PATH,
-    OUT_SUMMARY_PATH,
-    PROC_FEATURES_PATH,
-    PROC_SUMMARY_PATH,
-)
+
 from pipeline.no_event_feature_preprocessor import NoEventFeaturePreprocessor
 from pipeline.summarizer import Summarizer
 
@@ -90,8 +57,7 @@ class FeaturePreprocessor:
         )
         return feature_selector.feature_selection()
 
-    # clean!
-    def preproc_events_features(self):
+    def preproc_events_features(self) -> List[pd.DataFrame]:
         event_preproc_features: List[pd.DataFrame] = []
         if self.clean_chart and self.feature_extractor.use_icu:
             chart = Chart(
@@ -109,7 +75,6 @@ class FeaturePreprocessor:
             event_preproc_features.append(lab.preproc())
         return event_preproc_features
 
-    # select colunns!!!
     def preprocess_no_event_features(self):
         preprocessor = NoEventFeaturePreprocessor(
             self.feature_extractor,
@@ -118,8 +83,6 @@ class FeaturePreprocessor:
             self.keep_proc_icd9,
         )
         return preprocessor.preprocess()
-
-    # check summary path... where are they use in the origiinal code? cleaning? data gen?
 
     def save_summaries(self):
         summarizer = Summarizer(self.feature_extractor)
