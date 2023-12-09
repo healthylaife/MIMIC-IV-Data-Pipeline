@@ -15,6 +15,7 @@ from pipeline.feature.chart_events import Chart
 logger = logging.getLogger()
 
 
+# REMOVE FEATURE EXTRACTOR?
 class FeaturePreprocessor:
     def __init__(
         self,
@@ -52,6 +53,7 @@ class FeaturePreprocessor:
         )
         return feature_selector.feature_selection()
 
+    # clean!
     def preproc_events_features(self):
         event_preproc_features: List[pd.DataFrame] = []
         if self.clean_chart and self.feature_extractor.use_icu:
@@ -78,6 +80,7 @@ class FeaturePreprocessor:
         self.feature_selection()
         self.preproc_events_features()
 
+    # select colunns!!!
     def preprocess_no_event_features(self):
         no_event_preproc_features = []
         empty_cohort = pd.DataFrame()
@@ -104,6 +107,8 @@ class FeaturePreprocessor:
                 )
                 no_event_preproc_features.append(proc.preproc())
         return no_event_preproc_features
+
+    # check summary path... where are they use in the origiinal code? cleaning? data gen?
 
     def save_summaries(self):
         summaries = []

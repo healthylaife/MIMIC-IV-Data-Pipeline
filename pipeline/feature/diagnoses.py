@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Dict
 from pipeline.conversion.icd import IcdConverter
 from pipeline.feature.feature_abc import Feature
 import logging
@@ -72,12 +73,14 @@ class Diagnoses(Feature):
         logger.info(f"[PROCESSING DIAGNOSIS DATA]")
         path = self.feature_path
         diag = pd.read_csv(path, compression="gzip")
-        if self.icd_group_option == IcdGroupOption.KEEP:
-            diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = diag[DiagnosesHeader.ICD_CODE]
-        if self.icd_group_option == IcdGroupOption.CONVERT:
-            diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = diag[DiagnosesHeader.ROOT_ICD10]
-        if self.icd_group_option == IcdGroupOption.GROUP:
-            diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = diag[DiagnosesHeader.ROOT]
+        icd_group_option_mapping: Dict[str, str] = {
+            IcdGroupOption.KEEP: DiagnosesHeader.ICD_CODE,
+            IcdGroupOption.CONVERT: DiagnosesHeader.ROOT_ICD10,
+            IcdGroupOption.GROUP: DiagnosesHeader.ROOT,
+        }
+        diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = icd_group_option_mapping.get(
+            self.icd_group_option
+        )
         cols_to_keep = [c for c in PreprocDiagnosesHeader]
         if self.use_icu:
             cols_to_keep = cols_to_keep + [h.value for h in DiagnosesIcuHeader]
