@@ -73,7 +73,6 @@ class FeaturePreprocessor:
         if self.clean_chart and self.feature_extractor.use_icu:
             extract_chart = pd.read_csv(EXTRACT_CHART_ICU_PATH, compression="gzip")
             chart = Chart(df=extract_chart)
-            breakpoint()
             preproc_chart = chart.impute_outlier(
                 self.impute_outlier_chart,
                 self.thresh,
