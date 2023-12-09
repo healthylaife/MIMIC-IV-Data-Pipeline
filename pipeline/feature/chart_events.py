@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 from pipeline.preprocessing.outlier_removal import outlier_imputation
 from pipeline.file_info.preproc.feature import (
-    PREPROC_CHART_ICU_PATH,
+    EXTRACT_CHART_ICU_PATH,
     ChartEventsHeader,
 )
 from pipeline.file_info.preproc.cohort import IcuCohortHeader
@@ -38,14 +38,17 @@ class Chart(Feature):
         self.impute_outlier = impute_outlier
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-        self.feature_path = PREPROC_CHART_ICU_PATH
+        self.feature_path = EXTRACT_CHART_ICU_PATH
+
+    def df(self):
+        return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         """Function for processing hospital observations from a pickled cohort, optimized for memory efficiency."""
         logger.info("[EXTRACTING CHART EVENTS DATA]")
 
         processed_chunks = [
-            self.process_chunk_chart_events(chunk)
+            self.process_chunk_chart_events(chunk, cohort)
             for chunk in tqdm(load_icu_chart_events(self.chunksize))
         ]
 
@@ -59,10 +62,12 @@ class Chart(Feature):
         self.df = out
         return out
 
-    def process_chunk_chart_events(self, chunk: pd.DataFrame) -> pd.DataFrame:
+    def process_chunk_chart_events(
+        self, chunk: pd.DataFrame, cohort: pd.DataFrame
+    ) -> pd.DataFrame:
         """Process a single chunk of chart events."""
         chunk = chunk.dropna(subset=[ChartEvents.VALUENUM]).merge(
-            self.cohort, on=ChartEvents.STAY_ID
+            cohort, on=ChartEvents.STAY_ID
         )
         chunk[ChartEventsHeader.EVENT_TIME_FROM_ADMIT] = (
             chunk[ChartEvents.CHARTTIME] - chunk[IcuCohortHeader.IN_TIME]
@@ -104,7 +109,7 @@ class Chart(Feature):
 
     def preproc(self):
         logger.info("[PROCESSING CHART EVENTS DATA]")
-        chart = pd.read_csv(PREPROC_CHART_ICU_PATH, compression="gzip")
+        chart = pd.read_csv(EXTRACT_CHART_ICU_PATH, compression="gzip")
         chart = outlier_imputation(
             chart,
             "itemid",
@@ -116,7 +121,7 @@ class Chart(Feature):
 
         logger.info("Total number of rows", chart.shape[0])
         chart.to_csv(
-            PREPROC_CHART_ICU_PATH,
+            EXTRACT_CHART_ICU_PATH,
             compression="gzip",
             index=False,
         )
@@ -127,7 +132,7 @@ class Chart(Feature):
         final = pd.DataFrame()
         for chart in tqdm(
             pd.read_csv(
-                PREPROC_CHART_ICU_PATH,
+                EXTRACT_CHART_ICU_PATH,
                 compression="gzip",
                 chunksize=chunksize,
             )

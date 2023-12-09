@@ -7,6 +7,8 @@ import pandas as pd
 from pipeline.file_info.preproc.feature import (
     DiagnosesHeader,
     DiagnosesIcuHeader,
+    EXTRACT_DIAG_ICU_PATH,
+    EXTRACT_DIAG_PATH,
     PREPROC_DIAG_ICU_PATH,
     PREPROC_DIAG_PATH,
 )
@@ -39,7 +41,13 @@ class Diagnoses(Feature):
         self.cohort = cohort
         self.use_icu = use_icu
         self.icd_group_option = icd_group_option
-        self.feature_path = PREPROC_DIAG_ICU_PATH if self.use_icu else PREPROC_DIAG_PATH
+        self.feature_path = EXTRACT_DIAG_ICU_PATH if self.use_icu else EXTRACT_DIAG_PATH
+        self.preproc_feature_path = (
+            PREPROC_DIAG_ICU_PATH if self.use_icu else PREPROC_DIAG_PATH
+        )
+
+    def df(self):
+        return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         logger.info("[EXTRACTING DIAGNOSIS DATA]")
@@ -54,43 +62,41 @@ class Diagnoses(Feature):
             else [CohortHeader.HOSPITAL_ADMISSION_ID, CohortHeader.LABEL]
         )
         diag = hosp_diagnose.merge(
-            self.cohort[admissions_cohort_cols],
+            cohort[admissions_cohort_cols],
             on=DiagnosesHeader.HOSPITAL_ADMISSION_ID,
         )
-        diag = IcdConverter().standardize_icd(diag)
-        cols = [h.value for h in DiagnosesHeader]
-        if self.use_icu:
-            cols = cols + [h.value for h in DiagnosesIcuHeader]
-
-        diag = diag[cols]
+        icd_converter = IcdConverter()
+        diag = icd_converter.standardize_icd(diag)
+        diag = diag[
+            [h.value for h in DiagnosesHeader]
+            + ([DiagnosesIcuHeader.STAY_ID] if self.use_icu else [])
+        ]
         self.df = diag
         return diag
 
     def save(self) -> pd.DataFrame:
         return save_data(self.df, self.feature_path, "DIAGNOSES")
 
-    def preproc(self) -> pd.DataFrame:
+    def preproc(self, group_diag_icd: IcdGroupOption) -> pd.DataFrame:
         logger.info(f"[PROCESSING DIAGNOSIS DATA]")
-        path = self.feature_path
-        diag = pd.read_csv(path, compression="gzip")
-        icd_group_option_mapping: Dict[str, str] = {
+        diag = pd.read_csv(self.feature_path, compression="gzip")
+        preproc_code = {
             IcdGroupOption.KEEP: DiagnosesHeader.ICD_CODE,
             IcdGroupOption.CONVERT: DiagnosesHeader.ROOT_ICD10,
             IcdGroupOption.GROUP: DiagnosesHeader.ROOT,
-        }
-        diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = icd_group_option_mapping.get(
-            self.icd_group_option
-        )
-        cols_to_keep = [c for c in PreprocDiagnosesHeader]
-        if self.use_icu:
-            cols_to_keep = cols_to_keep + [h.value for h in DiagnosesIcuHeader]
-        diag = diag[cols_to_keep]
+        }.get(group_diag_icd)
+        diag[PreprocDiagnosesHeader.NEW_ICD_CODE] = diag[preproc_code]
+        diag = diag[
+            [c for c in PreprocDiagnosesHeader]
+            + ([DiagnosesIcuHeader.STAY_ID] if self.use_icu else [])
+        ]
+        self.icd_group_option = group_diag_icd
         logger.info(f"Total number of rows: {diag.shape[0]}")
-        return save_data(diag, self.feature_path, "DIAGNOSES")
+        return save_data(diag, self.preproc_feature_path, "DIAGNOSES")
 
     def summary(self):
         diag = pd.read_csv(
-            self.feature_path,
+            self.preproc_feature_path,
             compression="gzip",
         )
         freq = (

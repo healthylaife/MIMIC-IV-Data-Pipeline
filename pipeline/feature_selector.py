@@ -1,18 +1,18 @@
 import pandas as pd
 import logging
 from pipeline.file_info.preproc.feature import (
-    PREPROC_DIAG_ICU_PATH,
     PREPROC_DIAG_PATH,
+    PREPROC_DIAG_ICU_PATH,
     PreprocDiagnosesHeader,
-    PREPROC_MED_ICU_PATH,
-    PREPROC_MED_PATH,
+    EXTRACT_MED_ICU_PATH,
+    EXTRACT_MED_PATH,
     IcuMedicationHeader,
     PreprocMedicationHeader,
-    PREPROC_OUT_ICU_PATH,
-    PREPROC_LABS_PATH,
-    PREPROC_PROC_ICU_PATH,
-    PREPROC_PROC_PATH,
-    PREPROC_CHART_ICU_PATH,
+    EXTRACT_OUT_ICU_PATH,
+    EXTRACT_LABS_PATH,
+    EXTRACT_PROC_PATH,
+    EXTRACT_PROC_ICU_PATH,
+    EXTRACT_CHART_ICU_PATH,
     IcuProceduresHeader,
     NonIcuProceduresHeader,
 )
@@ -67,7 +67,7 @@ class FeatureSelector:
             )
 
         if self.select_med:
-            path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
+            path = EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH
             feature_name = (
                 IcuMedicationHeader.ITEM_ID
                 if self.use_icu
@@ -80,7 +80,7 @@ class FeatureSelector:
             )
 
         if self.select_proc:
-            path = PREPROC_PROC_ICU_PATH if self.use_icu else PREPROC_PROC_PATH
+            path = EXTRACT_PROC_ICU_PATH if self.use_icu else EXTRACT_PROC_PATH
             features.append(
                 self.process_feature_selection(
                     path,
@@ -93,16 +93,16 @@ class FeatureSelector:
             )
 
         if self.select_labs:
-            labs = self.concat_csv_chunks(PREPROC_LABS_PATH, 10000000)
+            labs = self.concat_csv_chunks(EXTRACT_LABS_PATH, 10000000)
             feature_df = pd.read_csv(LABS_FEATURES_PATH)
             labs = labs[labs["itemid"].isin(feature_df["itemid"].unique())]
-            self.log_and_save(labs, PREPROC_LABS_PATH, "Labs")
+            self.log_and_save(labs, EXTRACT_LABS_PATH, "Labs")
             features.append(labs)
 
         if self.select_chart:
             features.append(
                 self.process_feature_selection(
-                    PREPROC_CHART_ICU_PATH,
+                    EXTRACT_CHART_ICU_PATH,
                     CHART_FEATURES_PATH,
                     "itemid",
                     "Output Events",
@@ -112,7 +112,7 @@ class FeatureSelector:
         if self.select_out:
             features.append(
                 self.process_feature_selection(
-                    PREPROC_OUT_ICU_PATH, OUT_FEATURES_PATH, "itemid", "Output Events"
+                    EXTRACT_OUT_ICU_PATH, OUT_FEATURES_PATH, "itemid", "Output Events"
                 )
             )
 

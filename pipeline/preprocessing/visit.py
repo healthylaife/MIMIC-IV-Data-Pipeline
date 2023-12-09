@@ -1,8 +1,10 @@
 import pandas as pd
 from pipeline.conversion.icd import IcdConverter
 from pipeline.file_info.raw.hosp import (
+    HospDiagnosesIcd,
     HospPatients,
     HospAdmissions,
+    load_hosp_diagnosis_icd,
 )
 from pipeline.file_info.raw.icu import IcuStays
 
@@ -98,17 +100,24 @@ def make_no_icu_visits(
 
 
 def filter_visits(
-    visits,
+    visits: pd.DataFrame,
     disease_readmission: Optional[DiseaseCode],
     disease_selection: Optional[DiseaseCode],
 ) -> pd.DataFrame:
     """# Filter visits based on readmission due to a specific disease and on disease selection"""
     icd_converter = IcdConverter()
-    diag = icd_converter.preproc_icd_module()
+    diag = load_hosp_diagnosis_icd()[
+        [
+            HospDiagnosesIcd.ICD_CODE,
+            HospDiagnosesIcd.ICD_VERSION,
+            HospDiagnosesIcd.HOSPITAL_ADMISSION_ID,
+        ]
+    ]
+    diag = icd_converter.standardize_icd(diag)
+    diag.dropna(subset=[HospDiagnosesIcd.ROOT], inplace=True)
     if disease_readmission:
         hids = icd_converter.get_pos_ids(diag, disease_readmission)
         visits = visits[visits[CohortHeader.HOSPITAL_ADMISSION_ID].isin(hids)]
-        logger.info(f"[ READMISSION DUE TO {disease_readmission} ]")
 
     if disease_selection:
         hids = icd_converter.get_pos_ids(diag, disease_selection)

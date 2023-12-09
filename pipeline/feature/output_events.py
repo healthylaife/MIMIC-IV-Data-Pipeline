@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import numpy as np
 from pipeline.file_info.preproc.feature import (
-    PREPROC_OUT_ICU_PATH,
+    EXTRACT_OUT_ICU_PATH,
     OutputEventsHeader,
 )
 from pipeline.file_info.preproc.cohort import CohortHeader, IcuCohortHeader
@@ -20,7 +20,10 @@ class OutputEvents(Feature):
         self.cohort = cohort
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-        self.feature_path = PREPROC_OUT_ICU_PATH
+        self.feature_path = EXTRACT_OUT_ICU_PATH
+
+    def df(self):
+        return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         """Function for getting hosp observations pertaining to a pickled cohort.
@@ -28,7 +31,7 @@ class OutputEvents(Feature):
         logger.info("[EXTRACTING OUTPUT EVENTS DATA]")
         raw_out = load_icu_output_events()
         out = raw_out.merge(
-            self.cohort[
+            cohort[
                 [
                     IcuCohortHeader.STAY_ID,
                     IcuCohortHeader.IN_TIME,
@@ -51,7 +54,7 @@ class OutputEvents(Feature):
         return out
 
     def save(self) -> pd.DataFrame:
-        return save_data(self.df, PREPROC_OUT_ICU_PATH, "OUTPUT")
+        return save_data(self.df, EXTRACT_OUT_ICU_PATH, "OUTPUT")
 
     def preproc(self):
         pass

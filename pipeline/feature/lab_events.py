@@ -8,7 +8,7 @@ import logging
 import pandas as pd
 from pipeline.preprocessing.outlier_removal import outlier_imputation
 from pipeline.file_info.preproc.feature import (
-    PREPROC_LABS_PATH,
+    EXTRACT_LABS_PATH,
     LabEventsHeader,
 )
 from pipeline.file_info.preproc.cohort import CohortHeader, NonIcuCohortHeader
@@ -44,10 +44,13 @@ class Lab(Feature):
         self.impute = impute_outlier
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-        self.feature_path = PREPROC_LABS_PATH
+        self.feature_path = EXTRACT_LABS_PATH
 
     def save(self) -> pd.DataFrame:
         return save_data(self.df, self.feature_path, "LABS")
+
+    def df(self):
+        return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         """Process and transform lab events data."""
@@ -69,7 +72,7 @@ class Lab(Feature):
             HospLabEvents.VALUE_UOM,
         ]
         processed_chunks = [
-            self.process_lab_chunk(chunk, admissions)
+            self.process_lab_chunk(chunk, admissions, cohort)
             for chunk in tqdm(
                 load_hosp_lab_events(chunksize=self.chunksize, use_cols=usecols)
             )
@@ -80,14 +83,14 @@ class Lab(Feature):
         return labevents
 
     def process_lab_chunk(
-        self, chunk: pd.DataFrame, admissions: pd.DataFrame
+        self, chunk: pd.DataFrame, admissions: pd.DataFrame, cohort: pd.DataFrame
     ) -> pd.DataFrame:
         """Process a single chunk of lab events."""
         chunk = chunk.dropna(subset=[HospLabEvents.VALUE_NUM]).fillna(
             {HospLabEvents.VALUE_UOM: 0}
         )
         chunk = chunk[
-            chunk[LabEventsHeader.PATIENT_ID].isin(self.cohort[CohortHeader.PATIENT_ID])
+            chunk[LabEventsHeader.PATIENT_ID].isin(cohort[CohortHeader.PATIENT_ID])
         ]
         chunk_with_hadm, chunk_no_hadm = (
             chunk[chunk[HospLabEvents.HOSPITAL_ADMISSION_ID].notna()],
@@ -108,14 +111,14 @@ class Lab(Feature):
             ]
         ]
         merged_chunk = pd.concat([chunk_with_hadm, chunk_imputed], ignore_index=True)
-        return self.merge_with_cohort_and_calculate_lab_time(merged_chunk)
+        return self.merge_with_cohort_and_calculate_lab_time(merged_chunk, cohort)
 
     def merge_with_cohort_and_calculate_lab_time(
-        self, chunk: pd.DataFrame
+        self, chunk: pd.DataFrame, cohort: pd.DataFrame
     ) -> pd.DataFrame:
         """Merge chunk with cohort data and calculate the lab time from admit time."""
         chunk = chunk.merge(
-            self.cohort[
+            cohort[
                 [
                     CohortHeader.HOSPITAL_ADMISSION_ID,
                     NonIcuCohortHeader.ADMIT_TIME,
@@ -134,7 +137,7 @@ class Lab(Feature):
 
     def preproc(self):
         print("[PROCESSING LABS DATA]")
-        labs = pd.read_csv(PREPROC_LABS_PATH, compression="gzip")
+        labs = pd.read_csv(EXTRACT_LABS_PATH, compression="gzip")
         labs = outlier_imputation(
             labs,
             "itemid",
@@ -145,7 +148,7 @@ class Lab(Feature):
         )
 
         print("Total number of rows", labs.shape[0])
-        labs.to_csv(PREPROC_LABS_PATH, compression="gzip", index=False)
+        labs.to_csv(EXTRACT_LABS_PATH, compression="gzip", index=False)
         print("[SUCCESSFULLY SAVED LABS DATA]")
 
         return labs
@@ -154,7 +157,7 @@ class Lab(Feature):
         labs = pd.DataFrame()
         for chunk in tqdm(
             pd.read_csv(
-                PREPROC_LABS_PATH,
+                EXTRACT_LABS_PATH,
                 compression="gzip",
                 chunksize=self.chunksize,
             )
@@ -198,7 +201,7 @@ class Lab(Feature):
         final = pd.DataFrame()
         for labs in tqdm(
             pd.read_csv(
-                PREPROC_LABS_PATH,
+                EXTRACT_LABS_PATH,
                 compression="gzip",
                 chunksize=chunksize,
             )

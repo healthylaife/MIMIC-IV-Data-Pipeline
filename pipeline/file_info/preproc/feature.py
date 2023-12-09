@@ -4,9 +4,15 @@ from pipeline.file_info.common import PREPROC_PATH
 
 
 FEATURE_PATH = PREPROC_PATH / "features"
+FEATURE_EXTRACT_PATH = FEATURE_PATH / "extract"
+FEATURE_PREPROC_PATH = FEATURE_PATH / "preproc"
+FEATURE_SUMMARY_PATH = FEATURE_PATH / "summary"
 
-PREPROC_DIAG_PATH = FEATURE_PATH / "preproc_diag.csv.gz"
-PREPROC_DIAG_ICU_PATH = FEATURE_PATH / "preproc_diag_icu.csv.gz"
+
+EXTRACT_DIAG_PATH = FEATURE_EXTRACT_PATH / "diag.csv.gz"
+EXTRACT_DIAG_ICU_PATH = FEATURE_EXTRACT_PATH / "diag_icu.csv.gz"
+PREPROC_DIAG_PATH = FEATURE_PREPROC_PATH / "diag.csv.gz"
+PREPROC_DIAG_ICU_PATH = FEATURE_PREPROC_PATH / "diag_icu.csv.gz"
 
 
 class DiagnosesHeader(StrEnum):
@@ -27,8 +33,10 @@ class PreprocDiagnosesHeader(StrEnum):
     NEW_ICD_CODE = "new_icd_code"
 
 
-PREPROC_PROC_PATH = FEATURE_PATH / "preproc_proc.csv.gz"
-PREPROC_PROC_ICU_PATH = FEATURE_PATH / "preproc_proc_icu.csv.gz"
+EXTRACT_PROC_PATH = FEATURE_EXTRACT_PATH / "proc.csv.gz"
+EXTRACT_PROC_ICU_PATH = FEATURE_EXTRACT_PATH / "proc_icu.csv.gz"
+PREPROC_PROC_PATH = FEATURE_PREPROC_PATH / "proc.csv.gz"
+PREPROC_PROC_ICU_PATH = FEATURE_PREPROC_PATH / "proc_icu.csv.gz"
 
 
 class ProceduresHeader(StrEnum):
@@ -52,8 +60,10 @@ class NonIcuProceduresHeader(StrEnum):
     PROC_TIME_FROM_ADMIT = "proc_time_from_admit"
 
 
-PREPROC_MED_ICU_PATH = FEATURE_PATH / "preproc_med_icu.csv.gz"
-PREPROC_MED_PATH = FEATURE_PATH / "preproc_med.csv.gz"
+EXTRACT_MED_ICU_PATH = FEATURE_EXTRACT_PATH / "med_icu.csv.gz"
+EXTRACT_MED_PATH = FEATURE_EXTRACT_PATH / "med.csv.gz"
+PREPROC_MED_ICU_PATH = FEATURE_PREPROC_PATH / "med_icu.csv.gz"
+PREPROC_MED_PATH = FEATURE_PREPROC_PATH / "med.csv.gz"
 
 
 class MedicationsHeader(StrEnum):
@@ -85,7 +95,8 @@ class PreprocMedicationHeader(StrEnum):
     DRUG_NAME = "drug_name"
 
 
-PREPROC_OUT_ICU_PATH = FEATURE_PATH / "preproc_out_icu.csv.gz"
+EXTRACT_OUT_ICU_PATH = FEATURE_EXTRACT_PATH / "out_icu.csv.gz"
+PREPROC_OUT_ICU_PATH = FEATURE_PREPROC_PATH / "out_icu.csv.gz"
 
 
 class OutputEventsHeader(StrEnum):
@@ -98,7 +109,8 @@ class OutputEventsHeader(StrEnum):
     EVENT_TIME_FROM_ADMIT = "event_time_from_admit"
 
 
-PREPROC_LABS_PATH = FEATURE_PATH / "preproc_labs.csv.gz"
+EXTRACT_LABS_PATH = FEATURE_EXTRACT_PATH / "labs.csv.gz"
+PREPROC_LABS_ICU_PATH = FEATURE_PREPROC_PATH / "labs.csv.gz"
 
 
 class LabEventsHeader(StrEnum):
@@ -111,7 +123,8 @@ class LabEventsHeader(StrEnum):
     VALUE_NUM = "valuenum"
 
 
-PREPROC_CHART_ICU_PATH = FEATURE_PATH / "preproc_chart_icu.csv.gz"
+EXTRACT_CHART_ICU_PATH = FEATURE_EXTRACT_PATH / "chart_icu.csv.gz"
+PREPROC_CHART_ICU_PATH = FEATURE_PREPROC_PATH / "chart_icu.csv.gz"
 
 
 class ChartEventsHeader(StrEnum):

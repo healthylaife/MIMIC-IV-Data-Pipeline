@@ -1,3 +1,4 @@
+from pathlib import Path
 import pandas as pd
 import logging
 from pipeline.feature.feature_abc import Feature
@@ -6,9 +7,20 @@ from pipeline.feature.diagnoses import Diagnoses
 from pipeline.feature.medications import Medications
 from pipeline.feature.output_events import OutputEvents
 from pipeline.feature.procedures import Procedures
+from pipeline.file_info.common import save_data
 from pipeline.file_info.preproc.cohort import load_cohort
 from pipeline.feature.lab_events import Lab
 from typing import List, Tuple
+
+from pipeline.file_info.preproc.feature import (
+    EXTRACT_CHART_ICU_PATH,
+    EXTRACT_LABS_PATH,
+    EXTRACT_MED_ICU_PATH,
+    EXTRACT_MED_PATH,
+    EXTRACT_OUT_ICU_PATH,
+    EXTRACT_PROC_ICU_PATH,
+    EXTRACT_PROC_PATH,
+)
 
 logger = logging.getLogger()
 
@@ -56,18 +68,48 @@ class FeatureExtractor:
             List[pd.DataFrame]: A list of DataFrames, each containing a type of extracted feature.
         """
         cohort = load_cohort(self.use_icu, self.cohort_output)
-        feature_conditions: List[Tuple[bool, Feature]] = [
-            (self.for_diagnoses, Diagnoses(cohort, self.use_icu)),
-            (self.for_procedures, Procedures(cohort, self.use_icu)),
-            (self.for_medications, Medications(cohort, self.use_icu)),
-            (self.for_output_events and self.use_icu, OutputEvents(cohort)),
-            (self.for_chart_events and self.use_icu, Chart(cohort)),
-            (self.for_labs and not self.use_icu, Lab(cohort)),
+        feature_conditions: List[Tuple[bool, Feature, Path, str]] = [
+            (
+                self.for_diagnoses,
+                Diagnoses(cohort, self.use_icu),
+                EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH,
+                "DIAGNOSES",
+            ),
+            (
+                self.for_procedures,
+                Procedures(cohort, self.use_icu),
+                EXTRACT_PROC_ICU_PATH if self.use_icu else EXTRACT_PROC_PATH,
+                "PROCEDURES",
+            ),
+            (
+                self.for_medications,
+                Medications(cohort, self.use_icu),
+                EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH,
+                "MEDICATIONS",
+            ),
+            (
+                self.for_output_events and self.use_icu,
+                OutputEvents(cohort),
+                EXTRACT_OUT_ICU_PATH,
+                "OUTPUT EVENTS",
+            ),
+            (
+                self.for_chart_events and self.use_icu,
+                Chart(cohort),
+                EXTRACT_CHART_ICU_PATH,
+                "CHART EVENTS",
+            ),
+            (
+                self.for_labs and not self.use_icu,
+                Lab(cohort),
+                EXTRACT_LABS_PATH,
+                "LAB EVENTS",
+            ),
         ]
         features = []
-        for condition, feature in feature_conditions:
+        for condition, feature, path, name in feature_conditions:
             if condition:
                 features.append(feature.extract_from(cohort))
-                feature.save()
+                save_data(feature.df, path, name)
 
         return features

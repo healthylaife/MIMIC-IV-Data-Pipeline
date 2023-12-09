@@ -12,6 +12,8 @@ from pipeline.file_info.preproc.feature import (
     MedicationsHeader,
     IcuMedicationHeader,
     NonIcuMedicationHeader,
+    EXTRACT_MED_ICU_PATH,
+    EXTRACT_MED_PATH,
     PREPROC_MED_ICU_PATH,
     PREPROC_MED_PATH,
     PreprocMedicationHeader,
@@ -43,7 +45,11 @@ class Medications(Feature):
         self.group_code = group_code
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-        self.feature_path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
+        self.feature_path = EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH
+        self.preproc_path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
+
+    def df(self):
+        return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         logger.info(f"[EXTRACTING MEDICATIONS DATA]")
@@ -56,7 +62,7 @@ class Medications(Feature):
             if self.use_icu
             else [CohortHeader.HOSPITAL_ADMISSION_ID, NonIcuCohortHeader.ADMIT_TIME]
         )
-        admissions = self.cohort[cohort_headers]
+        admissions = cohort[cohort_headers]
         raw_med = load_input_events() if self.use_icu else load_hosp_prescriptions()
         medications = raw_med.merge(
             admissions,
@@ -101,7 +107,6 @@ class Medications(Feature):
         Returns:
             pd.DataFrame: The normalized dataframe.
         """
-        # Normalize the 'DRUG' column
         med[NonIcuMedicationHeader.DRUG] = (
             med[NonIcuMedicationHeader.DRUG]
             .fillna("")
@@ -142,13 +147,12 @@ class Medications(Feature):
     def save(self) -> pd.DataFrame:
         return save_data(self.df, self.feature_path, "MEDICATIONS")
 
-    def preproc(self):
+    def preproc(self, group_code: bool):
         logger.info("[PROCESSING MEDICATIONS DATA]")
-        path = self.feature_path
-        med = pd.read_csv(path, compression="gzip")
+        med = pd.read_csv(self.feature_path, compression="gzip")
         med[PreprocMedicationHeader.DRUG_NAME] = (
             med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME]
-            if self.group_code
+            if group_code
             else med[NonIcuMedicationHeader.DRUG]
         )
         med = med.drop(
@@ -158,12 +162,12 @@ class Medications(Feature):
             ]
         )
         med.dropna()
+        self.group_code = group_code
         logger.info(f"Total number of rows: {med.shape[0]}")
         return save_data(med, self.feature_path, "MEDICATIONS")
 
     def summary(self):
-        path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
-        med = pd.read_csv(path, compression="gzip")
+        med = pd.read_csv(self.feature_path, compression="gzip")
         feature_name = (
             IcuMedicationHeader.ITEM_ID.value
             if self.use_icu

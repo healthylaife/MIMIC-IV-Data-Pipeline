@@ -6,8 +6,8 @@ from pipeline.file_info.preproc.feature import (
     ProceduresHeader,
     IcuProceduresHeader,
     NonIcuProceduresHeader,
-    PREPROC_PROC_ICU_PATH,
-    PREPROC_PROC_PATH,
+    EXTRACT_PROC_ICU_PATH,
+    EXTRACT_PROC_PATH,
 )
 from pipeline.file_info.preproc.cohort import (
     CohortHeader,
@@ -30,12 +30,15 @@ class Procedures(Feature):
         self.keep_icd9 = keep_icd9
         self.df = pd.DataFrame()
         self.final_df = pd.DataFrame()
-        self.feature_path = PREPROC_PROC_ICU_PATH if self.use_icu else PREPROC_PROC_PATH
+        self.feature_path = EXTRACT_PROC_ICU_PATH if self.use_icu else EXTRACT_PROC_PATH
         self.adm_id = (
             IcuCohortHeader.STAY_ID
             if self.use_icu
             else CohortHeader.HOSPITAL_ADMISSION_ID
         )
+
+    def df(self):
+        return self.df
 
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         logger.info("[EXTRACTING PROCEDURES DATA]")
@@ -123,13 +126,13 @@ class Procedures(Feature):
     def save(self) -> pd.DataFrame:
         return save_data(self.df, self.feature_path, "PROCEDURES")
 
-    def preproc(self):
+    def preproc(self, keep_icd9: bool):
         logger.info("[PROCESSING PROCEDURES DATA]")
         proc = pd.read_csv(
-            PREPROC_PROC_PATH,
+            EXTRACT_PROC_PATH,
             compression="gzip",
         )
-        if not self.keep_icd9:
+        if not keep_icd9:
             proc = proc.loc[proc[NonIcuProceduresHeader.ICD_VERSION] == 10]
         proc = proc[
             [
@@ -141,8 +144,9 @@ class Procedures(Feature):
                 NonIcuProceduresHeader.PROC_TIME_FROM_ADMIT,
             ]
         ]
-        if not self.keep_icd9:
+        if not keep_icd9:
             proc = proc.dropna()
+        self.keep_icd9 = keep_icd9
         logger.info(f"Total number of rows: {proc.shape[0]}")
         return save_data(proc, self.feature_path, "PROCEDURES")
 

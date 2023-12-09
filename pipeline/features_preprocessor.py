@@ -11,6 +11,7 @@ from typing import List
 from pathlib import Path
 
 from pipeline.feature.chart_events import Chart
+from pipeline.no_event_feature_preprocessor import NoEventFeaturePreprocessor
 
 logger = logging.getLogger()
 
@@ -82,31 +83,13 @@ class FeaturePreprocessor:
 
     # select colunns!!!
     def preprocess_no_event_features(self):
-        no_event_preproc_features = []
-        empty_cohort = pd.DataFrame()
-        if self.feature_extractor.for_diagnoses:
-            dia = Diagnoses(
-                cohort=empty_cohort,
-                use_icu=self.feature_extractor.use_icu,
-                icd_group_option=self.group_diag_icd,
-            )
-            no_event_preproc_features.append(dia.preproc())
-        if not self.feature_extractor.use_icu:
-            if self.feature_extractor.for_medications:
-                med = Medications(
-                    cohort=empty_cohort,
-                    use_icu=self.feature_extractor.use_icu,
-                    group_code=self.group_med_code,
-                )
-                no_event_preproc_features.append(med.preproc())
-            if self.feature_extractor.for_procedures:
-                proc = Procedures(
-                    cohort=empty_cohort,
-                    use_icu=self.feature_extractor.use_icu,
-                    keep_icd9=self.keep_proc_icd9,
-                )
-                no_event_preproc_features.append(proc.preproc())
-        return no_event_preproc_features
+        preprocessor = NoEventFeaturePreprocessor(
+            self.feature_extractor,
+            self.group_diag_icd,
+            self.group_med_code,
+            self.keep_proc_icd9,
+        )
+        return preprocessor.preprocess()
 
     # check summary path... where are they use in the origiinal code? cleaning? data gen?
 

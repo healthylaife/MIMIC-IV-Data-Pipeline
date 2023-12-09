@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
-from typing import Tuple
 
 from pipeline.file_info.common import load_static_icd_map, IcdMap
-from pipeline.file_info.raw.hosp import HospDiagnosesIcd, load_hosp_diagnosis_icd
+from pipeline.file_info.raw.hosp import HospDiagnosesIcd
 
 ROOT_ICD_CONVERT = "root_icd10_convert"
 
@@ -18,12 +17,6 @@ class IcdConverter:
         filtered_df = icd_map_df[icd_map_df[IcdMap.DIAGNOISIS_CODE].str.len() == 3]
         filtered_df = filtered_df.drop_duplicates(subset=IcdMap.DIAGNOISIS_CODE)
         return dict(zip(filtered_df[IcdMap.DIAGNOISIS_CODE], filtered_df[IcdMap.ICD10]))
-
-    def get_pos_ids(self, diag: pd.DataFrame, ICD10_code: str) -> pd.Series:
-        """Extracts unique hospital admission IDs where 'root' contains a specific ICD-10 code."""
-        return diag[diag[HospDiagnosesIcd.ROOT].str.contains(ICD10_code, na=False)][
-            HospDiagnosesIcd.HOSPITAL_ADMISSION_ID
-        ].unique()
 
     def standardize_icd(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardizes ICD codes in a DataFrame."""
@@ -40,15 +33,8 @@ class IcdConverter:
         )
         return df
 
-    def preproc_icd_module(self) -> pd.DataFrame:
-        """Processes module dataset with ICD codes."""
-        diag = load_hosp_diagnosis_icd()[
-            [
-                HospDiagnosesIcd.ICD_CODE,
-                HospDiagnosesIcd.ICD_VERSION,
-                HospDiagnosesIcd.HOSPITAL_ADMISSION_ID,
-            ]
-        ]
-        diag = self.standardize_icd(diag)
-        diag.dropna(subset=[HospDiagnosesIcd.ROOT], inplace=True)
-        return diag
+    def get_pos_ids(self, diag: pd.DataFrame, ICD10_code: str) -> pd.Series:
+        """Extracts unique hospital admission IDs where 'root' contains a specific ICD-10 code."""
+        return diag[diag[HospDiagnosesIcd.ROOT].str.contains(ICD10_code, na=False)][
+            HospDiagnosesIcd.HOSPITAL_ADMISSION_ID
+        ].unique()

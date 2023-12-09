@@ -37,6 +37,10 @@ class DataGenerator:
         self.bucket = bucket
         self.predW = predW
 
+        # FEATURES [DICT NAME FEATURE]?, REMOVE FEATURE EXTRACTOR?
+
+
+
     def process_data(self):
         features = []
         if self.feature_extractor.for_diagnoses:
