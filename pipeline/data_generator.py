@@ -8,6 +8,7 @@ from pipeline.feature.lab_events import Lab
 from pipeline.feature.medications import Medications
 from pipeline.feature.output_events import OutputEvents
 from pipeline.feature.procedures import Procedures
+from pipeline.file_info.common import PREPROC_PATH
 from pipeline.file_info.preproc.cohort import COHORT_PATH
 from pipeline.file_info.preproc.feature import (
     EXTRACT_CHART_ICU_PATH,
@@ -269,3 +270,118 @@ class DataGenerator:
                     final_lab = pd.concat([final_lab, sub_lab], ignore_index=True)
             t = t + 1
             los = int(self.include_time / self.bucket)
+
+        if self.feature_extractor.for_medications:
+            f2_meds = final_meds.groupby(
+                ["stay_id", "itemid", "orderid"]
+                if self.feature_extractor.use_icu
+                else ["hadm_id", "drug_name"]
+            ).size()
+            self.med_per_adm = (
+                f2_meds.groupby(
+                    "stay_id" if self.feature_extractor.use_icu else "hadm_id"
+                )
+                .sum()
+                .reset_index()[0]
+                .max()
+            )
+            self.medlength_per_adm = (
+                final_meds.groupby(
+                    "stay_id" if self.feature_extractor.use_icu else "hadm_id"
+                )
+                .size()
+                .max()
+            )
+        if self.feature_extractor.for_procedures:
+            f2_proc = final_proc.groupby(
+                ["stay_id", "itemid"]
+                if self.feature_extractor.use_icu
+                else ["hadm_id", "icd_code"]
+            ).size()
+            self.proc_per_adm = (
+                f2_proc.groupby(
+                    "stay_id" if self.feature_extractor.use_icu else "hadm_id"
+                )
+                .sum()
+                .reset_index()[0]
+                .max()
+            )
+            self.proclength_per_adm = (
+                final_proc.groupby(
+                    "stay_id" if self.feature_extractor.use_icu else "hadm_id"
+                )
+                .size()
+                .max()
+            )
+        if self.feature_extractor.use_icu:
+            if self.feature_extractor.for_output_events:
+                f2_out = final_out.groupby(["stay_id", "itemid"]).size()
+                self.out_per_adm = (
+                    f2_out.groupby(
+                        "stay_id" if self.feature_extractor.use_icu else "hadm_id"
+                    )
+                    .sum()
+                    .reset_index()[0]
+                    .max()
+                )
+                self.outlength_per_adm = (
+                    final_out.groupby(
+                        "stay_id" if self.feature_extractor.use_icu else "hadm_id"
+                    )
+                    .size()
+                    .max()
+                )
+            if self.feature_extractor.for_chart_events:
+                f2_chart = final_chart.groupby(["stay_id", "itemid"]).size()
+                self.chart_per_adm = (
+                    f2_chart.groupby("stay_id").sum().reset_index()[0].max()
+                )
+                self.chartlength_per_adm = final_chart.groupby("stay_id").size().max()
+        else:
+            if self.feature_extractor.for_procedures:
+                f2_labs = final_lab.groupby(["hadm_id", "itemid"]).size()
+                self.labs_per_adm = (
+                    f2_labs.groupby("hadm_id").sum().reset_index()[0].max()
+                )
+                self.labslength_per_adm = final_lab.groupby("hadm_id").size().max()
+        self.create_dict(final_meds, final_proc, final_out, final_lab, final_chart, los)
+
+    def create_dict(self, meds, proc, out, labs, chart, los):
+        self.dataDic = {}
+        self.labels_csv = pd.DataFrame(
+            columns=[
+                "stay_id" if self.feature_extractor.use_icu else "hadm_id",
+                "label",
+            ]
+        )
+        self.labels_csv[
+            "stay_id" if self.feature_extractor.use_icu else "hadm_id"
+        ] = pd.Series(self.hids)
+        self.labels_csv["label"] = 0
+        self.process_feature_data(meds, "Med", los)
+        self.process_feature_data(proc, "Proc", los)
+        self.process_feature_data(out, "Out", los)
+        self.process_feature_data(labs, "Lab", los)
+        self.process_feature_data(chart, "Chart", los)
+        self.save_csv_files()
+
+        return
+
+    def process_feature_data(self, feature_df, feature_name, los):
+        for hid in tqdm(self.hids):
+            # Process specific feature data for each 'hid'
+            # Update self.dataDic[hid][feature_name] with processed data
+            return
+
+    def save_csv_files(self):
+        for hid in self.hids:
+            self.save_individual_csv(hid)
+        self.labels_csv.to_csv(PREPROC_PATH / "csv/labels.csv", index=False)
+
+    def save_individual_csv(self, hid):
+        # Save demographic and dynamic data to CSV files
+        demo_csv_path = os.path.join(PREPROC_PATH / f"/csv/{str(hid)}demo.csv")
+        dynamic_csv_path = os.path.join(PREPROC_PATH / f"/csv/{str(hid)}dynamic.csv")
+        static_csv_path = os.path.join(PREPROC_PATH / f"/csv/{str(hid)}static.csv")
+        return
+        # Save corresponding DataFrames to these paths
