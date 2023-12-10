@@ -113,6 +113,10 @@ class DataGenerator:
             self.lab = lab.generate_fun(self.cohort)
 
     def length_by_target(self):
+        self.los = self.include_time
+        self.cohort = self.cohort[(self.cohort["los"] >= self.include_time)]
+        self.hids = self.cohort["hadm_id"].unique()
+
         if self.target_type == TargetType.MORTALITY:
             if self.feature_extractor.for_diagnoses:
                 dia = Diagnoses(use_icu=self.feature_extractor.use_icu, df=self.dia)
@@ -263,3 +267,5 @@ class DataGenerator:
                     final_lab = sub_lab
                 else:
                     final_lab = pd.concat([final_lab, sub_lab], ignore_index=True)
+            t = t + 1
+            los = int(self.include_time / self.bucket)
