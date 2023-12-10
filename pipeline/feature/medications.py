@@ -42,11 +42,9 @@ class Medications(Feature):
     def __init__(
         self,
         use_icu: bool,
-        cohort: pd.DataFrame = pd.DataFrame(),
         df: pd.DataFrame = pd.DataFrame(),
         group_code: bool = False,
     ):
-        self.cohort = cohort
         self.use_icu = use_icu
         self.group_code = group_code
         self.df = df

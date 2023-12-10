@@ -29,10 +29,8 @@ class Lab(Feature):
     def __init__(
         self,
         df: pd.DataFrame = pd.DataFrame(),
-        cohort: pd.DataFrame = pd.DataFrame(),
         chunksize: int = 10000000,
     ):
-        self.cohort = cohort
         self.df = df
         self.chunksize = chunksize
         self.final_df = pd.DataFrame()
@@ -173,45 +171,45 @@ class Lab(Feature):
 
         return summary
 
-    def generate_fun(self):
-        chunksize = self.chunksize
-        final = pd.DataFrame()
-        for labs in tqdm(
-            pd.read_csv(
-                EXTRACT_LABS_PATH,
-                compression="gzip",
-                chunksize=chunksize,
-            )
-        ):
-            labs = labs[labs["hadm_id"].isin(self.data["hadm_id"])]
-            labs[["start_days", "dummy", "start_hours"]] = labs[
-                "lab_time_from_admit"
-            ].str.split(" ", expand=True)
-            labs[["start_hours", "min", "sec"]] = labs["start_hours"].str.split(
-                ":", expand=True
-            )
-            labs["start_time"] = pd.to_numeric(labs["start_days"]) * 24 + pd.to_numeric(
-                labs["start_hours"]
-            )
-            labs = labs.drop(
-                columns=["start_days", "dummy", "start_hours", "min", "sec"]
-            )
-            labs = labs[labs["start_time"] >= 0]
+    # def generate_fun(self):
+    #     chunksize = self.chunksize
+    #     final = pd.DataFrame()
+    #     for labs in tqdm(
+    #         pd.read_csv(
+    #             EXTRACT_LABS_PATH,
+    #             compression="gzip",
+    #             chunksize=chunksize,
+    #         )
+    #     ):
+    #         labs = labs[labs["hadm_id"].isin(self.data["hadm_id"])]
+    #         labs[["start_days", "dummy", "start_hours"]] = labs[
+    #             "lab_time_from_admit"
+    #         ].str.split(" ", expand=True)
+    #         labs[["start_hours", "min", "sec"]] = labs["start_hours"].str.split(
+    #             ":", expand=True
+    #         )
+    #         labs["start_time"] = pd.to_numeric(labs["start_days"]) * 24 + pd.to_numeric(
+    #             labs["start_hours"]
+    #         )
+    #         labs = labs.drop(
+    #             columns=["start_days", "dummy", "start_hours", "min", "sec"]
+    #         )
+    #         labs = labs[labs["start_time"] >= 0]
 
-            ###Remove where event time is after discharge time
-            labs = pd.merge(
-                labs, self.data[["hadm_id", "los"]], on="hadm_id", how="left"
-            )
-            labs["sanity"] = labs["los"] - labs["start_time"]
-            labs = labs[labs["sanity"] > 0]
-            del labs["sanity"]
+    #         ###Remove where event time is after discharge time
+    #         labs = pd.merge(
+    #             labs, self.data[["hadm_id", "los"]], on="hadm_id", how="left"
+    #         )
+    #         labs["sanity"] = labs["los"] - labs["start_time"]
+    #         labs = labs[labs["sanity"] > 0]
+    #         del labs["sanity"]
 
-            if final.empty:
-                final = labs
-            else:
-                final = pd.concat([final, labs], ignore_index=True)
-        self.df = final
-        return final
+    #         if final.empty:
+    #             final = labs
+    #         else:
+    #             final = pd.concat([final, labs], ignore_index=True)
+    #     self.df = final
+    #     return final
 
     # def mortality_length(self, include_time):
     #     self.df = self.df[self.df["hadm_id"].isin(self.cohort["hadm_id"])]

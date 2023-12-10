@@ -26,11 +26,9 @@ class Chart(Feature):
     def __init__(
         self,
         df: pd.DataFrame = pd.DataFrame(),
-        cohort: pd.DataFrame = pd.DataFrame(),
         chunksize: int = 10000000,
     ):
         self.df = df
-        self.cohort = cohort
         self.chunksize = chunksize
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_CHART_ICU_PATH

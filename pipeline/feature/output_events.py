@@ -15,10 +15,7 @@ logger = logging.getLogger()
 
 
 class OutputEvents(Feature):
-    def __init__(
-        self, df: pd.DataFrame = pd.DataFrame(), cohort: pd.DataFrame = pd.DataFrame()
-    ):
-        self.cohort = cohort
+    def __init__(self, df: pd.DataFrame = pd.DataFrame()):
         self.df = df
         self.final_df = pd.DataFrame()
         self.feature_path = EXTRACT_OUT_ICU_PATH
@@ -74,9 +71,9 @@ class OutputEvents(Feature):
         summary = summary.fillna(0)
         return summary
 
-    def generate_fun(self):
-        out = pd.read_csv(self.feature_path, compression="gzip")
-        out = out[out["stay_id"].isin(self.cohort["stay_id"])]
+    def generate_fun(self, cohort):
+        out: pd.DataFrame = self.df
+        out = out[out["stay_id"].isin(cohort["stay_id"])]
         out[["start_days", "dummy", "start_hours"]] = out[
             "event_time_from_admit"
         ].str.split(" ", -1, expand=True)

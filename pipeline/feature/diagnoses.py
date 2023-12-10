@@ -35,11 +35,9 @@ class Diagnoses(Feature):
     def __init__(
         self,
         use_icu: bool,
-        cohort: pd.DataFrame = pd.DataFrame(),
         icd_group_option: IcdGroupOption | None = None,
         df: pd.DataFrame = pd.DataFrame(),
     ):
-        self.cohort = cohort
         self.use_icu = use_icu
         self.icd_group_option = icd_group_option
         self.feature_path = EXTRACT_DIAG_ICU_PATH if self.use_icu else EXTRACT_DIAG_PATH
@@ -115,17 +113,17 @@ class Diagnoses(Feature):
         summary = summary.fillna(0)
         return summary
 
-    def generate_fun(self):
-        diag = pd.read_csv(self.summary_path(), compression="gzip")
-        diag = diag[
-            diag[DiagnosesHeader.HOSPITAL_ADMISSION_ID].isin(
-                self.cohort[CohortHeader.HOSPITAL_ADMISSION_ID]
-            )
-        ]
-        diag_per_adm = diag.groupby(DiagnosesHeader.HOSPITAL_ADMISSION_ID).size().max()
-        self.df = diag
-        self.df_per_adm = diag_per_adm
-        return diag, diag_per_adm
+    # def generate_fun(self, cohort):
+    #     diag = pd.read_csv(self.summary_path(), compression="gzip")
+    #     diag = diag[
+    #         diag[DiagnosesHeader.HOSPITAL_ADMISSION_ID].isin(
+    #             self.cohort[CohortHeader.HOSPITAL_ADMISSION_ID]
+    #         )
+    #     ]
+    #     diag_per_adm = diag.groupby(DiagnosesHeader.HOSPITAL_ADMISSION_ID).size().max()
+    #     self.df = diag
+    #     self.df_per_adm = diag_per_adm
+    #     return diag, diag_per_adm
 
     # def mortality_length(self):
     #     col = "stay_id" if self.use_icu else "hadm_id"
