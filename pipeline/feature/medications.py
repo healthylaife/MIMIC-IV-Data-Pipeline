@@ -12,10 +12,6 @@ from pipeline.file_info.preproc.feature import (
     MedicationsHeader,
     IcuMedicationHeader,
     NonIcuMedicationHeader,
-    EXTRACT_MED_ICU_PATH,
-    EXTRACT_MED_PATH,
-    PREPROC_MED_ICU_PATH,
-    PREPROC_MED_PATH,
     PreprocMedicationHeader,
 )
 from pipeline.file_info.preproc.cohort import (
@@ -23,7 +19,6 @@ from pipeline.file_info.preproc.cohort import (
     IcuCohortHeader,
     NonIcuCohortHeader,
 )
-from pipeline.file_info.preproc.summary import MED_FEATURES_PATH, MED_SUMMARY_PATH
 from pipeline.file_info.raw.hosp import (
     HospPrescriptions,
     load_hosp_prescriptions,
@@ -32,8 +27,6 @@ from pipeline.file_info.raw.icu import (
     InputEvents,
     load_input_events,
 )
-from pipeline.file_info.common import save_data
-from pathlib import Path
 
 logger = logging.getLogger()
 
@@ -49,6 +42,11 @@ class Medications(Feature):
         self.group_code = group_code
         self.df = df
         self.final_df = pd.DataFrame()
+        self.admid = (
+            IcuCohortHeader.STAY_ID
+            if self.use_icu
+            else CohortHeader.HOSPITAL_ADMISSION_ID
+        )
 
     def df(self) -> pd.DataFrame:
         return self.df
@@ -68,9 +66,7 @@ class Medications(Feature):
         raw_med = load_input_events() if self.use_icu else load_hosp_prescriptions()
         medications = raw_med.merge(
             admissions,
-            on=IcuCohortHeader.STAY_ID
-            if self.use_icu
-            else CohortHeader.HOSPITAL_ADMISSION_ID,
+            on=self.admid,
         )
         admit_header = (
             IcuCohortHeader.IN_TIME if self.use_icu else NonIcuCohortHeader.ADMIT_TIME
@@ -147,22 +143,24 @@ class Medications(Feature):
         logger.info(f"Total number of rows: {med.shape[0]}")
 
     def preproc(self, group_code: bool):
+        med: pd.DataFrame = self.df
         logger.info("[PROCESSING MEDICATIONS DATA]")
-        self.df[PreprocMedicationHeader.DRUG_NAME] = (
-            self.df[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME]
+        med[PreprocMedicationHeader.DRUG_NAME] = (
+            med[NonIcuMedicationHeader.NON_PROPRIEATARY_NAME]
             if group_code
-            else self.df[NonIcuMedicationHeader.DRUG]
+            else med[NonIcuMedicationHeader.DRUG]
         )
-        self.df = self.df.drop(
+        med = med.drop(
             columns=[
                 NonIcuMedicationHeader.NON_PROPRIEATARY_NAME,
                 NonIcuMedicationHeader.DRUG,
             ]
         )
-        self.df.dropna()
+        med.dropna()
         self.group_code = group_code
-        logger.info(f"Total number of rows: {self.df.shape[0]}")
-        return self.df
+        self.df = med
+        logger.info(f"Total number of rows: {med.shape[0]}")
+        return med
 
     def summary(self) -> pd.DataFrame:
         med: pd.DataFrame = self.df
@@ -196,17 +194,15 @@ class Medications(Feature):
         summary = pd.merge(freq, summary, on=feature_name, how="right")
         summary["missing%"] = 100 * (summary["missing_count"] / summary["total_count"])
         summary = summary.fillna(0)
-        summary.to_csv(MED_SUMMARY_PATH, index=False)
-        summary[feature_name].to_csv(MED_FEATURES_PATH, index=False)
         return summary
 
-    def generate_fun(self):
+    def generate_fun(self, cohort: pd.DataFrame):
         meds: pd.DataFrame = self.df
         meds[["start_days", "dummy", "start_hours"]] = meds[
             "start_hours_from_admit"
         ].str.split(" ", expand=True)
         meds[["start_hours", "min", "sec"]] = meds["start_hours"].str.split(
-            ":", -1, expand=True
+            ":", expand=True
         )
         meds["start_time"] = pd.to_numeric(meds["start_days"]) * 24 + pd.to_numeric(
             meds["start_hours"]
@@ -226,8 +222,8 @@ class Medications(Feature):
         meds = meds[meds["sanity"] > 0]
         del meds["sanity"]
         #####Select hadm_id as in main file
-        meds = meds[meds["hadm_id"].isin(self.data["hadm_id"])]
-        meds = pd.merge(meds, self.data[["hadm_id", "los"]], on="hadm_id", how="left")
+        meds = meds[meds[self.admid].isin(cohort[self.admid])]
+        meds = pd.merge(meds, cohort[[self.admid, "los"]], on=self.admid, how="left")
 
         #####Remove where start time is after end of visit
         meds["sanity"] = meds["los"] - meds["start_time"]
@@ -238,8 +234,14 @@ class Medications(Feature):
             meds["stop_time"] > meds["los"], "los"
         ]
         del meds["los"]
+        if self.use_icu:
+            meds["rate"] = meds["rate"].apply(pd.to_numeric, errors="coerce")
+            meds["amount"] = meds["amount"].apply(pd.to_numeric, errors="coerce")
+        else:
+            meds["dose_val_rx"] = meds["dose_val_rx"].apply(
+                pd.to_numeric, errors="coerce"
+            )
 
-        meds["dose_val_rx"] = meds["dose_val_rx"].apply(pd.to_numeric, errors="coerce")
         self.df = meds
         return meds
 

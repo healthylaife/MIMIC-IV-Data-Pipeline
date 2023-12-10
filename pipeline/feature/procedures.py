@@ -34,11 +34,15 @@ class Procedures(Feature):
         self.keep_icd9 = keep_icd9
         self.df = df
         self.final_df = pd.DataFrame()
-        self.feature_path = EXTRACT_PROC_ICU_PATH if self.use_icu else EXTRACT_PROC_PATH
         self.adm_id = (
             IcuCohortHeader.STAY_ID
             if self.use_icu
             else CohortHeader.HOSPITAL_ADMISSION_ID
+        )
+        self.time_from_admit = (
+            IcuProceduresHeader.EVENT_TIME_FROM_ADMIT
+            if self.use_icu
+            else NonIcuProceduresHeader.PROC_TIME_FROM_ADMIT
         )
 
     def df(self):
@@ -69,11 +73,7 @@ class Procedures(Feature):
             if self.use_icu
             else HospProceduresIcd.HOSPITAL_ADMISSION_ID,
         )
-        procedures[
-            IcuProceduresHeader.EVENT_TIME_FROM_ADMIT
-            if self.use_icu
-            else NonIcuProceduresHeader.PROC_TIME_FROM_ADMIT
-        ] = (
+        procedures[self.time_from_admit] = (
             procedures[
                 IcuProceduresHeader.START_TIME
                 if self.use_icu
@@ -167,13 +167,11 @@ class Procedures(Feature):
         summary = summary.fillna(0)
         return summary
 
-    def generate_fun(self):
+    def generate_fun(self, cohort: pd.DataFrame):
         proc: pd.DataFrame = self.df
-        proc = proc[
-            proc[ProceduresHeader.HOSPITAL_ADMISSION_ID].isin(self.cohort["hadm_id"])
-        ]
+        proc = proc[proc[self.adm_id].isin(cohort[self.adm_id])]
         proc[["start_days", "dummy", "start_hours"]] = proc[
-            "proc_time_from_admit"
+            self.time_from_admit
         ].str.split(" ", expand=True)
         proc[["start_hours", "min", "sec"]] = proc["start_hours"].str.split(
             ":", expand=True
@@ -185,7 +183,7 @@ class Procedures(Feature):
         proc = proc[proc["start_time"] >= 0]
 
         ###Remove where event time is after discharge time
-        proc = pd.merge(proc, self.cohort[["hadm_id", "los"]], on="hadm_id", how="left")
+        proc = pd.merge(proc, cohort[[self.adm_id, "los"]], on=self.adm_id, how="left")
         proc["sanity"] = proc["los"] - proc["start_time"]
         proc = proc[proc["sanity"] > 0]
         del proc["sanity"]

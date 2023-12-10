@@ -1,5 +1,6 @@
 from pipeline.features_extractor import FeatureExtractor
 from pipeline.features_preprocessor import FeaturePreprocessor, IcdGroupOption
+from pipeline.data_generator import DataGenerator
 
 
 def test_feature_icu_all_true():
@@ -27,7 +28,12 @@ def test_feature_icu_all_true():
     )
 
     preprocessor.preprocess()
-    assert 0 == 0
+    generator = DataGenerator(
+        cohort_output=extractor.cohort_output,
+        feature_extractor=extractor,
+    )
+    features = generator.generate_features()
+    assert len(features) == 3
 
 
 def test_feature_non_icu_all_true():
@@ -54,4 +60,9 @@ def test_feature_non_icu_all_true():
         clean_labs=True,
     )
     preprocessor.preprocess()
-    assert 0 == 0
+    generator = DataGenerator(
+        cohort_output=extractor.cohort_output,
+        feature_extractor=extractor,
+    )
+    features = generator.generate_features()
+    assert len(features) == 3

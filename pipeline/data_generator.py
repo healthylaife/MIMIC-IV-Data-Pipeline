@@ -8,6 +8,14 @@ from pipeline.feature.medications import Medications
 from pipeline.feature.output_events import OutputEvents
 from pipeline.feature.procedures import Procedures
 from pipeline.file_info.preproc.cohort import COHORT_PATH
+from pipeline.file_info.preproc.feature import (
+    EXTRACT_DIAG_ICU_PATH,
+    EXTRACT_DIAG_PATH,
+    EXTRACT_MED_ICU_PATH,
+    EXTRACT_MED_PATH,
+    EXTRACT_PROC_ICU_PATH,
+    EXTRACT_PROC_PATH,
+)
 from pipeline.prediction_task import PredictionTask, TargetType
 import logging
 
@@ -27,58 +35,71 @@ logger = logging.getLogger()
 class DataGenerator:
     def __init__(
         self,
-        use_icu: bool,
         cohort_output: pd.DataFrame,
         feature_extractor: FeatureExtractor,
-        prediction_task: PredictionTask,
-        impute: str,
-        include_time: int = 24,
-        bucket: int = 1,
-        predW: int = 0,
+        # impute: str,
+        # include_time: int = 24,
+        # bucket: int = 1,
+        # predW: int = 0,
     ):
         self.cohort_output = cohort_output
-        self.use_icu = use_icu
         self.feature_extractor = feature_extractor
-        self.prediction_task = prediction_task
-        self.impute = impute
-        self.include_time = include_time
-        self.bucket = bucket
-        self.predW = predW
+        # self.impute = impute
+        # self.include_time = include_time
+        # self.bucket = bucket
+        # self.predW = predW
 
-    def generate(self):
-        self.cohort = read_cohort(self.cohort_output, self.use_icu)
+    def generate_features(self):
+        print("[ ======READING DIAGNOSIS ]")
+        self.cohort = read_cohort(self.cohort_output, self.feature_extractor.use_icu)
         features = []
         if self.feature_extractor.for_diagnoses:
-            summary_dia = pd.read_csv()
-            dia = Diagnoses(
-                cohort=pd.DataFrame(),
-                use_icu=self.feature_extractor.use_icu,
+            preproc_dia = pd.read_csv(
+                EXTRACT_DIAG_ICU_PATH
+                if self.feature_extractor.use_icu
+                else EXTRACT_DIAG_PATH,
+                compression="gzip",
             )
-            features.append(dia.generate_fun())
-            print("[ ======READING DIAGNOSIS ]")
+            dia = Diagnoses(use_icu=self.feature_extractor.use_icu, df=preproc_dia)
+            features.append(dia.generate_fun(self.cohort))
         if self.feature_extractor.for_procedures:
             print("[ ======READING PROCEDURES ]")
-            proc = Procedures(
-                cohort=pd.DataFrame(), use_icu=self.feature_extractor.use_icu
+            preproc_proc = pd.read_csv(
+                EXTRACT_PROC_ICU_PATH
+                if self.feature_extractor.use_icu
+                else EXTRACT_PROC_PATH,
+                compression="gzip",
             )
-            features.append(proc.generate_fun())
+            proc = Procedures(use_icu=self.feature_extractor.use_icu, df=preproc_proc)
+            features.append(proc.generate_fun(self.cohort))
         if self.feature_extractor.for_medications:
             print("[ ======READING MEDICATIONS ]")
-            med = Medications(
-                cohort=pd.DataFrame(), use_icu=self.feature_extractor.use_icu
+            preproc_med = pd.read_csv(
+                EXTRACT_MED_ICU_PATH
+                if self.feature_extractor.use_icu
+                else EXTRACT_MED_PATH,
+                compression="gzip",
             )
-            features.append(med.generate_fun())
-        if self.feature_extractor.for_labs:
-            print("[ ======READING LABS ]")
-            labs = Lab()
-            features.append(labs.generate_fun())
+            med = Medications(use_icu=self.feature_extractor.use_icu, df=preproc_med)
+            features.append(med.generate_fun(self.cohort))
 
-        if self.feature_extractor.for_labs:
-            print("[ ======READING LABS ]")
-            out = OutputEvents(cohort=pd.DataFrame())
-            features.append(out.generate_fun())
+        # if self.feature_extractor.for_medications:
+        #     print("[ ======READING MEDICATIONS ]")
+        #     med = Medications(
+        #         cohort=pd.DataFrame(), use_icu=self.feature_extractor.use_icu
+        #     )
+        #     features.append(med.generate_fun())
+        # if self.feature_extractor.for_labs:
+        #     print("[ ======READING LABS ]")
+        #     labs = Lab()
+        #     features.append(labs.generate_fun())
 
-        return
+        # if self.feature_extractor.for_labs:
+        #     print("[ ======READING LABS ]")
+        #     out = OutputEvents(cohort=pd.DataFrame())
+        #     features.append(out.generate_fun())
+
+        return features
 
     # def process_data(self):
 

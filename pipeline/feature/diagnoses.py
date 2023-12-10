@@ -28,11 +28,9 @@ class Diagnoses(Feature):
     def __init__(
         self,
         use_icu: bool,
-        icd_group_option: IcdGroupOption | None = None,
         df: pd.DataFrame = pd.DataFrame(),
     ):
         self.use_icu = use_icu
-        self.icd_group_option = icd_group_option
         self.df = df
 
     def df(self) -> pd.DataFrame:
@@ -102,7 +100,7 @@ class Diagnoses(Feature):
         summary = summary.fillna(0)
         return summary
 
-    def generate_fun(self, cohort):
+    def generate_fun(self, cohort: pd.DataFrame):
         diag: pd.DataFrame = self.df
         diag = diag[
             diag[DiagnosesHeader.HOSPITAL_ADMISSION_ID].isin(
@@ -111,7 +109,6 @@ class Diagnoses(Feature):
         ]
         diag_per_adm = diag.groupby(DiagnosesHeader.HOSPITAL_ADMISSION_ID).size().max()
         self.df = diag
-        self.df_per_adm = diag_per_adm
         return diag, diag_per_adm
 
     # def mortality_length(self):
