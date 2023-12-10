@@ -3,13 +3,10 @@ import logging
 import pandas as pd
 import numpy as np
 from pipeline.file_info.preproc.feature import (
-    EXTRACT_OUT_ICU_PATH,
     OutputEventsHeader,
 )
-from pipeline.file_info.preproc.cohort import CohortHeader, IcuCohortHeader
-from pipeline.file_info.preproc.summary import OUT_FEATURES_PATH, OUT_SUMMARY_PATH
+from pipeline.file_info.preproc.cohort import IcuCohortHeader
 from pipeline.file_info.raw.icu import load_icu_output_events, OuputputEvents
-from pipeline.file_info.common import save_data
 
 logger = logging.getLogger()
 
@@ -71,25 +68,21 @@ class OutputEvents(Feature):
         return summary
 
     def generate_fun(self, cohort):
-        out: pd.DataFrame = self.df
-        out = out[out["stay_id"].isin(cohort["stay_id"])]
-        out[["start_days", "dummy", "start_hours"]] = out[
-            "event_time_from_admit"
-        ].str.split(" ", -1, expand=True)
-        out[["start_hours", "min", "sec"]] = out["start_hours"].str.split(
-            ":", -1, expand=True
+        """
+        Processes event times in the data, adjusting based on the cohort stay_id and length of stay (los).
+        """
+        out: pd.DataFrame = self.df[self.df["stay_id"].isin(cohort["stay_id"])].copy()
+        time_split = out["event_time_from_admit"].str.extract(
+            r"(\d+) (\d+):(\d+):(\d+)"
         )
-        out["start_time"] = pd.to_numeric(out["start_days"]) * 24 + pd.to_numeric(
-            out["start_hours"]
+        out["start_time"] = pd.to_numeric(time_split[0]) * 24 + pd.to_numeric(
+            time_split[1]
         )
-        out = out.drop(columns=["start_days", "dummy", "start_hours", "min", "sec"])
-        out = out[out["start_time"] >= 0]
+        # Removing entries where event time is after discharge time
+        out = out.merge(cohort[["stay_id", "los"]], on="stay_id", how="left")
+        out = out[out["los"] - out["start_time"] > 0]
+        out = out.drop(columns=["los", "event_time_from_admit"])
 
-        ###Remove where event time is after discharge time
-        out = pd.merge(out, self.data[["stay_id", "los"]], on="stay_id", how="left")
-        out["sanity"] = out["los"] - out["start_time"]
-        out = out[out["sanity"] > 0]
-        del out["sanity"]
         self.df = out
         return out
 

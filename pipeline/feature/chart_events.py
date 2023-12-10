@@ -113,22 +113,15 @@ class Chart(Feature):
         logger.info("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
         return self.df
 
-    def generate_fun(self):
-        chunksize = 5000000
+    def generate_fun(self, cohort):
         final = pd.DataFrame()
-        for chart in tqdm(
-            pd.read_csv(
-                EXTRACT_CHART_ICU_PATH,
-                compression="gzip",
-                chunksize=chunksize,
-            )
-        ):
-            chart = chart[chart["stay_id"].isin(self.data["stay_id"])]
+        for chart in tqdm(self.df):
+            chart = chart[chart["stay_id"].isin(cohort["stay_id"])]
             chart[["start_days", "dummy", "start_hours"]] = chart[
                 "event_time_from_admit"
-            ].str.split(" ", -1, expand=True)
+            ].str.split(" ", expand=True)
             chart[["start_hours", "min", "sec"]] = chart["start_hours"].str.split(
-                ":", -1, expand=True
+                ":", expand=True
             )
             chart["start_time"] = pd.to_numeric(
                 chart["start_days"]
@@ -147,7 +140,7 @@ class Chart(Feature):
 
             ###Remove where event time is after discharge time
             chart = pd.merge(
-                chart, self.data[["stay_id", "los"]], on="stay_id", how="left"
+                chart, cohort[["stay_id", "los"]], on="stay_id", how="left"
             )
             chart["sanity"] = chart["los"] - chart["start_time"]
             chart = chart[chart["sanity"] > 0]

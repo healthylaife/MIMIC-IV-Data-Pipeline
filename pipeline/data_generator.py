@@ -9,10 +9,13 @@ from pipeline.feature.output_events import OutputEvents
 from pipeline.feature.procedures import Procedures
 from pipeline.file_info.preproc.cohort import COHORT_PATH
 from pipeline.file_info.preproc.feature import (
+    EXTRACT_CHART_ICU_PATH,
     EXTRACT_DIAG_ICU_PATH,
     EXTRACT_DIAG_PATH,
+    EXTRACT_LABS_PATH,
     EXTRACT_MED_ICU_PATH,
     EXTRACT_MED_PATH,
+    EXTRACT_OUT_ICU_PATH,
     EXTRACT_PROC_ICU_PATH,
     EXTRACT_PROC_PATH,
 )
@@ -20,7 +23,7 @@ from pipeline.prediction_task import PredictionTask, TargetType
 import logging
 
 from pipeline.features_extractor import FeatureExtractor
-from pipeline.feature.chart_events import ChartEvents
+from pipeline.feature.chart_events import Chart, ChartEvents
 from pipeline.feature.diagnoses import Diagnoses
 from pipeline.preprocessing.cohort import read_cohort
 from pipeline.file_info.preproc.cohort import (
@@ -72,6 +75,21 @@ class DataGenerator:
             )
             proc = Procedures(use_icu=self.feature_extractor.use_icu, df=preproc_proc)
             features.append(proc.generate_fun(self.cohort))
+
+        if self.feature_extractor.use_icu and self.feature_extractor.for_output_events:
+            print("[ ======READING OUTPUT ]")
+            preproc_out = pd.read_csv(EXTRACT_OUT_ICU_PATH, compression="gzip")
+            out = OutputEvents(df=preproc_out)
+            features.append(out.generate_fun(self.cohort))
+
+        if self.feature_extractor.use_icu and self.feature_extractor.for_chart_events:
+            print("[ ======READING CHART ]")
+            preproc_chart = pd.read_csv(
+                EXTRACT_CHART_ICU_PATH, compression="gzip", chunksize=5000000
+            )
+            chart = Chart(df=preproc_chart)
+            features.append(chart.generate_fun(self.cohort))
+
         if self.feature_extractor.for_medications:
             print("[ ======READING MEDICATIONS ]")
             preproc_med = pd.read_csv(
@@ -83,21 +101,11 @@ class DataGenerator:
             med = Medications(use_icu=self.feature_extractor.use_icu, df=preproc_med)
             features.append(med.generate_fun(self.cohort))
 
-        # if self.feature_extractor.for_medications:
-        #     print("[ ======READING MEDICATIONS ]")
-        #     med = Medications(
-        #         cohort=pd.DataFrame(), use_icu=self.feature_extractor.use_icu
-        #     )
-        #     features.append(med.generate_fun())
-        # if self.feature_extractor.for_labs:
+        # if not (self.feature_extractor.use_icu) and self.feature_extractor.for_labs:
         #     print("[ ======READING LABS ]")
-        #     labs = Lab()
-        #     features.append(labs.generate_fun())
-
-        # if self.feature_extractor.for_labs:
-        #     print("[ ======READING LABS ]")
-        #     out = OutputEvents(cohort=pd.DataFrame())
-        #     features.append(out.generate_fun())
+        #     preproc_lab = pd.read_csv(EXTRACT_LABS_PATH, compression="gzip")
+        #     labs = Lab(df=preproc_lab)
+        #     features.append(labs.generate_fun(self.cohort))
 
         return features
 

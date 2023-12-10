@@ -33,7 +33,7 @@ def test_feature_icu_all_true():
         feature_extractor=extractor,
     )
     features = generator.generate_features()
-    assert len(features) == 3
+    assert len(features) == 5
 
 
 def test_feature_non_icu_all_true():

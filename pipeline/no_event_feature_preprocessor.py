@@ -8,7 +8,6 @@ from pipeline.feature.procedures import Procedures
 from pipeline.feature_selector import FeatureSelector
 from pipeline.features_extractor import FeatureExtractor
 from typing import List
-from pathlib import Path
 
 from pipeline.file_info.common import save_data
 from pipeline.file_info.preproc.feature import (
