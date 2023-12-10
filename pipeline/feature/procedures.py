@@ -25,10 +25,7 @@ logger = logging.getLogger()
 
 class Procedures(Feature):
     def __init__(
-        self,
-        use_icu: bool,
-        df: pd.DataFrame = pd.DataFrame,
-        keep_icd9: bool = True,
+        self, use_icu: bool, df: pd.DataFrame = pd.DataFrame, keep_icd9: bool = True
     ):
         self.use_icu = use_icu
         self.keep_icd9 = keep_icd9
@@ -190,37 +187,30 @@ class Procedures(Feature):
         self.df = proc
         return proc
 
-    # def mortality_length(self, include_time):
-    #     self.df = self.df[self.df[self.adm_id].isin(self.df[self.adm_id])]
-    #     self.df = self.df[self.df[self.adm_id] <= include_time]
+    def mortality_length(self, cohort, include_time):
+        self.df = self.df[self.df[self.adm_id].isin(cohort[self.adm_id])]
+        self.df = self.df[self.df[self.adm_id] <= include_time]
 
-    # def los_length(self, include_time):
-    #     self.df = self.df[self.df[self.adm_id].isin(self.cohort[self.adm_id])]
-    #     self.df = self.df[self.df[self.adm_id] <= include_time]
+    def los_length(self, cohort, include_time):
+        self.df = self.df[self.df[self.adm_id].isin(cohort[self.adm_id])]
+        self.df = self.df[self.df[self.adm_id] <= include_time]
 
-    # def read_length(self):
-    #     col = "stay_id" if self.use_icu else "hadm_id"
-    #     self.df = self.df[self.df[col].isin(self.cohort[col])]
-    #     self.df = pd.merge(
-    #         self.df, self.cohort[[col, "select_time"]], on=col, how="left"
-    #     )
-    #     self.df["start_time"] = self.proc["start_time"] - self.proc["select_time"]
-    #     self.df = self.df[self.df["start_time"] >= 0]
+    def read_length(self, cohort):
+        col = "stay_id" if self.use_icu else "hadm_id"
+        self.df = self.df[self.df[col].isin(cohort[col])]
+        self.df = pd.merge(self.df, cohort[[col, "select_time"]], on=col, how="left")
+        self.df["start_time"] = self.proc["start_time"] - self.proc["select_time"]
+        self.df = self.df[self.df["start_time"] >= 0]
 
-    # def smooth_meds_step(self, bucket, i, t):
-    #     sub_proc = (
-    #         self.proc[
-    #             (self.proc["start_time"] >= i) & (self.proc["start_time"] < i + bucket)
-    #         ]
-    #         .groupby(["stay_id", "itemid"] if self.use_icu else ["hadm_id", "icd_code"])
-    #         .agg({"subject_id": "max"})
-    #     )
-    #     sub_proc = sub_proc.reset_index()
-    #     sub_proc["start_time"] = t
-    #     if self.final_df.empty:
-    #         self.final_df = sub_proc
-    #     else:
-    #         self.final_df = self.final_df.append(sub_proc)
+    def smooth_meds_step(self, bucket, i, t):
+        sub_proc = (
+            self.df[(self.df["start_time"] >= i) & (self.df["start_time"] < i + bucket)]
+            .groupby(["stay_id", "itemid"] if self.use_icu else ["hadm_id", "icd_code"])
+            .agg({"subject_id": "max"})
+        )
+        sub_proc = sub_proc.reset_index()
+        sub_proc["start_time"] = t
+        return sub_proc
 
     # def smooth_meds(self):
     #     f2_df = self.final_df.groupby(

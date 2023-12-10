@@ -25,11 +25,7 @@ MEAN_FREQUENCY_HEADER = "mean_frequency"
 
 
 class Diagnoses(Feature):
-    def __init__(
-        self,
-        use_icu: bool,
-        df: pd.DataFrame = pd.DataFrame(),
-    ):
+    def __init__(self, use_icu: bool, df: pd.DataFrame = pd.DataFrame()):
         self.use_icu = use_icu
         self.df = df
 
@@ -111,14 +107,14 @@ class Diagnoses(Feature):
         self.df = diag
         return diag, diag_per_adm
 
-    # def mortality_length(self):
-    #     col = "stay_id" if self.use_icu else "hadm_id"
-    #     self.df = self.df[self.df[col].isin(self.cohort[col])]
+    def mortality_length(self, cohort):
+        col = "stay_id" if self.use_icu else "hadm_id"
+        self.df = self.df[self.df[col].isin(cohort[col])]
 
-    # def los_length(self):
-    #     col = "stay_id" if self.use_icu else "hadm_id"
-    #     self.df = self.df[self.df[col].isin(self.cohort[col])]
+    def los_length(self, cohort):
+        col = "stay_id" if self.use_icu else "hadm_id"
+        self.df = self.df[self.df[col].isin(cohort[col])]
 
-    # def read_length(self):
-    #     col = "stay_id" if self.use_icu else "hadm_id"
-    #     self.df = self.df[self.df[col].isin(self.cohort[col])]
+    def read_length(self, cohort):
+        col = "stay_id" if self.use_icu else "hadm_id"
+        self.df = self.df[self.df[col].isin(cohort[col])]

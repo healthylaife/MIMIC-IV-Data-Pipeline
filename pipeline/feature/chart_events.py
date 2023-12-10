@@ -4,18 +4,12 @@ from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
 from pipeline.preprocessing.outlier_removal import outlier_imputation
-from pipeline.file_info.preproc.feature import (
-    EXTRACT_CHART_ICU_PATH,
-    ChartEventsHeader,
-)
+from pipeline.file_info.preproc.feature import ChartEventsHeader
 from pipeline.file_info.preproc.cohort import IcuCohortHeader
-from pipeline.file_info.preproc.summary import CHART_FEATURES_PATH, CHART_SUMMARY_PATH
 from pipeline.file_info.raw.icu import (
     load_icu_chart_events,
     ChartEvents,
 )
-from pipeline.file_info.common import save_data
-from pathlib import Path
 
 from pipeline.conversion.uom import drop_wrong_uom
 
@@ -23,11 +17,7 @@ logger = logging.getLogger()
 
 
 class Chart(Feature):
-    def __init__(
-        self,
-        df: pd.DataFrame = pd.DataFrame(),
-        chunksize: int = 10000000,
-    ):
+    def __init__(self, df: pd.DataFrame = pd.DataFrame(), chunksize: int = 10000000):
         self.df = df
         self.chunksize = chunksize
         self.final_df = pd.DataFrame()
@@ -115,10 +105,8 @@ class Chart(Feature):
 
     def generate_fun(self, cohort):
         processed_chunks = []
-
         for chart in tqdm(self.df):
             chart = chart[chart["stay_id"].isin(cohort["stay_id"])].copy()
-
             # Convert 'event_time_from_admit' to numeric total hours
             time_parts = chart["event_time_from_admit"].str.extract(
                 r"(\d+) (\d+):(\d+):(\d+)"
@@ -126,53 +114,44 @@ class Chart(Feature):
             chart["start_time"] = pd.to_numeric(time_parts[0]) * 24 + pd.to_numeric(
                 time_parts[1]
             )
-
-            # Merge with cohort and calculate 'sanity'
             chart = pd.merge(
                 chart, cohort[["stay_id", "los"]], on="stay_id", how="left"
             )
             chart = chart[chart["los"] - chart["start_time"] > 0]
-
-            # Drop unnecessary columns
             chart = chart.drop(columns=["event_time_from_admit", "los"])
-
             processed_chunks.append(chart)
-
-        # Concatenate all processed chunks
         final = pd.concat(processed_chunks, ignore_index=True)
         self.df = final
         return final
 
-    # def mortality_length(self, include_time):
-    #     self.df = self.df[self.df["stay_id"].isin(self.df["stay_id"])]
-    #     self.df = self.df[self.df["start_time"] <= include_time]
+    def mortality_length(self, cohort, include_time):
+        self.df = self.df[self.df["stay_id"].isin(cohort["stay_id"])]
+        self.df = self.df[self.df["start_time"] <= include_time]
+        return self.df
 
-    # def los_length(self, include_time):
-    #     self.df = self.df[self.df["stay_id"].isin(self.df["stay_id"])]
-    #     self.df = self.df[self.df["start_time"] <= include_time]
+    def los_length(self, cohort, include_time):
+        self.df = self.df[self.df["stay_id"].isin(cohort["stay_id"])]
+        self.df = self.df[self.df["start_time"] <= include_time]
+        return self.df
 
-    # def read_length(self):
-    #     self.df = self.df[self.df["stay_id"].isin(self.cohort["stay_id"])]
-    #     self.df = pd.merge(
-    #         self.df, self.cohort[["stay_id", "select_time"]], on="stay_id", how="left"
-    #     )
-    #     self.df["start_time"] = self.df["start_time"] - self.df["select_time"]
-    #     self.df = self.df[self.df["start_time"] >= 0]
+    def read_length(self, cohort):
+        self.df = self.df[self.df["stay_id"].isin(cohort["stay_id"])]
+        self.df = pd.merge(
+            self.df, cohort[["stay_id", "select_time"]], on="stay_id", how="left"
+        )
+        self.df["start_time"] = self.df["start_time"] - self.df["select_time"]
+        self.df = self.df[self.df["start_time"] >= 0]
+        return self.df
 
-    # def smooth_meds_step(self, bucket, i, t):
-    #     sub_chart = (
-    #         self.df[
-    #             (self.chart["start_time"] >= i) & (self.df["start_time"] < i + bucket)
-    #         ]
-    #         .groupby(["stay_id", "itemid"])
-    #         .agg({"valuenum": np.nanmean})
-    #     )
-    #     sub_chart = sub_chart.reset_index()
-    #     sub_chart["start_time"] = t
-    #     if self.final_df.empty:
-    #         self.final_df = sub_chart
-    #     else:
-    #         self.final_df = self.final_df.append(sub_chart)
+    def smooth_meds_step(self, bucket, i, t):
+        sub_chart = (
+            self.df[(self.df["start_time"] >= i) & (self.df["start_time"] < i + bucket)]
+            .groupby(["stay_id", "itemid"])
+            .agg({"valuenum": "mean"})
+        )
+        sub_chart = sub_chart.reset_index()
+        sub_chart["start_time"] = t
+        return sub_chart
 
     # def smooth_meds(self):
     #     f2_df = self.final_df.groupby(["stay_id", "itemid"]).size()

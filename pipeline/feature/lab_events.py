@@ -7,10 +7,7 @@ from pipeline.feature.feature_abc import Feature
 import logging
 import pandas as pd
 from pipeline.preprocessing.outlier_removal import outlier_imputation
-from pipeline.file_info.preproc.feature import (
-    EXTRACT_LABS_PATH,
-    LabEventsHeader,
-)
+from pipeline.file_info.preproc.feature import LabEventsHeader
 from pipeline.file_info.preproc.cohort import CohortHeader, NonIcuCohortHeader
 from pipeline.file_info.raw.hosp import (
     HospAdmissions,
@@ -26,11 +23,7 @@ logger = logging.getLogger()
 
 
 class Lab(Feature):
-    def __init__(
-        self,
-        df: pd.DataFrame = pd.DataFrame(),
-        chunksize: int = 10000000,
-    ):
+    def __init__(self, df: pd.DataFrame = pd.DataFrame(), chunksize: int = 10000000):
         self.df = df
         self.chunksize = chunksize
         self.final_df = pd.DataFrame()
@@ -170,91 +163,45 @@ class Lab(Feature):
 
         return summary
 
-    # def generate_fun(self):
-    #     chunksize = self.chunksize
-    #     final = pd.DataFrame()
-    #     for labs in tqdm(
-    #         pd.read_csv(
-    #             EXTRACT_LABS_PATH,
-    #             compression="gzip",
-    #             chunksize=chunksize,
-    #         )
-    #     ):
-    #         labs = labs[labs["hadm_id"].isin(self.data["hadm_id"])]
-    #         labs[["start_days", "dummy", "start_hours"]] = labs[
-    #             "lab_time_from_admit"
-    #         ].str.split(" ", expand=True)
-    #         labs[["start_hours", "min", "sec"]] = labs["start_hours"].str.split(
-    #             ":", expand=True
-    #         )
-    #         labs["start_time"] = pd.to_numeric(labs["start_days"]) * 24 + pd.to_numeric(
-    #             labs["start_hours"]
-    #         )
-    #         labs = labs.drop(
-    #             columns=["start_days", "dummy", "start_hours", "min", "sec"]
-    #         )
-    #         labs = labs[labs["start_time"] >= 0]
+    def generate_fun(self, cohort):
+        processed_chunks = []
+        for labs in tqdm(self.df):
+            labs = labs[labs["hadm_id"].isin(cohort["hadm_id"])].copy()
+            # Process 'lab_time_from_admit' to numeric total hours
+            time_parts = labs["lab_time_from_admit"].str.extract(
+                r"(\d+) (\d+):(\d+):(\d+)"
+            )
+            labs["start_time"] = pd.to_numeric(time_parts[0]) * 24 + pd.to_numeric(
+                time_parts[1]
+            )
+            labs = pd.merge(labs, cohort[["hadm_id", "los"]], on="hadm_id", how="left")
+            labs = labs[labs["los"] - labs["start_time"] > 0]
+            labs = labs.drop(columns=["lab_time_from_admit", "los"])
+            processed_chunks.append(labs)
+        final = pd.concat(processed_chunks, ignore_index=True)
+        self.df = final
+        return final
 
-    #         ###Remove where event time is after discharge time
-    #         labs = pd.merge(
-    #             labs, self.data[["hadm_id", "los"]], on="hadm_id", how="left"
-    #         )
-    #         labs["sanity"] = labs["los"] - labs["start_time"]
-    #         labs = labs[labs["sanity"] > 0]
-    #         del labs["sanity"]
+    def mortality_length(self, cohort, include_time):
+        self.df = self.df[self.df["hadm_id"].isin(cohort["hadm_id"])]
+        self.df = self.df[self.df["start_time"] <= include_time]
 
-    #         if final.empty:
-    #             final = labs
-    #         else:
-    #             final = pd.concat([final, labs], ignore_index=True)
-    #     self.df = final
-    #     return final
+    def los_length(self, cohort, include_time):
+        self.df = self.df[self.df["hadm_id"].isin(cohort["hadm_id"])]
+        self.df = self.df[self.df["start_time"] <= include_time]
 
-    # def mortality_length(self, include_time):
-    #     self.df = self.df[self.df["hadm_id"].isin(self.cohort["hadm_id"])]
-    #     self.df = self.df[self.df["start_time"] <= include_time]
+    def read_length(self, cohort):
+        self.df = self.df[self.df["hadm_id"].isin(cohort["hadm_id"])]
 
-    # def los_length(self, include_time):
-    #     self.df = self.df[self.df["hadm_id"].isin(self.cohort["hadm_id"])]
-    #     self.df = self.df[self.df["start_time"] <= include_time]
-
-    # def read_length(self):
-    #     self.df = self.df[self.df["hadm_id"].isin(self.cohort["hadm_id"])]
-
-    # def smooth_meds_step(self, bucket, i, t):
-    #     self.df = pd.merge(
-    #         self.df, self.cohort[["hadm_id", "select_time"]], on="hadm_id", how="left"
-    #     )
-    #     self.df["start_time"] = self.df["start_time"] - self.df["select_time"]
-    #     self.df = self.df[self.df["start_time"] >= 0]
-    #     sub_chart = (
-    #         self.df[
-    #             (self.chart["start_time"] >= i) & (self.df["start_time"] < i + bucket)
-    #         ]
-    #         .groupby(["stay_id", "itemid"])
-    #         .agg({"valuenum": np.nanmean})
-    #     )
-    #     sub_chart = sub_chart.reset_index()
-    #     sub_chart["start_time"] = t
-    #     if self.final_df.empty:
-    #         self.final_df = sub_chart
-    #     else:
-    #         self.final_df = self.final_df.append(sub_chart)
-
-    # def smooth_meds_step(self, bucket, i, t):
-    #     sub_labs = (
-    #         self.labs[
-    #             (self.df["start_time"] >= i) & (self.df["start_time"] < i + bucket)
-    #         ]
-    #         .groupby(["hadm_id", "itemid"])
-    #         .agg({"subject_id": "max", "valuenum": np.nanmean})
-    #     )
-    #     sub_labs = sub_labs.reset_index()
-    #     sub_labs["start_time"] = t
-    #     if self.final_df.empty:
-    #         self.final_df = sub_labs
-    #     else:
-    #         self.final_df = self.final_df.append(sub_labs)
+    def smooth_meds_step(self, bucket, i, t):
+        sub_labs = (
+            self.df[(self.df["start_time"] >= i) & (self.df["start_time"] < i + bucket)]
+            .groupby(["hadm_id", "itemid"])
+            .agg({"subject_id": "max", "valuenum": "mean"})
+        )
+        sub_labs = sub_labs.reset_index()
+        sub_labs["start_time"] = t
+        return sub_labs
 
     # def smooth_meds(self):
     #     f2_df = self.final_df.groupby(["hadm_id", "itemid"]).size()

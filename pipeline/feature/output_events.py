@@ -86,36 +86,31 @@ class OutputEvents(Feature):
         self.df = out
         return out
 
-    # def mortality_length(self, include_time):
-    #     self.df = self.df[self.df["stay_id"].isin(self.cohort["stay_id"])]
-    #     self.df = self.df[self.df["start_time"] <= include_time]
+    def mortality_length(self, cohort, include_time):
+        self.df = self.df[self.df["stay_id"].isin(cohort["stay_id"])]
+        self.df = self.df[self.df["start_time"] <= include_time]
 
-    # def los_length(self, include_time):
-    #     self.df = self.df[self.df["stay_id"].isin(self.cohort["stay_id"])]
-    #     self.df = self.df[self.df["start_time"] <= include_time]
+    def los_length(self, cohort, include_time):
+        self.df = self.df[self.df["stay_id"].isin(cohort["stay_id"])]
+        self.df = self.df[self.df["start_time"] <= include_time]
 
-    # def read_length(self):
-    #     self.df = self.df[self.df["stay_id"].isin(self.cohort["stay_id"])]
-    #     self.df = pd.merge(
-    #         self.df, self.cohort[["stay_id", "select_time"]], on="stay_id", how="left"
-    #     )
-    #     self.df["start_time"] = self.df["start_time"] - self.df["select_time"]
-    #     self.df = self.df[self.df["start_time"] >= 0]
+    def read_length(self, cohort):
+        self.df = self.df[self.df["stay_id"].isin(cohort["stay_id"])]
+        self.df = pd.merge(
+            self.df, cohort[["stay_id", "select_time"]], on="stay_id", how="left"
+        )
+        self.df["start_time"] = self.df["start_time"] - self.df["select_time"]
+        self.df = self.df[self.df["start_time"] >= 0]
 
-    # def smooth_meds_step(self, bucket, i, t):
-    #     sub_out = (
-    #         self.out[
-    #             (self.out["start_time"] >= i) & (self.out["start_time"] < i + bucket)
-    #         ]
-    #         .groupby(["stay_id", "itemid"])
-    #         .agg({"subject_id": "max"})
-    #     )
-    #     sub_out = sub_out.reset_index()
-    #     sub_out["start_time"] = t
-    #     if self.final_df.empty:
-    #         self.final_df = sub_out
-    #     else:
-    #         self.final_df = self.final_df.append(sub_out)
+    def smooth_meds_step(self, bucket, i, t):
+        sub_out = (
+            self.df[(self.df["start_time"] >= i) & (self.df["start_time"] < i + bucket)]
+            .groupby(["stay_id", "itemid"])
+            .agg({"subject_id": "max"})
+        )
+        sub_out = sub_out.reset_index()
+        sub_out["start_time"] = t
+        return sub_out
 
     # def smooth_meds(self):
     #     f2_df = self.final_df.groupby(["stay_id", "itemid"]).size()

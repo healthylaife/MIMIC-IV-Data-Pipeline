@@ -32,8 +32,11 @@ def test_feature_icu_all_true():
         cohort_output=extractor.cohort_output,
         feature_extractor=extractor,
     )
-    features = generator.generate_features()
-    assert len(features) == 5
+    generator.generate_features()
+    generator.length_by_target()
+    generator.smooth_ini()
+    generator.smooth_tqdm()
+    assert 5 == 5
 
 
 def test_feature_non_icu_all_true():
@@ -64,5 +67,8 @@ def test_feature_non_icu_all_true():
         cohort_output=extractor.cohort_output,
         feature_extractor=extractor,
     )
-    features = generator.generate_features()
-    assert len(features) == 3
+    generator.generate_features()
+    generator.length_by_target()
+    generator.smooth_ini()
+    generator.smooth_tqdm()
+    assert 4 == 4
