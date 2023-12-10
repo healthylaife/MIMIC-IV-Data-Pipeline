@@ -4,6 +4,7 @@ import pandas as pd
 from tqdm import tqdm
 import pickle
 import os
+from pipeline.dict_maker import DictMaker
 from pipeline.feature.lab_events import Lab
 from pipeline.feature.medications import Medications
 from pipeline.feature.output_events import OutputEvents
@@ -344,44 +345,9 @@ class DataGenerator:
                     f2_labs.groupby("hadm_id").sum().reset_index()[0].max()
                 )
                 self.labslength_per_adm = final_lab.groupby("hadm_id").size().max()
-        self.create_dict(final_meds, final_proc, final_out, final_lab, final_chart, los)
 
-    def create_dict(self, meds, proc, out, labs, chart, los):
-        self.dataDic = {}
-        self.labels_csv = pd.DataFrame(
-            columns=[
-                "stay_id" if self.feature_extractor.use_icu else "hadm_id",
-                "label",
-            ]
+        dict_maker = DictMaker(self.feature_extractor, self.hids)
+        breakpoint()
+        dict_maker.create_dict(
+            final_meds, final_proc, final_out, final_lab, final_chart, los
         )
-        self.labels_csv[
-            "stay_id" if self.feature_extractor.use_icu else "hadm_id"
-        ] = pd.Series(self.hids)
-        self.labels_csv["label"] = 0
-        self.process_feature_data(meds, "Med", los)
-        self.process_feature_data(proc, "Proc", los)
-        self.process_feature_data(out, "Out", los)
-        self.process_feature_data(labs, "Lab", los)
-        self.process_feature_data(chart, "Chart", los)
-        self.save_csv_files()
-
-        return
-
-    def process_feature_data(self, feature_df, feature_name, los):
-        for hid in tqdm(self.hids):
-            # Process specific feature data for each 'hid'
-            # Update self.dataDic[hid][feature_name] with processed data
-            return
-
-    def save_csv_files(self):
-        for hid in self.hids:
-            self.save_individual_csv(hid)
-        self.labels_csv.to_csv(PREPROC_PATH / "csv/labels.csv", index=False)
-
-    def save_individual_csv(self, hid):
-        # Save demographic and dynamic data to CSV files
-        demo_csv_path = os.path.join(PREPROC_PATH / f"/csv/{str(hid)}demo.csv")
-        dynamic_csv_path = os.path.join(PREPROC_PATH / f"/csv/{str(hid)}dynamic.csv")
-        static_csv_path = os.path.join(PREPROC_PATH / f"/csv/{str(hid)}static.csv")
-        return
-        # Save corresponding DataFrames to these paths
