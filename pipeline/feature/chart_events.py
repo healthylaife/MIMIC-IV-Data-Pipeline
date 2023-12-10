@@ -114,43 +114,32 @@ class Chart(Feature):
         return self.df
 
     def generate_fun(self, cohort):
-        final = pd.DataFrame()
-        for chart in tqdm(self.df):
-            chart = chart[chart["stay_id"].isin(cohort["stay_id"])]
-            chart[["start_days", "dummy", "start_hours"]] = chart[
-                "event_time_from_admit"
-            ].str.split(" ", expand=True)
-            chart[["start_hours", "min", "sec"]] = chart["start_hours"].str.split(
-                ":", expand=True
-            )
-            chart["start_time"] = pd.to_numeric(
-                chart["start_days"]
-            ) * 24 + pd.to_numeric(chart["start_hours"])
-            chart = chart.drop(
-                columns=[
-                    "start_days",
-                    "dummy",
-                    "start_hours",
-                    "min",
-                    "sec",
-                    "event_time_from_admit",
-                ]
-            )
-            chart = chart[chart["start_time"] >= 0]
+        processed_chunks = []
 
-            ###Remove where event time is after discharge time
+        for chart in tqdm(self.df):
+            chart = chart[chart["stay_id"].isin(cohort["stay_id"])].copy()
+
+            # Convert 'event_time_from_admit' to numeric total hours
+            time_parts = chart["event_time_from_admit"].str.extract(
+                r"(\d+) (\d+):(\d+):(\d+)"
+            )
+            chart["start_time"] = pd.to_numeric(time_parts[0]) * 24 + pd.to_numeric(
+                time_parts[1]
+            )
+
+            # Merge with cohort and calculate 'sanity'
             chart = pd.merge(
                 chart, cohort[["stay_id", "los"]], on="stay_id", how="left"
             )
-            chart["sanity"] = chart["los"] - chart["start_time"]
-            chart = chart[chart["sanity"] > 0]
-            del chart["sanity"]
-            del chart["los"]
+            chart = chart[chart["los"] - chart["start_time"] > 0]
 
-            if final.empty:
-                final = chart
-            else:
-                final = final.append(chart, ignore_index=True)
+            # Drop unnecessary columns
+            chart = chart.drop(columns=["event_time_from_admit", "los"])
+
+            processed_chunks.append(chart)
+
+        # Concatenate all processed chunks
+        final = pd.concat(processed_chunks, ignore_index=True)
         self.df = final
         return final
 
