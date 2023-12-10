@@ -28,10 +28,8 @@ class Procedures(Feature):
         self,
         use_icu: bool,
         df: pd.DataFrame = pd.DataFrame,
-        cohort: pd.DataFrame = pd.DataFrame,
         keep_icd9: bool = True,
     ):
-        self.cohort = cohort
         self.use_icu = use_icu
         self.keep_icd9 = keep_icd9
         self.df = df
