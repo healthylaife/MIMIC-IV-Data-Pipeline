@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import datetime
+from pipeline.file_info.common import save_data
 from pipeline.file_info.preproc.cohort import (
     COHORT_PATH,
     CohortHeader,
@@ -86,38 +87,37 @@ class Cohort:
         self.df = df.rename(columns={HospAdmissions.RACE: CohortHeader.ETHICITY})
 
     def save(self):
-        self.df.to_csv(
-            COHORT_PATH / f"{self.name}.csv.gz",
-            index=False,
-            compression="gzip",
-        )
-        logger.info(f"[ COHORT {self.name} SAVED ]")
+        save_data(self.df, COHORT_PATH / f"{self.name}.csv.gz", "COHORT")
 
     def save_summary(self):
-        self.df.to_csv(
-            COHORT_PATH / f"{self.summary_name}.csv.gz",
-            index=False,
-            compression="gzip",
+        summary = "\n".join(
+            [
+                f"{self.df} FOR {' ICU' if self.icu else ''} DATA",
+                f"# Admission Records: {self.df.shape[0]}",
+                f"# Patients: {self.df[CohortHeader.PATIENT_ID].nunique()}",
+                f"# Positive cases: {self.df[self.df[CohortHeader.LABEL]==1].shape[0]}",
+                f"# Negative cases: {self.df[self.df[CohortHeader.LABEL]==0].shape[0]}",
+            ]
         )
-        logger.info(f"[ SUMMARY {self.summary_name} SAVED ]")
+        with open(COHORT_PATH / f"{self.summary_name}.txt", "w") as f:
+            f.write(summary)
 
-    def read_output(self) -> pd.DataFrame:
-        data = pd.read_csv(
-            COHORT_PATH / f"{self.name}.csv.gz",
-            compression="gzip",
-        )
-        for col in [NonIcuCohortHeader.ADMIT_TIME, NonIcuCohortHeader.DISCH_TIME]:
-            data[col] = pd.to_datetime(data[col])
 
-        data[CohortHeader.LOS] = (
-            (
-                data[NonIcuCohortHeader.DISCH_TIME]
-                - data[NonIcuCohortHeader.ADMIT_TIME]
-            ).dt.total_seconds()
-            / 3600
-        ).astype(int)
-        data = data[data[CohortHeader.LOS] > 0]
-        data[CohortHeader.AGE] = data[CohortHeader.AGE].astype(int)
+def read_cohort(name: str, use_icu: bool) -> pd.DataFrame:
+    data = pd.read_csv(
+        COHORT_PATH / f"{name}.csv.gz",
+        compression="gzip",
+    )
+    start_time = IcuCohortHeader.IN_TIME if use_icu else NonIcuCohortHeader.ADMIT_TIME
+    stop_time = IcuCohortHeader.OUT_TIME if use_icu else NonIcuCohortHeader.DISCH_TIME
+    for col in [start_time, stop_time]:
+        data[col] = pd.to_datetime(data[col])
+    data[CohortHeader.LOS] = (
+        (data[stop_time] - data[start_time]).dt.total_seconds() / 3600
+    ).astype(int)
+    data = data[data[CohortHeader.LOS] > 0]
+    data[CohortHeader.AGE] = data[CohortHeader.AGE].astype(int)
 
-        logger.info("[ READ COHORT ]")
-        self.df = data
+    logger.info("[ READ COHORT ]")
+
+    return data

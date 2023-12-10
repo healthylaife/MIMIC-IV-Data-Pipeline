@@ -70,8 +70,10 @@ if __name__ == "__main__":
     )
     feat_preproc.preproc_events_features()
 
-    # from pipeline.preprocessing.data_gen import generate_admission_cohort
+    from pipeline.preprocessing.cohort import read_cohort
 
+    cohort = read_cohort(feature_extractor.cohort_output, prediction_task.use_icu)
+    print(len(cohort))
     # cohort = generate_admission_cohort(feature_extractor.cohort_output)
     # data_generator = DataGenerator(
     # data = data_generator.generate_data()

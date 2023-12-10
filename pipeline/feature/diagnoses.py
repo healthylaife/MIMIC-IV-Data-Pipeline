@@ -127,14 +127,14 @@ class Diagnoses(Feature):
         self.df_per_adm = diag_per_adm
         return diag, diag_per_adm
 
-    def mortality_length(self):
-        col = "stay_id" if self.use_icu else "hadm_id"
-        self.df = self.df[self.df[col].isin(self.cohort[col])]
+    # def mortality_length(self):
+    #     col = "stay_id" if self.use_icu else "hadm_id"
+    #     self.df = self.df[self.df[col].isin(self.cohort[col])]
 
-    def los_length(self):
-        col = "stay_id" if self.use_icu else "hadm_id"
-        self.df = self.df[self.df[col].isin(self.cohort[col])]
+    # def los_length(self):
+    #     col = "stay_id" if self.use_icu else "hadm_id"
+    #     self.df = self.df[self.df[col].isin(self.cohort[col])]
 
-    def read_length(self):
-        col = "stay_id" if self.use_icu else "hadm_id"
-        self.df = self.df[self.df[col].isin(self.cohort[col])]
+    # def read_length(self):
+    #     col = "stay_id" if self.use_icu else "hadm_id"
+    #     self.df = self.df[self.df[col].isin(self.cohort[col])]
