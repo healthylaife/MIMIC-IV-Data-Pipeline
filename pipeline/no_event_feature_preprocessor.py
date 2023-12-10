@@ -10,12 +10,10 @@ from pipeline.features_extractor import FeatureExtractor
 from typing import List
 from pathlib import Path
 
-from pipeline.feature.chart_events import Chart
 from pipeline.file_info.common import save_data
 from pipeline.file_info.preproc.feature import (
     EXTRACT_DIAG_ICU_PATH,
     EXTRACT_DIAG_PATH,
-    EXTRACT_MED_ICU_PATH,
     EXTRACT_MED_PATH,
     EXTRACT_PROC_PATH,
     PREPROC_DIAG_ICU_PATH,
@@ -38,7 +36,7 @@ class NoEventFeaturePreprocessor:
         self.group_med_code = group_med_code
         self.keep_proc_icd9 = keep_proc_icd9
 
-    def preprocess(self):
+    def preprocess(self) -> List[pd.DataFrame]:
         no_event_preproc_features = []
         if self.feature_extractor.for_diagnoses:
             extract_dia = pd.read_csv(

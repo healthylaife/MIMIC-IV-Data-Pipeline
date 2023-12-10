@@ -18,7 +18,6 @@ class OutputEvents(Feature):
     def __init__(self, df: pd.DataFrame = pd.DataFrame()):
         self.df = df
         self.final_df = pd.DataFrame()
-        self.feature_path = EXTRACT_OUT_ICU_PATH
 
     def df(self):
         return self.df

@@ -49,8 +49,6 @@ class Medications(Feature):
         self.group_code = group_code
         self.df = df
         self.final_df = pd.DataFrame()
-        self.feature_path = EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH
-        self.preproc_path = PREPROC_MED_ICU_PATH if self.use_icu else PREPROC_MED_PATH
 
     def df(self) -> pd.DataFrame:
         return self.df
@@ -164,7 +162,7 @@ class Medications(Feature):
         self.df.dropna()
         self.group_code = group_code
         logger.info(f"Total number of rows: {self.df.shape[0]}")
-        return self.df  # save_data(med, self.feature_path, "MEDICATIONS")
+        return self.df
 
     def summary(self) -> pd.DataFrame:
         med: pd.DataFrame = self.df
@@ -203,7 +201,7 @@ class Medications(Feature):
         return summary
 
     def generate_fun(self):
-        meds = pd.read_csv(self.feature_path, compression="gzip")
+        meds: pd.DataFrame = self.df
         meds[["start_days", "dummy", "start_hours"]] = meds[
             "start_hours_from_admit"
         ].str.split(" ", expand=True)

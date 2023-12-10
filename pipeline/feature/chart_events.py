@@ -31,7 +31,6 @@ class Chart(Feature):
         self.df = df
         self.chunksize = chunksize
         self.final_df = pd.DataFrame()
-        self.feature_path = EXTRACT_CHART_ICU_PATH
 
     def df(self) -> pd.DataFrame:
         return self.df

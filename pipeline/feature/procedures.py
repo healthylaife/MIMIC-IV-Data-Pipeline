@@ -168,7 +168,7 @@ class Procedures(Feature):
         return summary
 
     def generate_fun(self):
-        proc = pd.read_csv(self.feature_path(), compression="gzip")
+        proc: pd.DataFrame = self.df
         proc = proc[
             proc[ProceduresHeader.HOSPITAL_ADMISSION_ID].isin(self.cohort["hadm_id"])
         ]

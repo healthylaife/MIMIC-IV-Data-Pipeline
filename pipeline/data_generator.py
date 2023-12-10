@@ -46,9 +46,10 @@ class DataGenerator:
         self.predW = predW
 
     def generate(self):
-        self.data = read_cohort(self.cohort_output, self.use_icu)
+        self.cohort = read_cohort(self.cohort_output, self.use_icu)
         features = []
         if self.feature_extractor.for_diagnoses:
+            summary_dia = pd.read_csv()
             dia = Diagnoses(
                 cohort=pd.DataFrame(),
                 use_icu=self.feature_extractor.use_icu,

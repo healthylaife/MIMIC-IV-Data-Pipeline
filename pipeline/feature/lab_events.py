@@ -34,7 +34,6 @@ class Lab(Feature):
         self.df = df
         self.chunksize = chunksize
         self.final_df = pd.DataFrame()
-        self.feature_path = EXTRACT_LABS_PATH
 
     def df(self):
         return self.df
