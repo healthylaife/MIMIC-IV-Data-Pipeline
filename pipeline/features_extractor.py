@@ -104,11 +104,12 @@ class FeatureExtractor:
                 EXTRACT_LABS_PATH,
             ),
         ]
-        features = []
+        features = {}
         for condition, feature, path in feature_conditions:
             if condition:
-                features.append(feature.extract_from(cohort))
-                breakpoint()
-                save_data(feature.df, path, feature.__class__.name())
+                extract_feature = feature.extract_from(cohort)
+                feature_name = feature.__class__.name()
+                features[feature_name] = extract_feature
+                save_data(extract_feature, path, feature_name)
 
         return features

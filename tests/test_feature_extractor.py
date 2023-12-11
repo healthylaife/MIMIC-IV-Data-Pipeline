@@ -1,6 +1,7 @@
 from pipeline.features_extractor import (
     FeatureExtractor,
 )
+from pipeline.feature.feature_abc import Name
 
 
 def test_feature_icu_all_true():
@@ -16,8 +17,8 @@ def test_feature_icu_all_true():
     )
     result = feature_extractor.save_features()
     assert len(result) == 5
-    assert len(result[0]) == 2647
-    assert result[0].columns.tolist() == [
+    assert len(result[Name.DIAGNOSES]) == 2647
+    assert result[Name.DIAGNOSES].columns.tolist() == [
         "subject_id",
         "hadm_id",
         "icd_code",
@@ -25,8 +26,8 @@ def test_feature_icu_all_true():
         "root",
         "stay_id",
     ]
-    assert len(result[1]) == 1435
-    assert result[1].columns.tolist() == [
+    assert len(result[Name.PROCEDURES]) == 1435
+    assert result[Name.PROCEDURES].columns.tolist() == [
         "subject_id",
         "hadm_id",
         "stay_id",
@@ -35,8 +36,8 @@ def test_feature_icu_all_true():
         "intime",
         "event_time_from_admit",
     ]
-    assert len(result[2]) == 11038
-    assert result[2].columns.tolist() == [
+    assert len(result[Name.MEDICATIONS]) == 11038
+    assert result[Name.MEDICATIONS].columns.tolist() == [
         "subject_id",
         "hadm_id",
         "starttime",
@@ -49,8 +50,8 @@ def test_feature_icu_all_true():
         "amount",
         "orderid",
     ]
-    assert len(result[3]) == 9362
-    assert result[3].columns.tolist() == [
+    assert len(result[Name.OUTPUT]) == 9362
+    assert result[Name.OUTPUT].columns.tolist() == [
         "subject_id",
         "hadm_id",
         "stay_id",
@@ -59,8 +60,8 @@ def test_feature_icu_all_true():
         "intime",
         "event_time_from_admit",
     ]
-    assert len(result[4]) == 72108
-    assert result[4].columns.tolist() == [
+    assert len(result[Name.CHART]) == 72108
+    assert result[Name.CHART].columns.tolist() == [
         "stay_id",
         "itemid",
         "valuenum",
@@ -81,16 +82,16 @@ def test_feature_non_icu_all_true():
     )
     result = feature_extractor.save_features()
     assert len(result) == 4
-    assert len(result[0]) == 1273
-    assert result[0].columns.tolist() == [
+    assert len(result[Name.DIAGNOSES]) == 1273
+    assert result[Name.DIAGNOSES].columns.tolist() == [
         "subject_id",
         "hadm_id",
         "icd_code",
         "root_icd10_convert",
         "root",
     ]
-    assert len(result[1]) == 136
-    assert result[1].columns.tolist() == [
+    assert len(result[Name.PROCEDURES]) == 136
+    assert result[Name.PROCEDURES].columns.tolist() == [
         "subject_id",
         "hadm_id",
         "icd_code",
@@ -99,8 +100,8 @@ def test_feature_non_icu_all_true():
         "admittime",
         "proc_time_from_admit",
     ]
-    assert len(result[2]) == 4803
-    assert result[2].columns.tolist() == [
+    assert len(result[Name.MEDICATIONS]) == 4803
+    assert result[Name.MEDICATIONS].columns.tolist() == [
         "subject_id",
         "hadm_id",
         "starttime",
@@ -112,8 +113,8 @@ def test_feature_non_icu_all_true():
         "dose_val_rx",
         "EPC",
     ]
-    assert len(result[3]) == 22029
-    assert result[3].columns.tolist() == [
+    assert len(result[Name.LAB]) == 22029
+    assert result[Name.LAB].columns.tolist() == [
         "subject_id",
         "hadm_id",
         "itemid",
