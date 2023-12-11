@@ -1,7 +1,6 @@
 from enum import StrEnum
-from typing import Dict
 from pipeline.conversion.icd import IcdConverter
-from pipeline.feature.feature_abc import Feature
+from pipeline.feature.feature_abc import Feature, Name
 import logging
 import pandas as pd
 from pipeline.file_info.preproc.feature import (
@@ -28,6 +27,9 @@ class Diagnoses(Feature):
     def __init__(self, use_icu: bool, df: pd.DataFrame = pd.DataFrame()):
         self.use_icu = use_icu
         self.df = df
+
+    def name() -> str:
+        return Name.DIAGNOSES
 
     def df(self) -> pd.DataFrame:
         return self.df

@@ -4,31 +4,11 @@ import pandas as pd
 from tqdm import tqdm
 import pickle
 import os
-from pipeline.feature.lab_events import Lab
-from pipeline.feature.medications import Medications
-from pipeline.feature.output_events import OutputEvents
-from pipeline.feature.procedures import Procedures
 from pipeline.file_info.common import PREPROC_PATH
-from pipeline.file_info.preproc.cohort import COHORT_PATH
-from pipeline.file_info.preproc.feature import (
-    EXTRACT_CHART_ICU_PATH,
-    EXTRACT_DIAG_ICU_PATH,
-    EXTRACT_DIAG_PATH,
-    EXTRACT_LABS_PATH,
-    EXTRACT_MED_ICU_PATH,
-    EXTRACT_MED_PATH,
-    EXTRACT_OUT_ICU_PATH,
-    EXTRACT_PROC_ICU_PATH,
-    EXTRACT_PROC_PATH,
-)
-from pipeline.prediction_task import PredictionTask, TargetType
+
 import logging
 
 from pipeline.features_extractor import FeatureExtractor
-from pipeline.feature.chart_events import Chart, ChartEvents
-from pipeline.feature.diagnoses import Diagnoses
-from pipeline.preprocessing.cohort import read_cohort
-from pipeline.feature.feature_abc import Feature
 
 logger = logging.getLogger()
 

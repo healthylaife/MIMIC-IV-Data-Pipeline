@@ -1,6 +1,5 @@
 from tqdm import tqdm
-import numpy as np
-from pipeline.feature.feature_abc import Feature
+from pipeline.feature.feature_abc import Feature, Name
 import logging
 import pandas as pd
 from pipeline.preprocessing.outlier_removal import outlier_imputation
@@ -21,6 +20,9 @@ class Chart(Feature):
         self.df = df
         self.chunksize = chunksize
         self.final_df = pd.DataFrame()
+
+    def name() -> str:
+        return Name.CHART
 
     def df(self) -> pd.DataFrame:
         return self.df

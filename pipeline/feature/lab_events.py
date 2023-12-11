@@ -3,7 +3,7 @@ from pipeline.preprocessing.admission_imputer import (
     INPUTED_HOSPITAL_ADMISSION_ID_HEADER,
     impute_hadm_ids,
 )
-from pipeline.feature.feature_abc import Feature
+from pipeline.feature.feature_abc import Feature, Name
 import logging
 import pandas as pd
 from pipeline.preprocessing.outlier_removal import outlier_imputation
@@ -15,7 +15,6 @@ from pipeline.file_info.raw.hosp import (
     load_hosp_admissions,
     load_hosp_lab_events,
 )
-import numpy as np
 from pipeline.file_info.common import save_data
 from pipeline.conversion.uom import drop_wrong_uom
 
@@ -23,6 +22,9 @@ logger = logging.getLogger()
 
 
 class Lab(Feature):
+    def name() -> str:
+        return Name.LAB
+
     def __init__(self, df: pd.DataFrame = pd.DataFrame(), chunksize: int = 10000000):
         self.df = df
         self.chunksize = chunksize

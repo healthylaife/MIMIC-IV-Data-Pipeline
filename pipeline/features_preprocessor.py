@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 
-from pipeline.feature.diagnoses import Diagnoses, IcdGroupOption
+from pipeline.feature.diagnoses import IcdGroupOption
 from pipeline.feature.lab_events import Lab
 from pipeline.feature_selector import FeatureSelector
 from pipeline.features_extractor import FeatureExtractor

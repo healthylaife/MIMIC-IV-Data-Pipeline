@@ -1,4 +1,4 @@
-from pipeline.feature.feature_abc import Feature
+from pipeline.feature.feature_abc import Feature, Name
 import logging
 import pandas as pd
 import numpy as np
@@ -6,19 +6,14 @@ from pipeline.file_info.preproc.feature import (
     ProceduresHeader,
     IcuProceduresHeader,
     NonIcuProceduresHeader,
-    EXTRACT_PROC_ICU_PATH,
-    EXTRACT_PROC_PATH,
 )
 from pipeline.file_info.preproc.cohort import (
     CohortHeader,
     IcuCohortHeader,
     NonIcuCohortHeader,
 )
-from pipeline.file_info.preproc.summary import PROC_FEATURES_PATH, PROC_SUMMARY_PATH
 from pipeline.file_info.raw.hosp import HospProceduresIcd, load_hosp_procedures_icd
 from pipeline.file_info.raw.icu import load_icu_procedure_events
-from pipeline.file_info.common import save_data
-from pathlib import Path
 
 logger = logging.getLogger()
 
@@ -41,6 +36,9 @@ class Procedures(Feature):
             if self.use_icu
             else NonIcuProceduresHeader.PROC_TIME_FROM_ADMIT
         )
+
+    def name() -> str:
+        return Name.PROCEDURES
 
     def df(self):
         return self.df

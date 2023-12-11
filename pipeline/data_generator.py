@@ -1,9 +1,6 @@
 from typing import Dict
-import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import pickle
-import os
 from pipeline.dict_maker import DictMaker
 from pipeline.feature.lab_events import Lab
 from pipeline.feature.medications import Medications

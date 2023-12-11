@@ -1,4 +1,4 @@
-from pipeline.feature.feature_abc import Feature
+from pipeline.feature.feature_abc import Feature, Name
 import logging
 import pandas as pd
 import numpy as np
@@ -28,6 +28,7 @@ from pipeline.file_info.raw.icu import (
     load_input_events,
 )
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
 
@@ -44,6 +45,9 @@ class Medications(Feature):
             if self.use_icu
             else CohortHeader.HOSPITAL_ADMISSION_ID
         )
+
+    def name() -> str:
+        return Name.MEDICATIONS
 
     def df(self) -> pd.DataFrame:
         return self.df

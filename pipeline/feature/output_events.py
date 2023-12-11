@@ -1,4 +1,4 @@
-from pipeline.feature.feature_abc import Feature
+from pipeline.feature.feature_abc import Feature, Name
 import logging
 import pandas as pd
 import numpy as np
@@ -8,6 +8,7 @@ from pipeline.file_info.preproc.feature import (
 from pipeline.file_info.preproc.cohort import IcuCohortHeader
 from pipeline.file_info.raw.icu import load_icu_output_events, OuputputEvents
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
 
@@ -15,6 +16,9 @@ class OutputEvents(Feature):
     def __init__(self, df: pd.DataFrame = pd.DataFrame()):
         self.df = df
         self.final_df = pd.DataFrame()
+
+    def name() -> str:
+        return Name.OUTPUT
 
     def df(self):
         return self.df

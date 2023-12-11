@@ -7,10 +7,10 @@ from pathlib import Path
 from tqdm import tqdm
 import importlib
 
-# import preprocessing.day_intervals_preproc.disease_cohort as disease_cohort
+import preprocessing.day_intervals_preproc.disease_cohort as disease_cohort
 
 # importlib.reload(disease_cohort)
-import disease_cohort
+# import disease_cohort
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "./../..")
 if not os.path.exists("./data/cohort"):

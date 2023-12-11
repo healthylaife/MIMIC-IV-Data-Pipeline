@@ -23,7 +23,9 @@ from pipeline.file_info.preproc.feature import (
     EXTRACT_PROC_ICU_PATH,
     EXTRACT_PROC_PATH,
 )
+from pipeline.feature.feature_abc import Name
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
 
@@ -70,48 +72,43 @@ class FeatureExtractor:
             List[pd.DataFrame]: A list of DataFrames, each containing a type of extracted feature.
         """
         cohort = load_cohort(self.use_icu, self.cohort_output)
-        feature_conditions: List[Tuple[bool, Feature, Path, str]] = [
+        feature_conditions: List[Tuple[bool, Feature, Path]] = [
             (
                 self.for_diagnoses,
                 Diagnoses(use_icu=self.use_icu),
                 EXTRACT_DIAG_ICU_PATH if self.use_icu else EXTRACT_DIAG_PATH,
-                "DIAGNOSES",
             ),
             (
                 self.for_procedures,
                 Procedures(use_icu=self.use_icu),
                 EXTRACT_PROC_ICU_PATH if self.use_icu else EXTRACT_PROC_PATH,
-                "PROCEDURES",
             ),
             (
                 self.for_medications,
                 Medications(use_icu=self.use_icu),
                 EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH,
-                "MEDICATIONS",
             ),
             (
                 self.for_output_events and self.use_icu,
                 OutputEvents(),
                 EXTRACT_OUT_ICU_PATH,
-                "OUTPUT EVENTS",
             ),
             (
                 self.for_chart_events and self.use_icu,
                 Chart(),
                 EXTRACT_CHART_ICU_PATH,
-                "CHART EVENTS",
             ),
             (
                 self.for_labs and not self.use_icu,
                 Lab(),
                 EXTRACT_LABS_PATH,
-                "LAB EVENTS",
             ),
         ]
         features = []
-        for condition, feature, path, name in feature_conditions:
+        for condition, feature, path in feature_conditions:
             if condition:
                 features.append(feature.extract_from(cohort))
-                save_data(feature.df, path, name)
+                breakpoint()
+                save_data(feature.df, path, feature.__class__.name())
 
         return features
