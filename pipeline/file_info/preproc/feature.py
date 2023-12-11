@@ -33,8 +33,6 @@ class PreprocDiagnosesHeader(StrEnum):
 
 EXTRACT_PROC_PATH = FEATURE_EXTRACT_PATH / "proc.csv.gz"
 EXTRACT_PROC_ICU_PATH = FEATURE_EXTRACT_PATH / "proc_icu.csv.gz"
-PREPROC_PROC_PATH = FEATURE_PREPROC_PATH / "proc.csv.gz"
-PREPROC_PROC_ICU_PATH = FEATURE_PREPROC_PATH / "proc_icu.csv.gz"
 
 
 class ProceduresHeader(StrEnum):
@@ -60,8 +58,6 @@ class NonIcuProceduresHeader(StrEnum):
 
 EXTRACT_MED_ICU_PATH = FEATURE_EXTRACT_PATH / "med_icu.csv.gz"
 EXTRACT_MED_PATH = FEATURE_EXTRACT_PATH / "med.csv.gz"
-PREPROC_MED_ICU_PATH = FEATURE_PREPROC_PATH / "med_icu.csv.gz"
-PREPROC_MED_PATH = FEATURE_PREPROC_PATH / "med.csv.gz"
 
 
 class MedicationsHeader(StrEnum):
@@ -94,7 +90,6 @@ class PreprocMedicationHeader(StrEnum):
 
 
 EXTRACT_OUT_ICU_PATH = FEATURE_EXTRACT_PATH / "out_icu.csv.gz"
-PREPROC_OUT_ICU_PATH = FEATURE_PREPROC_PATH / "out_icu.csv.gz"
 
 
 class OutputEventsHeader(StrEnum):
@@ -122,7 +117,6 @@ class LabEventsHeader(StrEnum):
 
 
 EXTRACT_CHART_ICU_PATH = FEATURE_EXTRACT_PATH / "chart_icu.csv.gz"
-PREPROC_CHART_ICU_PATH = FEATURE_PREPROC_PATH / "chart_icu.csv.gz"
 
 
 class ChartEventsHeader(StrEnum):

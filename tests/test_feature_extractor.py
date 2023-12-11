@@ -60,7 +60,7 @@ def test_feature_icu_all_true():
         "intime",
         "event_time_from_admit",
     ]
-    assert len(result[Name.CHART]) == 72108
+    assert len(result[Name.CHART]) == 162571
     assert result[Name.CHART].columns.tolist() == [
         "stay_id",
         "itemid",

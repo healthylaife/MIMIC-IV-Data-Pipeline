@@ -116,6 +116,7 @@ class DataGenerator:
             )
             lab = Lab(df=preproc_labs)
             self.lab = lab.generate_fun(self.cohort)
+        breakpoint()
 
     def length_by_target(self):
         self.los = self.include_time

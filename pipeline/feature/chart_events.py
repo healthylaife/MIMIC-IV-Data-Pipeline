@@ -6,6 +6,7 @@ from pipeline.preprocessing.outlier_removal import outlier_imputation
 from pipeline.file_info.preproc.feature import ChartEventsHeader
 from pipeline.file_info.preproc.cohort import IcuCohortHeader
 from pipeline.file_info.raw.icu import (
+    ICU_CHART_EVENTS_PATH,
     load_icu_chart_events,
     ChartEvents,
 )
@@ -30,33 +31,42 @@ class Chart(Feature):
     def extract_from(self, cohort: pd.DataFrame) -> pd.DataFrame:
         """Function for processing hospital observations from a pickled cohort, optimized for memory efficiency."""
         logger.info("[EXTRACTING CHART EVENTS DATA]")
-
         processed_chunks = [
             self.process_chunk_chart_events(chunk, cohort)
             for chunk in tqdm(load_icu_chart_events(self.chunksize))
         ]
+        chart = pd.concat(processed_chunks, ignore_index=True)
 
-        out = pd.concat(processed_chunks, ignore_index=True)
-        out = drop_wrong_uom(out, 0.95)
+        """Log statistics about the chart events before drop."""
+        logger.info(f"# Unique Events: {chart[ChartEventsHeader.ITEM_ID].nunique()}")
+        logger.info(f"# Admissions: {chart[ChartEventsHeader.STAY_ID].nunique()}")
+        logger.info(f"Total rows: {chart.shape[0]}")
+
+        chart = drop_wrong_uom(chart, 0.95)
         """Log statistics about the chart events."""
-        logger.info(f"# Unique Events: {out[ChartEventsHeader.ITEM_ID].nunique()}")
-        logger.info(f"# Admissions: {out[ChartEventsHeader.STAY_ID].nunique()}")
-        logger.info(f"Total rows: {out.shape[0]}")
-        out = out[[h.value for h in ChartEventsHeader]]
-        self.df = out
-        return out
+        logger.info(f"# Unique Events: {chart[ChartEventsHeader.ITEM_ID].nunique()}")
+        logger.info(f"# Admissions: {chart[ChartEventsHeader.STAY_ID].nunique()}")
+        logger.info(f"Total rows: {chart.shape[0]}")
+        chart = chart[[h.value for h in ChartEventsHeader]]
+        self.df = chart
+        return chart
 
     def process_chunk_chart_events(
         self, chunk: pd.DataFrame, cohort: pd.DataFrame
     ) -> pd.DataFrame:
         """Process a single chunk of chart events."""
-        chunk = chunk.dropna(subset=[ChartEvents.VALUENUM]).merge(
-            cohort, on=ChartEvents.STAY_ID
+        chunk = chunk.dropna(subset=[ChartEvents.VALUENUM])
+        chunk = chunk.merge(
+            cohort[[IcuCohortHeader.STAY_ID, IcuCohortHeader.IN_TIME]],
+            on=ChartEvents.STAY_ID,
         )
         chunk[ChartEventsHeader.EVENT_TIME_FROM_ADMIT] = (
             chunk[ChartEvents.CHARTTIME] - chunk[IcuCohortHeader.IN_TIME]
         )
-        return chunk.drop(["charttime", "intime"], axis=1).dropna().drop_duplicates()
+        chunk = chunk.drop(["charttime", "intime"], axis=1)
+        chunk = chunk.dropna()
+        chunk = chunk.drop_duplicates()
+        return chunk
 
     def summary(self):
         chart: pd.DataFrame = self.df
@@ -111,7 +121,7 @@ class Chart(Feature):
             chart = chart[chart["stay_id"].isin(cohort["stay_id"])].copy()
             # Convert 'event_time_from_admit' to numeric total hours
             time_parts = chart["event_time_from_admit"].str.extract(
-                r"(\d+) (\d+):(\d+):(\d+)"
+                r"(\d+) days (\d+):(\d+):(\d+)"
             )
             chart["start_time"] = pd.to_numeric(time_parts[0]) * 24 + pd.to_numeric(
                 time_parts[1]

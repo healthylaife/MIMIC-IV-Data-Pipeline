@@ -75,9 +75,10 @@ class OutputEvents(Feature):
         """
         Processes event times in the data, adjusting based on the cohort stay_id and length of stay (los).
         """
+        breakpoint()
         out: pd.DataFrame = self.df[self.df["stay_id"].isin(cohort["stay_id"])].copy()
         time_split = out["event_time_from_admit"].str.extract(
-            r"(\d+) (\d+):(\d+):(\d+)"
+            r"(\d+) days (\d+):(\d+):(\d+)"
         )
         out["start_time"] = pd.to_numeric(time_split[0]) * 24 + pd.to_numeric(
             time_split[1]

@@ -171,7 +171,7 @@ class Lab(Feature):
             labs = labs[labs["hadm_id"].isin(cohort["hadm_id"])].copy()
             # Process 'lab_time_from_admit' to numeric total hours
             time_parts = labs["lab_time_from_admit"].str.extract(
-                r"(\d+) (\d+):(\d+):(\d+)"
+                r"(\d+) days (\d+):(\d+):(\d+)"
             )
             labs["start_time"] = pd.to_numeric(time_parts[0]) * 24 + pd.to_numeric(
                 time_parts[1]

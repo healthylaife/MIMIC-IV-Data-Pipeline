@@ -64,7 +64,6 @@ def feature_icu(
         ].to_csv(
             "./data/features/preproc_diag_icu.csv.gz", compression="gzip", index=False
         )
-        breakpoint()
         print("[SUCCESSFULLY SAVED DIAGNOSIS DATA]")
 
     if out_flag:
@@ -102,12 +101,10 @@ def feature_icu(
             dtypes=None,
             usecols=["stay_id", "charttime", "itemid", "valuenum", "valueuom"],
         )
-        breakpoint()
         chart = drop_wrong_uom(chart, 0.95)
         chart[["stay_id", "itemid", "event_time_from_admit", "valuenum"]].to_csv(
             "./data/features/preproc_chart_icu.csv.gz", compression="gzip", index=False
         )
-        breakpoint()
         print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
 
     if proc_flag:

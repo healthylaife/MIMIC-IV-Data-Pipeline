@@ -77,6 +77,7 @@ class Generator:
         if self.feat_med:
             print("[ ======READING MEDICATIONS ]")
             self.generate_meds()
+        breakpoint()
 
     def generate_adm(self):
         data = pd.read_csv(

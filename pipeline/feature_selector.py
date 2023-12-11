@@ -127,13 +127,11 @@ class FeatureSelector:
         self.log_and_save(data_df, data_path, data_type)
         return data_df
 
-    # TODO: to move in fileinfo and to reuse: in file info
     def concat_csv_chunks(self, file_path: Path, chunksize: int):
         """Concatenate chunks from a CSV file."""
         chunks = pd.read_csv(file_path, compression="gzip", chunksize=chunksize)
         return pd.concat(chunks, ignore_index=True)
 
-    # TODO same as above
     def log_and_save(self, df: pd.DataFrame, path: Path, data_type: str):
         """Log information and save DataFrame to a CSV file."""
         logger.info(f"Total number of rows in {data_type}: {df.shape[0]}")
