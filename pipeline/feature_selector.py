@@ -1,8 +1,8 @@
 import pandas as pd
 import logging
 from pipeline.file_info.preproc.feature import (
-    PREPROC_DIAG_PATH,
-    PREPROC_DIAG_ICU_PATH,
+    EXTRACT_DIAG_PATH,
+    EXTRACT_DIAG_ICU_PATH,
     PreprocDiagnosesHeader,
     EXTRACT_MED_ICU_PATH,
     EXTRACT_MED_PATH,
@@ -58,7 +58,7 @@ class FeatureSelector:
         if self.select_dia:
             features.append(
                 self.process_feature_selection(
-                    PREPROC_DIAG_ICU_PATH if self.use_icu else PREPROC_DIAG_PATH,
+                    EXTRACT_DIAG_ICU_PATH if self.use_icu else EXTRACT_DIAG_PATH,
                     DIAG_FEATURES_PATH,
                     PreprocDiagnosesHeader.NEW_ICD_CODE.value,
                     "Diagnosis",

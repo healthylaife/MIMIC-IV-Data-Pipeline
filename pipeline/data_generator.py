@@ -58,6 +58,12 @@ class DataGenerator:
         self.chart = pd.DataFrame()
         self.med = pd.DataFrame()
         self.lab = pd.DataFrame()
+        self.med_per_adm = pd.DataFrame()
+        self.out_per_adm = pd.DataFrame()
+        self.chart_per_adm = pd.DataFrame()
+        self.dia_per_adm = pd.DataFrame()
+        self.proc_per_adm = pd.DataFrame()
+        self.labs_per_adm = pd.DataFrame()
 
     def generate_features(self):
         print("[ ======READING DIAGNOSIS ]")
@@ -346,7 +352,33 @@ class DataGenerator:
                 )
                 self.labslength_per_adm = final_lab.groupby("hadm_id").size().max()
 
-        dict_maker = DictMaker(self.feature_extractor, self.hids)
+        dict_maker = DictMaker(
+            self.feature_extractor,
+            self.hids,
+            self.med_per_adm,
+            self.out_per_adm,
+            self.chart_per_adm,
+            self.dia_per_adm,
+            self.proc_per_adm,
+            self.labs_per_adm,
+        )
         dict_maker.create_dict(
-            final_meds, final_proc, final_out, final_lab, final_chart, self.cohort, los
+            self.dia,
+            final_meds,
+            final_proc,
+            final_out,
+            final_lab,
+            final_chart,
+            self.cohort,
+            los,
+        )
+        dict_maker.save_dictionaries(
+            self.dia,
+            final_meds,
+            final_proc,
+            final_out,
+            final_lab,
+            final_chart,
+            self.cohort,
+            los,
         )

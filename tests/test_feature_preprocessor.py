@@ -26,7 +26,7 @@ def test_feature_icu_all_true():
         left_thresh=2,
         clean_labs=True,
     )
-
+    extractor.save_features()
     preprocessor.preprocess()
     generator = DataGenerator(
         cohort_output=extractor.cohort_output,
@@ -62,6 +62,7 @@ def test_feature_non_icu_all_true():
         left_thresh=5,
         clean_labs=True,
     )
+    extractor.save_features()
     preprocessor.preprocess()
     generator = DataGenerator(
         cohort_output=extractor.cohort_output,

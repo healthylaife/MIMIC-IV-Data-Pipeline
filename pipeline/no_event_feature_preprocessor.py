@@ -15,8 +15,8 @@ from pipeline.file_info.preproc.feature import (
     EXTRACT_DIAG_PATH,
     EXTRACT_MED_PATH,
     EXTRACT_PROC_PATH,
-    PREPROC_DIAG_ICU_PATH,
-    PREPROC_DIAG_PATH,
+    EXTRACT_DIAG_ICU_PATH,
+    EXTRACT_DIAG_PATH,
 )
 
 logger = logging.getLogger()
@@ -51,9 +51,9 @@ class NoEventFeaturePreprocessor:
             preproc_dia = dia.preproc(self.group_diag_icd)
             save_data(
                 preproc_dia,
-                PREPROC_DIAG_ICU_PATH
+                EXTRACT_DIAG_ICU_PATH
                 if self.feature_extractor.use_icu
-                else PREPROC_DIAG_PATH,
+                else EXTRACT_DIAG_PATH,
                 "DIAGNOSES",
             )
             no_event_preproc_features.append(preproc_dia)

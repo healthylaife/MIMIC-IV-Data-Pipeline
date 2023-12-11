@@ -21,8 +21,8 @@ from pipeline.file_info.preproc.feature import (
     EXTRACT_OUT_ICU_PATH,
     EXTRACT_PROC_ICU_PATH,
     EXTRACT_PROC_PATH,
-    PREPROC_DIAG_ICU_PATH,
-    PREPROC_DIAG_PATH,
+    EXTRACT_DIAG_PATH,
+    EXTRACT_DIAG_ICU_PATH,
     ChartEventsHeader,
     IcuMedicationHeader,
     IcuProceduresHeader,
@@ -89,9 +89,9 @@ class Summarizer:
         if self.feature_extractor.for_diagnoses:
             summary = self.process_feature(
                 Diagnoses,
-                PREPROC_DIAG_ICU_PATH
+                EXTRACT_DIAG_ICU_PATH
                 if self.feature_extractor.use_icu
-                else PREPROC_DIAG_PATH,
+                else EXTRACT_DIAG_PATH,
                 DIAG_SUMMARY_PATH,
                 PreprocDiagnosesHeader.NEW_ICD_CODE,
                 DIAG_FEATURES_PATH,

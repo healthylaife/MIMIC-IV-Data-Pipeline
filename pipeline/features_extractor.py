@@ -14,6 +14,8 @@ from typing import List, Tuple
 
 from pipeline.file_info.preproc.feature import (
     EXTRACT_CHART_ICU_PATH,
+    EXTRACT_DIAG_ICU_PATH,
+    EXTRACT_DIAG_PATH,
     EXTRACT_LABS_PATH,
     EXTRACT_MED_ICU_PATH,
     EXTRACT_MED_PATH,
@@ -72,7 +74,7 @@ class FeatureExtractor:
             (
                 self.for_diagnoses,
                 Diagnoses(use_icu=self.use_icu),
-                EXTRACT_MED_ICU_PATH if self.use_icu else EXTRACT_MED_PATH,
+                EXTRACT_DIAG_ICU_PATH if self.use_icu else EXTRACT_DIAG_PATH,
                 "DIAGNOSES",
             ),
             (
