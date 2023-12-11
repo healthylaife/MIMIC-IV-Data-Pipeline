@@ -347,7 +347,6 @@ class DataGenerator:
                 self.labslength_per_adm = final_lab.groupby("hadm_id").size().max()
 
         dict_maker = DictMaker(self.feature_extractor, self.hids)
-        breakpoint()
         dict_maker.create_dict(
-            final_meds, final_proc, final_out, final_lab, final_chart, los
+            final_meds, final_proc, final_out, final_lab, final_chart, self.cohort, los
         )
