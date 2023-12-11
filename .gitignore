@@ -3,3 +3,9 @@ scrap
 *.gzip
 *.csv.gz
 *summary*.txt
+venv
+__pycache__
+raw_data
+preproc_data
+data
+*.csv
