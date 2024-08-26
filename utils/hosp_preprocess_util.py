@@ -309,7 +309,8 @@ def preproc_labs(dataset_path: str, version_path:str, cohort_path:str, time_col:
         del chunkna['hadm_id']
         chunkna=chunkna.rename(columns={'hadm_id_new':'hadm_id'})
         chunkna=chunkna[['subject_id','hadm_id','itemid','charttime','valuenum','valueuom']]
-        chunk=chunk.append(chunkna, ignore_index=True)
+        #chunk=chunk.append(chunkna, ignore_index=True)
+        chunk = pd.concat([chunk, chunkna], ignore_index=True)
         #print(chunk['hadm_id'].isna().sum())
          
         chunk = chunk.merge(cohort[['hadm_id', 'admittime','dischtime']], how='inner', left_on='hadm_id', right_on='hadm_id')
@@ -324,7 +325,9 @@ def preproc_labs(dataset_path: str, version_path:str, cohort_path:str, time_col:
         if df_cohort.empty:
             df_cohort=chunk
         else:
-            df_cohort=df_cohort.append(chunk, ignore_index=True)
+            #df_cohort=df_cohort.append(chunk, ignore_index=True)
+            df_cohort = pd.concat([df_cohort, chunk], ignore_index=True)
+
     
     #labs = pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col]).drop_duplicates()
     

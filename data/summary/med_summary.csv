@@ -1,0 +1,929 @@
+drug_name,mean_frequency,missing_count,total_count,missing%
+1.1% sodium fluoride,1.1025641025641026,0.0,43,0.0
+abacavir sulfate,1.2372881355932204,0.0,73,0.0
+"abacavir sulfate, lamivudine, and zidovudine",3.0,0.0,3,0.0
+abatacept,1.0,0.0,1,0.0
+acamprosate calcium,1.0,0.0,5,0.0
+acarbose,1.0,0.0,8,0.0
+acetaminophen,1.9279026217228465,0.0,32944,0.0
+acetaminophen and codeine phosphate,1.1956521739130435,0.0,330,0.0
+acetaminophen oral solution,1.1428571428571428,0.0,168,0.0
+acetazolamide,1.7463592233009708,0.0,1439,0.0
+acetic acid,1.0588235294117647,0.0,18,0.0
+acetylcysteine,1.482615464452517,0.0,2857,0.0
+acitretin,1.0,0.0,4,0.0
+activated charcoal,1.2222222222222223,0.0,11,0.0
+acyclovir,1.4806629834254144,0.0,268,0.0
+acyclovir sodium,1.7272727272727273,0.0,266,0.0
+adalimumab,1.0,0.0,1,0.0
+adefovir dipivoxil,1.0,0.0,3,0.0
+adenosine,1.8695652173913044,0.0,258,0.0
+albumin (human),1.7837837837837838,0.0,2442,0.0
+albumin human,3.1511565357719205,0.0,5858,0.0
+albuterol,1.1666666666666667,0.0,42,0.0
+albuterol sulfate,1.4321473098686104,0.0,14933,0.0
+alendronate sodium,1.1017369727047146,0.0,444,0.0
+aliskiren hemifumarate,1.0,0.0,1,0.0
+allopurinol,1.2501829893134242,0.0,8540,0.0
+alprazolam,1.7777777777777777,0.0,320,0.0
+alprostadil,1.0,0.0,4,0.0
+alteplase,1.8713740458015267,0.0,4903,0.0
+"aluminum hydroxide, magnesium hydroxide, and simethicone",1.0895565092989985,0.0,3808,0.0
+alvimopan,1.0,0.0,2,0.0
+amantadine hydrochloride,1.173913043478261,0.0,27,0.0
+ambrisentan,1.0,0.0,4,0.0
+amikacin sulfate,2.466666666666667,0.0,111,0.0
+amiloride hydrochloride,1.3529411764705883,0.0,69,0.0
+amiloride hydrocloride,1.4,0.0,7,0.0
+aminocaproic acid,1.8157894736842106,0.0,138,0.0
+aminophylline,2.0,0.0,4,0.0
+amiodarone hydrochloride,3.1758745476477683,0.0,13164,0.0
+amitriptyline hydrochloride,1.1729323308270676,0.0,156,0.0
+amlodipine besylate,1.2804005722460658,0.0,895,0.0
+amoxicillin,1.2556818181818181,0.0,442,0.0
+amoxicillin and clavulanate potassium,1.2037037037037037,0.0,1430,0.0
+amphotericin b,2.1714285714285713,0.0,152,0.0
+ampicillin,1.588235294117647,0.0,81,0.0
+ampicillin and sulbactam,1.3316455696202532,0.0,526,0.0
+ampicillin sodium,1.614678899082569,0.0,528,0.0
+ampicillin sodium and sulbactam sodium,1.3312101910828025,0.0,209,0.0
+anagrelide hydrochloride,1.9375,0.0,31,0.0
+anakinra,1.8,0.0,9,0.0
+anastrozole,1.1020408163265305,0.0,54,0.0
+andexanet alfa,2.0,0.0,2,0.0
+angiotensin ii,1.1428571428571428,0.0,8,0.0
+anti-thymocyte globulin (rabbit),3.7413793103448274,0.0,217,0.0
+anticoagulant citrate dextrose solution formula a,1.7468531468531467,0.0,1249,0.0
+antithrombin iii (human),1.0,0.0,2,0.0
+apixaban,1.4402636638286186,0.0,5244,0.0
+apraclonidine,1.0,0.0,3,0.0
+apremilast,1.0,0.0,3,0.0
+aprepitant,1.9090909090909092,0.0,21,0.0
+argatroban,2.1875,0.0,140,0.0
+arginine hydrochloride,1.0,0.0,2,0.0
+aripiprazole,1.2547619047619047,0.0,527,0.0
+ascorbic acid,1.45,0.0,58,0.0
+"ascorbic acid, vitamin a palmitate, cholecalciferol, thiamine hydrochloride, riboflavin-5 phosphate sodium, pyridoxine hydrochloride, niacinamide, dexpanthenol, alpha-tocopherol acetate, vitamin k1, folic acid, biotin, cyanocobalamin",1.6633663366336633,0.0,168,0.0
+asenapine maleate,1.0,0.0,1,0.0
+aspirin,1.2117558700292512,0.0,30655,0.0
+atazanavir,1.0470588235294118,0.0,89,0.0
+atenolol,1.3993792033109156,0.0,2705,0.0
+atomoxetine hydrochloride,1.0,0.0,2,0.0
+atorvastatin calcium,1.215258364144648,0.0,26952,0.0
+atovaquone,1.1955017301038062,0.0,691,0.0
+atropa belladonna and opium,1.4666666666666666,0.0,110,0.0
+atropine sulfate,1.0537170263788969,0.0,2197,0.0
+azacitidine,1.7777777777777777,0.0,16,0.0
+azathioprine,1.1515151515151516,0.0,38,0.0
+azithromycin,1.59375,0.0,561,0.0
+azithromycin dihydrate,1.6688741721854305,0.0,252,0.0
+azithromycin monohydrate,1.6133694670280037,0.0,1786,0.0
+aztreonam,1.8571428571428572,0.0,221,0.0
+bacitracin,1.2,0.0,24,0.0
+bacitracin zinc,1.0,0.0,4,0.0
+bacitracin zinc and polymyxin b sulfate,1.21875,0.0,39,0.0
+baclofen,1.5214521452145215,0.0,461,0.0
+balsalazide disodium,1.15,0.0,23,0.0
+barium sulfate,1.15,0.0,552,0.0
+basiliximab,1.7777777777777777,0.0,16,0.0
+becaplermin,4.0,0.0,4,0.0
+belatacept,1.0,0.0,2,0.0
+bendamustine hydrochloride,1.0909090909090908,0.0,12,0.0
+benzocaine,1.06,0.0,53,0.0
+benzonatate,1.1670190274841437,0.0,552,0.0
+benzoyl peroxide,1.0,0.0,3,0.0
+benztropine mesylate,1.3333333333333333,0.0,28,0.0
+betamethasone dipropionate,1.1409691629955947,0.0,259,0.0
+betamethasone sodium phosphate and betamethasone acetate,2.0,0.0,2,0.0
+betamethasone valerate,1.146341463414634,0.0,47,0.0
+betaxolol hydrochloride,1.1267605633802817,0.0,80,0.0
+bethanechol chloride,1.5,0.0,15,0.0
+bethanechol chloride 5 mg,1.0714285714285714,0.0,15,0.0
+bevacizumab,1.0,0.0,3,0.0
+"bictegravir sodium, emtricitabine, and tenofovir alafenamide fumarate",1.2307692307692308,0.0,16,0.0
+bisacodyl,1.7351966485337336,0.0,27751,0.0
+bivalirudin,3.5675675675675675,0.0,132,0.0
+blinatumomab,7.0,0.0,7,0.0
+bortezomib,1.619718309859155,0.0,115,0.0
+brentuximab vedotin,3.0,0.0,3,0.0
+brimonidine tartrate,1.17351598173516,0.0,1799,0.0
+brinzolamide,1.2972972972972974,0.0,96,0.0
+brivaracetam,7.0,0.0,7,0.0
+budesonide,1.201086956521739,0.0,221,0.0
+budesonide and formoterol fumarate dihydrate,1.2222222222222223,0.0,33,0.0
+bumetanide,4.343501326259947,0.0,3275,0.0
+bupivacaine hydrochloride,1.7567567567567568,0.0,65,0.0
+bupivacaine hydrochloride and epinephrine,1.0,0.0,1,0.0
+bupivacaine hydrochloride and epinephrine bitartrate,1.0,0.0,1,0.0
+buprenorphine and naloxone,1.6923076923076923,0.0,22,0.0
+buprenorphine hcl,6.0,0.0,6,0.0
+buprenorphine hydrochloride and naloxone hydrochloride dihydrate,1.6538461538461537,0.0,86,0.0
+"buprenorphine hydrochloride, naloxone hydrochloride",1.5454545454545454,0.0,34,0.0
+bupropion hydrochloride,1.1632047477744807,0.0,784,0.0
+buspirone hydrochloride,1.2432432432432432,0.0,414,0.0
+busulfan,1.7647058823529411,0.0,30,0.0
+"butalbital, acetaminophen and caffeine",1.6985294117647058,0.0,231,0.0
+"butalbital, acetaminophen, and caffeine",1.8732394366197183,0.0,133,0.0
+"butalbital, aspirin, and caffeine",1.3157894736842106,0.0,25,0.0
+cabergoline,1.125,0.0,9,0.0
+caffeine and sodium benzoate,1.0,0.0,1,0.0
+calcipotriene,1.1875,0.0,38,0.0
+calcitonin salmon,1.18,0.0,177,0.0
+calcitriol,1.2421052631578948,0.0,472,0.0
+calcium acetate,1.2494061757719714,0.0,1578,0.0
+calcium carbonate,1.1594202898550725,0.0,80,0.0
+calcium chloride,1.4663461538461537,0.0,305,0.0
+"calcium chloride, magnesium chloride, dextrose monohydrate, lactic acid, sodium chloride, sodium bicarbonate and potassium chloride",1.0,0.0,1,0.0
+calcium gluconate,2.867704280155642,0.0,737,0.0
+cangrelor,1.6666666666666667,0.0,10,0.0
+capecitabine,3.0,0.0,6,0.0
+captopril,2.071794871794872,0.0,2424,0.0
+carbamazepine,1.2278481012658229,0.0,97,0.0
+carbamide peroxide 6.5%,1.0,0.0,1,0.0
+carbidopa,1.0,0.0,1,0.0
+carbidopa and levodopa,1.4393939393939394,0.0,95,0.0
+carboplatin,1.1025641025641026,0.0,43,0.0
+carboprost tromethamine,3.0,0.0,3,0.0
+carboxymethylcellulose sodium,1.2760416666666667,0.0,245,0.0
+carfilzomib,1.0,0.0,7,0.0
+cariprazine,1.0,0.0,1,0.0
+carmustine,1.0,0.0,3,0.0
+carvedilol,1.8012422360248448,0.0,16820,0.0
+caspofungin acetate,3.111111111111111,0.0,112,0.0
+cefazolin,1.4887152777777777,0.0,1715,0.0
+cefazolin sodium,1.3086585912965456,0.0,5834,0.0
+cefepime,2.367335562987737,0.0,4247,0.0
+cefepime hydrochloride,1.691866028708134,0.0,1768,0.0
+cefpodoxime proxetil,1.1794520547945206,0.0,861,0.0
+ceftaroline fosamil,2.492063492063492,0.0,157,0.0
+ceftazidime,2.095959595959596,0.0,2075,0.0
+"ceftazidime, avibactam",2.3333333333333335,0.0,14,0.0
+ceftolozane and tazobactam,2.125,0.0,34,0.0
+ceftriaxone sodium,1.3680410939886158,0.0,9854,0.0
+celecoxib,1.2608695652173914,0.0,58,0.0
+cephalexin,1.1649580615097856,0.0,1250,0.0
+cetirizine hydrochloride,1.1217948717948718,0.0,350,0.0
+cetuximab,1.25,0.0,5,0.0
+cevimeline hydrochloride,1.0,0.0,2,0.0
+chloramphenicol sodium succinate,2.3333333333333335,0.0,7,0.0
+chlordiazepoxide hydrochloride,1.4482758620689655,0.0,42,0.0
+chlorhexidine gluconate,1.1927710843373494,0.0,396,0.0
+chlorhexidine gluconate 0.12% oral rinse,1.1934156378600822,0.0,580,0.0
+chloroprocaine hydrochloride,1.5,0.0,6,0.0
+chlorothiazide sodium,2.8296557811120917,0.0,3206,0.0
+chlorpheniramine maleate,1.25,0.0,15,0.0
+chlorpromazine hydrochloride,1.627906976744186,0.0,70,0.0
+chlorthalidone,1.3577464788732394,0.0,482,0.0
+cholestyramine,1.24822695035461,0.0,352,0.0
+cidofovir dihydrate,2.0,0.0,4,0.0
+cilostazol,1.09375,0.0,210,0.0
+cimetidine,1.1666666666666667,0.0,7,0.0
+cinacalcet hydrochloride,1.2032854209445585,0.0,1172,0.0
+ciprofloxacin,1.5770786516853932,0.0,3509,0.0
+ciprofloxacin hydrochloride,1.249253235977431,0.0,3764,0.0
+cisatracurium besylate,2.769406392694064,0.0,1213,0.0
+cisplatin,1.1176470588235294,0.0,19,0.0
+citalopram,1.0606060606060606,0.0,70,0.0
+citalopram hydrobromide,1.0927272727272728,0.0,601,0.0
+cladribine,1.0,0.0,1,0.0
+clarithromycin,1.2,0.0,6,0.0
+clevipidine,1.3478260869565217,0.0,31,0.0
+clindamycin hydrochloride,1.2023529411764706,0.0,511,0.0
+clindamycin in 5 percent dextrose,1.2695652173913043,0.0,146,0.0
+clindamycin palmitate hydrochloride,1.1428571428571428,0.0,16,0.0
+clindamycin phosphate,1.2222222222222223,0.0,143,0.0
+clobazam,2.1666666666666665,0.0,52,0.0
+clobetasol propionate,1.1781305114638447,0.0,668,0.0
+clomipramine hydrochloride,1.4,0.0,7,0.0
+clonazepam,1.8980582524271845,0.0,391,0.0
+clonidine,1.555,0.0,622,0.0
+clonidine hydrochloride,1.4,0.0,7,0.0
+clopidogrel,1.2891587783532774,0.0,7218,0.0
+clopidogrel bisulfate,1.2556451612903226,0.0,4671,0.0
+clorazepate dipotassium,1.3333333333333333,0.0,12,0.0
+clostridium tetani toxoid antigen (formaldehyde inactivated) and corynebacterium diphtheriae toxoid antigen (formaldehyde inactivated),1.25,0.0,5,0.0
+"clostridium tetani toxoid antigen (formaldehyde inactivated), corynebacterium diphtheriae toxoid antigen (formaldehyde inactivated), bordetella pertussis toxoid antigen (glutaraldehyde inactivated), bordetella pertussis filamentous hemagglutinin antigen (formaldehyde inactivated), bordetella pertussis pertactin antigen, and bordetella pertussis fimbriae 2/3 antigen",1.0363636363636364,0.0,57,0.0
+clotrimazole,1.105511811023622,0.0,702,0.0
+clozapine,3.2,0.0,32,0.0
+coagulation factor viia (recombinant),4.666666666666667,0.0,42,0.0
+cobicistat,1.25,0.0,15,0.0
+codeine sulfate,1.3516483516483517,0.0,123,0.0
+colchicine,1.6558791801510249,0.0,1535,0.0
+colesevelam hydrochloride,1.4285714285714286,0.0,40,0.0
+colestipol hydrochloride,2.0,0.0,6,0.0
+colistimethate,2.5172413793103448,0.0,73,0.0
+colistimethate sodium,1.5714285714285714,0.0,11,0.0
+collagenase santyl,1.1578947368421053,0.0,176,0.0
+conjugated estrogens,1.075,0.0,43,0.0
+cosyntropin,1.1891252955082743,0.0,503,0.0
+cromolyn sodium,1.0,0.0,5,0.0
+cupric chloride,1.1818181818181819,0.0,13,0.0
+cyanocobalamin,1.1726618705035972,0.0,326,0.0
+cyclobenzaprine hydrochloride,1.2758620689655173,0.0,111,0.0
+cyclopentolate hydrochloride,1.1428571428571428,0.0,24,0.0
+cyclophosphamide,1.3357142857142856,0.0,187,0.0
+cyclosporine,2.9021164021164023,0.0,1097,0.0
+cyproheptadine hydrochloride,1.0,0.0,4,0.0
+cytarabine,1.15,0.0,23,0.0
+dabigatran etexilate mesylate,1.3076923076923077,0.0,17,0.0
+dactinomycin,1.0,0.0,1,0.0
+dalbavancin,2.0,0.0,2,0.0
+danazol,1.0,0.0,3,0.0
+dantrolene sodium,1.0,0.0,2,0.0
+dapsone,1.171875,0.0,150,0.0
+daptomycin,2.3361581920903953,0.0,1654,0.0
+darbepoetin alfa,1.375,0.0,11,0.0
+darunavir,1.2035398230088497,0.0,136,0.0
+dasatinib,2.4285714285714284,0.0,17,0.0
+daunorubicin hydrochloride,1.0,0.0,11,0.0
+decitabine,1.5833333333333333,0.0,38,0.0
+deferasirox,1.0,0.0,2,0.0
+deferoxamine mesylate,3.0,0.0,3,0.0
+denosumab,1.0,0.0,3,0.0
+desmopressin acetate,1.3574660633484164,0.0,300,0.0
+desonide,1.0930232558139534,0.0,47,0.0
+desvenlafaxine succinate,1.0,0.0,2,0.0
+dexamethasone,2.131175468483816,0.0,1251,0.0
+dexamethasone intensol,1.0,0.0,1,0.0
+dexamethasone sodium phosphate,1.9092240117130308,0.0,1304,0.0
+dexmedetomidine,1.6385542168674698,0.0,816,0.0
+dexmedetomidine hydrochloride,1.5998588567395906,0.0,2267,0.0
+dexrazoxane,2.0,0.0,2,0.0
+dextran 40,1.1578947368421053,0.0,22,0.0
+"dextroamphetamine saccharate, amphetamine aspartate monohydrate, dextroamphetamine sulfate, and amphetamine sulfate",1.6153846153846154,0.0,21,0.0
+"dextroamphetamine saccharate, amphetamine aspartate, dextroamphetamine sulfate and amphetamine sulfate",1.1111111111111112,0.0,20,0.0
+dextroamphetamine sulfate,1.2222222222222223,0.0,11,0.0
+dextrose,2.874125874125874,0.0,3288,0.0
+dextrose and sodium chloride,1.7465654374548083,0.0,9662,0.0
+dextrose monohydrate,3.0356842867487326,0.0,104807,0.0
+"dextrose monohydrate, sodium chloride, sodium lactate, potassium chloride, calcium chloride",1.3103448275862069,0.0,76,0.0
+diatrizoate meglumine and diatrizoate sodium,1.3012987012987014,0.0,501,0.0
+diazepam,1.7754329004329004,0.0,3281,0.0
+diazoxide,2.0,0.0,2,0.0
+"dibasic sodium phosphate, monobasic potassium phosphate and monobasic sodium phosphate",1.49609375,0.0,3447,0.0
+diclofenac sodium,1.6,0.0,8,0.0
+dicloxacillin sodium,1.148936170212766,0.0,54,0.0
+dicyclomine hydrochloride,1.1927710843373494,0.0,99,0.0
+digoxin,2.1403669724770644,0.0,2333,0.0
+dihydroergotamine mesylate,4.0,0.0,4,0.0
+diltiazem hydrochloride,1.9367771781033154,0.0,2512,0.0
+dimenhydrinate,1.103448275862069,0.0,32,0.0
+dinoprostone,2.0,0.0,2,0.0
+diphenhydramine hydrochloride,2.040450736781277,0.0,7062,0.0
+diphenoxylate hydrochloride and atropine sulfate,1.6440677966101696,0.0,194,0.0
+disopyramide phosphate,1.5176470588235293,0.0,129,0.0
+divalproex sodium,1.8930817610062893,0.0,903,0.0
+dobutamine,3.2,0.0,288,0.0
+dobutamine hydrochloride,2.114023591087811,0.0,1613,0.0
+dobutamine in dextrose,1.9948453608247423,0.0,387,0.0
+docetaxel,1.0,0.0,1,0.0
+docetaxel anhydrous,1.5,0.0,3,0.0
+docusate sodium,1.37829931088285,0.0,21201,0.0
+dofetilide,1.6116751269035532,0.0,635,0.0
+dolutegravir sodium,1.1448275862068966,0.0,166,0.0
+donepezil hydrochloride,1.1365248226950355,0.0,641,0.0
+dopamine hydrochloride,1.5745062836624775,0.0,1754,0.0
+dornase alfa,1.77,0.0,177,0.0
+dorzolamide hcl,1.2727272727272727,0.0,14,0.0
+dorzolamide hydrochloride,1.1451942740286298,0.0,560,0.0
+dorzolamide hydrochloride and timolol maleate,1.1355140186915889,0.0,729,0.0
+doxazosin,1.260115606936416,0.0,654,0.0
+doxepin hydrochloride,1.1666666666666667,0.0,189,0.0
+doxorubicin hydrochloride,1.375,0.0,44,0.0
+doxycycline,1.34640522875817,0.0,206,0.0
+doxycycline hyclate,1.1872,0.0,742,0.0
+dronabinol,1.25,0.0,75,0.0
+dronedarone,1.1444444444444444,0.0,103,0.0
+duloxetine,1.2485380116959064,0.0,427,0.0
+duloxetine hydrochloride,1.2219570405727924,0.0,1536,0.0
+efavirenz,1.2921348314606742,0.0,115,0.0
+eltrombopag olamine,1.6875,0.0,27,0.0
+"elvitegravir, cobicistat, emtricitabine, and tenofovir alafenamide",1.0,0.0,1,0.0
+"elvitegravir, cobicistat, emtricitabine, and tenofovir disoproxil fumarate",1.1,0.0,11,0.0
+emtricitabine,1.3404255319148937,0.0,63,0.0
+emtricitabine and tenofovir alafenamide,1.0975609756097562,0.0,45,0.0
+emtricitabine and tenofovir disoproxil fumarate,1.184873949579832,0.0,141,0.0
+enalapril maleate,1.6594594594594594,0.0,307,0.0
+enalaprilat,3.857142857142857,0.0,27,0.0
+enoxaparin sodium,1.4726970560303894,0.0,6203,0.0
+entacapone,1.46,0.0,73,0.0
+entecavir,1.3333333333333333,0.0,104,0.0
+ephedrine sulfate,4.0,0.0,4,0.0
+epinephrine,1.5111607142857142,0.0,1354,0.0
+eplerenone,1.439909297052154,0.0,635,0.0
+epoetin alfa,4.001539645881447,0.0,5198,0.0
+epoprostenol,4.648936170212766,0.0,874,0.0
+epoprostenol sodium,3.3513513513513513,0.0,124,0.0
+eptifibatide,1.6666666666666667,0.0,10,0.0
+equine thymocyte immune globulin,12.0,0.0,36,0.0
+ergocalciferol,1.1045454545454545,0.0,729,0.0
+ergotamine tartrate and caffeine,1.0,0.0,2,0.0
+eribulin mesylate,1.0,0.0,1,0.0
+erlotinib hydrochloride,1.0,0.0,1,0.0
+ertapenem sodium,1.4573991031390134,0.0,325,0.0
+erythromycin,1.29296875,0.0,662,0.0
+erythromycin ethylsuccinate,1.2857142857142858,0.0,9,0.0
+erythromycin lactobionate,1.2526315789473683,0.0,119,0.0
+erythropoietin,2.8043478260869565,0.0,3999,0.0
+escitalopram,1.143859649122807,0.0,326,0.0
+escitalopram oxalate,1.1730418943533698,0.0,644,0.0
+esmolol hydrochloride,1.8894472361809045,0.0,752,0.0
+esmolol hydrochloride in sodium chloride,1.4150943396226414,0.0,75,0.0
+esomeprazole magnesium,1.3636363636363635,0.0,15,0.0
+esomeprazole sodium,1.3296703296703296,0.0,242,0.0
+estradiol,1.3333333333333333,0.0,8,0.0
+"estrogens, conjugated",1.2461538461538462,0.0,81,0.0
+eszopiclone,5.0,0.0,5,0.0
+etanercept,2.5,0.0,15,0.0
+ethacrynate sodium,4.357142857142857,0.0,183,0.0
+ethacrynic acid,3.125,0.0,100,0.0
+ethacrynic sodium,2.909090909090909,0.0,32,0.0
+ethambutol hydrochloride,1.7222222222222223,0.0,31,0.0
+etomidate,1.056701030927835,0.0,205,0.0
+etoposide,1.2641509433962264,0.0,134,0.0
+etravirine,1.2222222222222223,0.0,66,0.0
+everolimus,2.25,0.0,27,0.0
+exemestane,1.0,0.0,37,0.0
+extended phenytoin sodium,1.8487394957983194,0.0,440,0.0
+ezetimibe,1.1455576559546314,0.0,1212,0.0
+famciclovir,1.0,0.0,2,0.0
+famotidine,1.2816808929743926,0.0,3904,0.0
+febuxostat,1.1515151515151516,0.0,380,0.0
+felodipine,1.331896551724138,0.0,309,0.0
+fenofibrate,1.0821256038647342,0.0,224,0.0
+fentanyl,1.699604743083004,0.0,430,0.0
+fentanyl citrate,1.5928043039677202,0.0,4737,0.0
+fentanyl transdermal,1.5806451612903225,0.0,49,0.0
+ferric citrate,1.4285714285714286,0.0,10,0.0
+ferumoxytol,1.4,0.0,14,0.0
+fexofenadine hcl,1.75,0.0,21,0.0
+fexofenadine hydrochloride,1.2897435897435898,0.0,503,0.0
+fidaxomicin,1.6,0.0,24,0.0
+filgrastim,1.7391304347826086,0.0,360,0.0
+filgrastim-sndz,1.6037735849056605,0.0,85,0.0
+finasteride,1.0600522193211488,0.0,406,0.0
+flecainide acetate,1.4245283018867925,0.0,151,0.0
+fluconazole,1.5913555992141455,0.0,1620,0.0
+fluconazole in sodium chloride,1.8275862068965518,0.0,265,0.0
+flucytosine,2.2,0.0,11,0.0
+fludarabine phosphate,1.0,0.0,4,0.0
+fludrocortisone acetate,1.4,0.0,518,0.0
+flumazenil,1.1904761904761905,0.0,25,0.0
+fluocinolone acetonide,1.1333333333333333,0.0,17,0.0
+fluocinonide,1.1238532110091743,0.0,245,0.0
+fluorometholone,1.0816326530612246,0.0,53,0.0
+fluorouracil,2.230769230769231,0.0,29,0.0
+fluoxetine,1.1440677966101696,0.0,270,0.0
+fluoxetine hydrochloride,1.1867612293144207,0.0,502,0.0
+fluphenazine decanoate,2.0,0.0,2,0.0
+fluphenazine hydrochloride,1.5,0.0,3,0.0
+fluticasone propionate,1.1850035038542397,0.0,8455,0.0
+fluticasone propionate and salmeterol,1.1355575593627893,0.0,7556,0.0
+fluvoxamine maleate,1.0,0.0,3,0.0
+folic acid,1.1779400461183704,0.0,3065,0.0
+fomepizole,2.5,0.0,5,0.0
+fondaparinux sodium,1.392156862745098,0.0,71,0.0
+fosamprenavir calcium,1.3333333333333333,0.0,4,0.0
+fosaprepitant dimeglumine,1.2857142857142858,0.0,45,0.0
+foscarnet sodium,1.6666666666666667,0.0,5,0.0
+fosfomycin tromethamine,1.1428571428571428,0.0,152,0.0
+fosphenytoin sodium,3.9813084112149535,0.0,426,0.0
+fulvestrant,1.0,0.0,3,0.0
+furosemide,4.343257505526635,0.0,121811,0.0
+gabapentin,1.578725645076356,0.0,5996,0.0
+galantamine hydrobromide,1.2307692307692308,0.0,16,0.0
+ganciclovir,1.0,0.0,4,0.0
+ganciclovir sodium,2.0,0.0,74,0.0
+gemcitabine,1.5,0.0,15,0.0
+gemfibrozil,1.0,0.0,3,0.0
+gemtuzumab ozogamicin,1.3333333333333333,0.0,4,0.0
+gentamicin,1.0,0.0,1,0.0
+gentamicin sulfate,1.9767441860465116,0.0,680,0.0
+glatiramer acetate,1.0,0.0,2,0.0
+glimepiride,1.38,0.0,207,0.0
+glipizide,1.3990147783251232,0.0,852,0.0
+glucagon hydrochloride,1.1204078572499625,0.0,7472,0.0
+glyburide,1.2666666666666666,0.0,38,0.0
+glycerin,1.0,0.0,3,0.0
+glycopyrrolate,1.1056524035921818,0.0,2093,0.0
+guaifenesin,1.2315349392793151,0.0,6186,0.0
+guaifenesin and dextromethorphan,1.1286789869952087,0.0,1649,0.0
+guaifenesin and dextromethorphan hydrobromide,1.25,0.0,10,0.0
+haemophilus influenzae type b strain 1482 capsular polysaccharide tetanus toxoid conjugate antigen,1.1428571428571428,0.0,16,0.0
+haloperidol,1.8892857142857142,0.0,1587,0.0
+haloperidol decanoate,3.4285714285714284,0.0,24,0.0
+haloperidol lactate,2.4343707713125844,0.0,5397,0.0
+heparin sodium,2.238582433044764,0.0,93866,0.0
+heparin sodium and dextrose,2.6941399970773054,0.0,18436,0.0
+hepatitis a vaccine,1.2045454545454546,0.0,53,0.0
+hepatitis b vaccine (recombinant),1.1372549019607843,0.0,58,0.0
+hetastarch,1.125,0.0,18,0.0
+hetastarch in sodium chloride,1.3333333333333333,0.0,4,0.0
+human c1-esterase inhibitor,2.0,0.0,2,0.0
+human insulin,3.7044334975369457,0.0,752,0.0
+hydralazine hydrochloride,2.4006968641114983,0.0,18603,0.0
+hydrochlorothiazide,1.2277227722772277,0.0,372,0.0
+hydrocodone polistirex and chlorpheniramine polistirex,1.3333333333333333,0.0,4,0.0
+hydrocortisone,1.429657794676806,0.0,1128,0.0
+hydrocortisone 2.5%,1.083916083916084,0.0,155,0.0
+hydrocortisone acetate,1.1607142857142858,0.0,65,0.0
+hydrocortisone sodium succinate,2.1547619047619047,0.0,1991,0.0
+hydrocortisone valerate,1.1666666666666667,0.0,7,0.0
+hydromorphone hydrochloride,2.790032679738562,0.0,20490,0.0
+hydroxocobalamin,1.1428571428571428,0.0,8,0.0
+hydroxychloroquine sulfate,1.225140712945591,0.0,653,0.0
+hydroxyurea,2.5467625899280577,0.0,708,0.0
+hydroxyzine hydrochloride,1.4794007490636705,0.0,790,0.0
+hyoscyamine sulfate extended-release,1.2,0.0,6,0.0
+hypromellose 2906 (4000 mpa.s) and hypromellose 2906 (50 mpa.s),1.3333333333333333,0.0,4,0.0
+i.v. fat emulsion,3.4318181818181817,0.0,151,0.0
+ibuprofen,1.2988505747126438,0.0,1130,0.0
+ibutilide fumarate,1.6666666666666667,0.0,15,0.0
+icatibant acetate,1.0,0.0,3,0.0
+idarubicin hydrochloride,2.0,0.0,16,0.0
+idarucizumab,1.5,0.0,3,0.0
+ifosfamide,1.2222222222222223,0.0,22,0.0
+imatinib mesylate,1.826086956521739,0.0,42,0.0
+imipenem and cilastatin sodium,1.9583333333333333,0.0,188,0.0
+imipramine hydrochloride,1.3461538461538463,0.0,70,0.0
+immune globulin (human),1.5714285714285714,0.0,22,0.0
+immune globulin infusion (human),1.9288888888888889,0.0,434,0.0
+immune globulin intravenous (human),1.5925925925925926,0.0,43,0.0
+indigo carmine,1.0,0.0,1,0.0
+indinavir sulfate,1.1428571428571428,0.0,8,0.0
+infliximab,1.7142857142857142,0.0,12,0.0
+insulin aspart,5.425968109339408,0.0,2382,0.0
+insulin degludec injection,3.6923076923076925,0.0,48,0.0
+insulin detemir,4.393939393939394,0.0,145,0.0
+insulin glargine,4.223134733090571,0.0,54508,0.0
+insulin glulisine,9.2,0.0,46,0.0
+insulin human,3.5101642254771415,0.0,39542,0.0
+insulin lispro,4.715635574283343,0.0,73861,0.0
+iohexol,1.2727272727272727,0.0,196,0.0
+ioversol,1.0,0.0,1,0.0
+ipratropium bromide,1.6240484270384299,0.0,17707,0.0
+ipratropium bromide and albuterol,1.1007751937984496,0.0,284,0.0
+ipratropium bromide and albuterol sulfate,1.4894132859220948,0.0,9215,0.0
+irbesartan,1.0769230769230769,0.0,42,0.0
+irinotecan hydrochloride,1.0,0.0,1,0.0
+iron dextran,1.0,0.0,5,0.0
+iron sucrose,1.3333333333333333,0.0,4,0.0
+isavuconazonium sulfate,2.6,0.0,13,0.0
+isoniazid,1.1486486486486487,0.0,85,0.0
+isoproterenol hydrochloride,1.25,0.0,5,0.0
+isosorbide dinitrate,1.9638069705093835,0.0,4395,0.0
+isosorbide mononitrate,1.5177554892924912,0.0,5599,0.0
+itraconazole,1.75,0.0,7,0.0
+ivabradine,1.75,0.0,14,0.0
+ivermectin,1.4102564102564104,0.0,55,0.0
+ketamine hydrochloride,2.6296296296296298,0.0,213,0.0
+ketoconazole,1.0994475138121547,0.0,199,0.0
+ketorolac tromethamine,1.5155172413793103,0.0,1758,0.0
+labetalol hcl,1.7205882352941178,0.0,1053,0.0
+labetalol hydrochloride,1.9342948717948718,0.0,1207,0.0
+lacosamide,3.7315436241610738,0.0,556,0.0
+lactulose,1.8973755047106327,0.0,5639,0.0
+lamivudine,1.5596330275229358,0.0,340,0.0
+lamivudine and zidovudine,1.125,0.0,9,0.0
+lamotrigine,1.7634408602150538,0.0,164,0.0
+lansoprazole,1.2253424657534246,0.0,1789,0.0
+lanthanum carbonate,1.3452380952380953,0.0,339,0.0
+latanoprost,1.109272964736613,0.0,2548,0.0
+ledipasvir and sofosbuvir,1.75,0.0,21,0.0
+leflunomide,1.1574074074074074,0.0,125,0.0
+lenalidomide,2.6666666666666665,0.0,8,0.0
+letermovir,3.0,0.0,6,0.0
+letrozole,1.0864197530864197,0.0,88,0.0
+"leucine, phenylalanine, lysine, methionine, isoleucine, valine, histidine, threonine, tryptophan, alanine, glycine, arginine, proline, serine, tyrosine, sodium acetate, dibasic potassium phosphate, magnesium chloride, sodium chloride, calcium chloride, dextrose",1.4838709677419355,0.0,322,0.0
+leucovorin calcium,2.7088607594936707,0.0,214,0.0
+leuprolide acetate,1.0,0.0,7,0.0
+levalbuterol,1.5549738219895288,0.0,594,0.0
+levetiracetam,2.5,0.0,4140,0.0
+levobunolol hydrochloride,1.0,0.0,25,0.0
+levocarnitine,1.375,0.0,11,0.0
+levofloxacin,1.4051724137931034,0.0,1630,0.0
+levonorgestrel,1.0,0.0,1,0.0
+levothyroxine sodium,1.3472541055977396,0.0,15259,0.0
+levothyroxine sodium anhydrous,1.4536741214057507,0.0,910,0.0
+lidocaine,1.2832892722972034,0.0,9223,0.0
+lidocaine 4%,1.0,0.0,1,0.0
+lidocaine and prilocaine,1.25,0.0,270,0.0
+lidocaine hydrochloride,2.080912100036778,0.0,22632,0.0
+lidocaine hydrochloride and epinephrine,1.1964285714285714,0.0,335,0.0
+"lidocaine hydrochloride,epinephrine bitartrate",1.1122448979591837,0.0,109,0.0
+linaclotide,1.3333333333333333,0.0,4,0.0
+linezolid,1.841296928327645,0.0,1079,0.0
+liothyronine sodium,1.7741935483870968,0.0,55,0.0
+liraglutide,1.0,0.0,6,0.0
+lisinopril,1.5157464212678937,0.0,3706,0.0
+lithium,1.8,0.0,27,0.0
+lithium carbonate,1.368421052631579,0.0,78,0.0
+loperamide hydrochloride,1.4700704225352113,0.0,2505,0.0
+lopinavir and ritonavir,1.206896551724138,0.0,35,0.0
+loratadine,1.0755244755244755,0.0,769,0.0
+lorazepam,2.0050325636471285,0.0,13546,0.0
+losartan potassium,1.5550024888003982,0.0,6248,0.0
+lubiprostone,1.1923076923076923,0.0,93,0.0
+lurasidone hydrochloride,1.1111111111111112,0.0,10,0.0
+magesium citrate,1.4070473876063183,0.0,1158,0.0
+magnesium hydroxide,1.3412698412698412,0.0,4732,0.0
+magnesium sulfate,1.608203677510608,0.0,1137,0.0
+magnesium sulfate heptahydrate,2.6805995964254827,0.0,9299,0.0
+magnesium sulfate in water,2.5857876631638472,0.0,54873,0.0
+mannitol,2.552941176470588,0.0,217,0.0
+maraviroc,1.0,0.0,2,0.0
+"measles, mumps, and rubella virus vaccine live",1.0,0.0,3,0.0
+meclizine,1.0,0.0,3,0.0
+meclizine hydrochloride,1.22,0.0,61,0.0
+medroxyprogesterone acetate,1.8181818181818181,0.0,40,0.0
+megestrol acetate,1.1575757575757575,0.0,191,0.0
+meloxicam,1.3333333333333333,0.0,4,0.0
+melphalan hydrochloride,1.0,0.0,10,0.0
+memantine,1.177304964539007,0.0,166,0.0
+memantine hydrochloride,1.146095717884131,0.0,455,0.0
+meningococcal group b vaccine,1.3333333333333333,0.0,4,0.0
+meperidine hydrochloride,1.1787383177570094,0.0,1009,0.0
+mepivacaine hydrochloride,1.0,0.0,1,0.0
+mercaptopurine,1.5789473684210527,0.0,30,0.0
+meropenem,2.3333333333333335,0.0,2100,0.0
+mesalamine,1.2682926829268293,0.0,208,0.0
+mesna,1.35,0.0,27,0.0
+metaxalone,1.6111111111111112,0.0,29,0.0
+metformin hydrochloride,1.3435294117647059,0.0,571,0.0
+methadone hydrochloride,2.7379032258064515,0.0,2037,0.0
+methimazole,1.5555555555555556,0.0,196,0.0
+methocarbamol,1.2087912087912087,0.0,110,0.0
+methotrexate,1.4307692307692308,0.0,279,0.0
+methotrexate sodium,1.375,0.0,22,0.0
+methylene blue,1.375,0.0,44,0.0
+methylnaltrexone bromide,1.9367088607594938,0.0,306,0.0
+methylphenidate hydrochloride,1.565217391304348,0.0,180,0.0
+methylphenidate hydrochloride extended release,1.8181818181818181,0.0,20,0.0
+methylprednisolone,2.0434782608695654,0.0,188,0.0
+methylprednisolone acetate,1.1111111111111112,0.0,20,0.0
+methylprednisolone sodium succinate,1.9892255892255892,0.0,2954,0.0
+metoclopramide,1.4249113125739061,0.0,3615,0.0
+metoclopramide hydrochloride,1.2,0.0,12,0.0
+metolazone,2.170473537604457,0.0,7792,0.0
+metoprolol succinate,1.4998334998335,0.0,4504,0.0
+metoprolol tartrate,3.1166761294508882,0.0,76851,0.0
+metronidazole,1.3477036395147313,0.0,6221,0.0
+mexiletine hydrochloride,1.3818181818181818,0.0,228,0.0
+micafungin sodium,1.7829268292682927,0.0,731,0.0
+miconazole nitrate,1.118811881188119,0.0,452,0.0
+midazolam,2.111111111111111,0.0,57,0.0
+midazolam hydrochloride,1.65748987854251,0.0,2047,0.0
+midodrine hydrochloride,2.607348703170029,0.0,3619,0.0
+milrinone lactate,2.7271505376344085,0.0,2029,0.0
+milrinone lactate in dextrose,2.3846153846153846,0.0,682,0.0
+mineral oil and petrolatum,1.2439024390243902,0.0,51,0.0
+mineral oil and white petrolatum,1.0,0.0,5,0.0
+"mineral oil, petrolatum",1.1701444622792938,0.0,729,0.0
+minocycline hydrochloride,1.2432432432432432,0.0,46,0.0
+minoxidil,1.4846938775510203,0.0,291,0.0
+mirtazapine,1.2175989085948158,0.0,3570,0.0
+misoprostol,1.2352941176470589,0.0,42,0.0
+mitomycin,1.0,0.0,3,0.0
+mitoxantrone,1.0,0.0,3,0.0
+mitoxantrone hydrochloride,2.0,0.0,4,0.0
+modafinil,1.4777070063694266,0.0,232,0.0
+moexipril hydrochloride,1.6666666666666667,0.0,20,0.0
+montelukast,1.0414201183431953,0.0,176,0.0
+montelukast sodium,1.0635838150289016,0.0,184,0.0
+morphine sulfate,1.894376618571957,0.0,10241,0.0
+morphine tincture,2.0833333333333335,0.0,25,0.0
+moxifloxacin,2.5,0.0,5,0.0
+moxifloxacin hydrochloride,1.2727272727272727,0.0,42,0.0
+mupirocin,1.5781354795439302,0.0,2353,0.0
+mycophenilic acid,1.4455445544554455,0.0,146,0.0
+mycophenolate mofetil,1.752153110047847,0.0,1831,0.0
+mycophenolate mofetil hydrochloride,1.872340425531915,0.0,88,0.0
+mycophenolic acid,1.5757575757575757,0.0,156,0.0
+nabumetone,1.0,0.0,5,0.0
+nadolol,1.533527696793003,0.0,526,0.0
+nafcillin,1.6494845360824741,0.0,480,0.0
+nafcillin sodium,1.7014925373134329,0.0,114,0.0
+nalbuphine hydrochloride,1.0,0.0,1,0.0
+naloxone hydrochloride,1.4803921568627452,0.0,302,0.0
+naltrexone hydrochloride,1.0,0.0,16,0.0
+naphazoline hydrochloride and pheniramine maleate,1.03125,0.0,33,0.0
+naproxen,1.2,0.0,30,0.0
+nebivolol hydrochloride,1.1666666666666667,0.0,7,0.0
+nefazodone hydrochloride,1.4,0.0,7,0.0
+"neisseria meningitidis group a capsular polysaccharide diphtheria toxoid conjugate antigen, neisseria meningitidis group c capsular polysaccharide diphtheria toxoid conjugate antigen, neisseria meningitidis group y capsular polysaccharide diphtheria toxoid conjugate antigen, and neisseria meningitidis group w-135 capsular polysaccharide diphtheria toxoid conjugate antigen",1.1428571428571428,0.0,16,0.0
+nelfinavir mesylate,1.0,0.0,2,0.0
+neomycin and polymyxin b sulfates,1.0,0.0,4,0.0
+neomycin sulfate,1.8421052631578947,0.0,70,0.0
+"neomycin sulfate, polymyxin b sulfate and bacitracin zinc",1.5,0.0,3,0.0
+"neomycin sulfate, polymyxin b sulfate and dexamethasone",1.2727272727272727,0.0,28,0.0
+"neomycin sulfate, polymyxin b sulfate and gramicidin",1.0,0.0,1,0.0
+"neomycin sulfate, polymyxin b sulfate and hydrocortisone",1.0,0.0,13,0.0
+"neomycin sulfate, polymyxin b sulfate, and dexamethasone",1.0,0.0,2,0.0
+neostigmine methylsulfate,1.0344827586206897,0.0,180,0.0
+nevirapine,1.2,0.0,6,0.0
+nicardipine hydrochloride,1.4153225806451613,0.0,702,0.0
+nicotine,1.1265822784810127,0.0,1157,0.0
+nicotine polacrilex,1.1121495327102804,0.0,119,0.0
+nifedipine,1.7214285714285715,0.0,482,0.0
+nilotinib,1.0,0.0,2,0.0
+nimodipine,1.5,0.0,6,0.0
+nitrofurantoin (monohydrate/macrocrystals),1.0952380952380953,0.0,23,0.0
+nitrofurantoin macrocrystals,1.1714285714285715,0.0,41,0.0
+nitrofurantoin monohydrate/macrocrystalline,1.2926829268292683,0.0,53,0.0
+nitroglycerin,1.5316842690383548,0.0,11022,0.0
+nivolumab,2.0,0.0,4,0.0
+norepinephrine bitartrate,1.6943717277486912,0.0,2589,0.0
+norethindrone,1.25,0.0,5,0.0
+norethindrone and ethinyl estradiol,1.4,0.0,7,0.0
+nortriptyline hydrochloride,1.09375,0.0,70,0.0
+nystatin,1.195433789954338,0.0,1309,0.0
+nystatin and triamcinolone acetonide,1.0593220338983051,0.0,125,0.0
+nystatin ointment,1.0,0.0,4,0.0
+octreotide acetate,1.7551020408163265,0.0,516,0.0
+ofloxacin,1.3333333333333333,0.0,16,0.0
+olanzapine,2.3028446389496717,0.0,5262,0.0
+olmesartan medoxomil,1.2989690721649485,0.0,126,0.0
+omeprazole,1.169167803547067,0.0,8570,0.0
+onabotulinumtoxina,1.0,0.0,5,0.0
+ondansetron,1.4895884977689637,0.0,12018,0.0
+ondansetron hydrochloride,1.449811320754717,0.0,1921,0.0
+oseltamivir phosphate,1.4416543574593796,0.0,976,0.0
+ovine digoxin immune fab,1.3333333333333333,0.0,8,0.0
+oxaliplatin,1.1111111111111112,0.0,10,0.0
+oxazepam,1.4683544303797469,0.0,232,0.0
+oxcarbazepine,1.4939759036144578,0.0,124,0.0
+oxybutynin chloride,1.1892247043363995,0.0,905,0.0
+oxycodone and acetaminophen,1.2121212121212122,0.0,40,0.0
+oxycodone hydrochloride,2.195756865807627,0.0,33740,0.0
+oxycodone hydrochloride and acetaminophen,1.350371537941905,0.0,5997,0.0
+oxymetazoline hcl,1.1666666666666667,0.0,7,0.0
+paclitaxel,1.0,0.0,5,0.0
+paliperidone,1.9285714285714286,0.0,27,0.0
+paliperidone palmitate,1.6666666666666667,0.0,10,0.0
+palivizumab,1.5,0.0,3,0.0
+palonosetron hydrochloride,1.0,0.0,3,0.0
+pamidronate disodium,1.1111111111111112,0.0,50,0.0
+pancrelipase,1.298311444652908,0.0,692,0.0
+"pancrelipase lipase, pancrelipase protease, pancrelipase amylase",1.3783783783783783,0.0,51,0.0
+pantoprazole sodium,1.5643813817796048,0.0,23594,0.0
+paricalcitol,2.4121037463976944,0.0,837,0.0
+paroxetine hydrochloride,1.2181818181818183,0.0,1139,0.0
+patiromer,2.3333333333333335,0.0,7,0.0
+pegfilgrastim,1.0,0.0,1,0.0
+peginterferon alfa-2a,1.0,0.0,1,0.0
+pemetrexed disodium,1.0,0.0,6,0.0
+penicillamine,1.0,0.0,1,0.0
+penicillin g,1.3461538461538463,0.0,70,0.0
+penicillin g benzathine,1.0,0.0,1,0.0
+penicillin g potassium,1.9523809523809523,0.0,82,0.0
+penicillin v potasium,1.0,0.0,6,0.0
+penicillin v potassium,1.5,0.0,12,0.0
+pentamidine isethionate,1.1818181818181819,0.0,52,0.0
+pentobarbital sodium,15.0,0.0,15,0.0
+pentostatin,2.0,0.0,2,0.0
+perampanel,9.0,0.0,9,0.0
+permethrin,2.1666666666666665,0.0,13,0.0
+perphenazine,1.0,0.0,2,0.0
+petrolatum,1.0555555555555556,0.0,38,0.0
+phenazopyridine hydrochloride,1.1782178217821782,0.0,119,0.0
+phenelzine sulfate,1.1904761904761905,0.0,25,0.0
+phenobarbital,3.669811320754717,0.0,389,0.0
+phenobarbital sodium,4.359154929577465,0.0,619,0.0
+"phenobarbital, hyoscyamine sulfate, atropine sulfate, scopolamine hydrobromide",1.2,0.0,6,0.0
+phenol,1.104201680672269,0.0,657,0.0
+phenoxybenzamine hydrochloride,3.5,0.0,7,0.0
+phenylephrine hydrochloride,1.5886939571150098,0.0,3260,0.0
+phenytoin,2.5555555555555554,0.0,460,0.0
+phenytoin sodium,2.3255813953488373,0.0,800,0.0
+phytonadione,1.5721576410547207,0.0,5545,0.0
+pilocarpine hydrochloride,1.0661764705882353,0.0,145,0.0
+pindolol,1.8095238095238095,0.0,38,0.0
+pioglitazone,1.233644859813084,0.0,132,0.0
+piperacillin and tazobactam,1.3125,0.0,21,0.0
+piperacillin sodium and tazobactam sodium,1.2857142857142858,0.0,18,0.0
+piroxicam,1.0,0.0,2,0.0
+pneumococcal 13-valent conjugate vaccine,1.0975609756097562,0.0,45,0.0
+pneumococcal vaccine polyvalent,1.110518573004781,0.0,6039,0.0
+polyethylene glycol 3350,1.2778519012675116,0.0,15324,0.0
+"polyethylene glycol 3350, sodium sulfate anhydrous, sodium bicarbonate, sodium chloride, potassium chloride",1.5871212121212122,0.0,419,0.0
+"polyethylene glycol 3350, sodium sulfate, sodium chloride, potassium chloride, ascorbic acid, sodium ascorbate",2.1176470588235294,0.0,2448,0.0
+polymyxin b sulfate and trimethoprim sulfate,1.1176470588235294,0.0,19,0.0
+"polymyxin b sulfate, trimethoprim sulfate",1.25,0.0,5,0.0
+"polyvinyl alcohol, povidone",1.1320825515947468,0.0,3017,0.0
+posaconazole,2.6645569620253164,0.0,421,0.0
+potassium bicarbonate,1.4923076923076923,0.0,388,0.0
+potassium chloride,4.88769123783032,0.0,98399,0.0
+potassium chloride and dextrose monohydrate,1.4444444444444444,0.0,65,0.0
+potassium chloride and sodium chloride,1.4801223241590213,0.0,484,0.0
+"potassium chloride, dextrose monohydrate and sodium chloride",1.597254004576659,0.0,3490,0.0
+"potassium phosphate, monobasic and potassium phosphate, dibasic",1.7253263707571802,0.0,3304,0.0
+povidone-iodine,1.5,0.0,33,0.0
+pramipexole dihydrochloride,1.2872340425531914,0.0,121,0.0
+pramoxine hydrochloride,1.0,0.0,1,0.0
+prasugrel,1.375,0.0,11,0.0
+prasugrel hydrochloride,1.2907801418439717,0.0,182,0.0
+pravastatin sodium,1.1432,0.0,2858,0.0
+praziquantel,1.0,0.0,1,0.0
+prazosin hydrochloride,1.3691275167785235,0.0,204,0.0
+prednisolone acetate,1.2747747747747749,0.0,849,0.0
+prednisolone sodium phosphate,4.25,0.0,17,0.0
+prednisone,2.18860652776105,0.0,18172,0.0
+prednisone intensol,1.4,0.0,7,0.0
+pregabalin,1.6643356643356644,0.0,1904,0.0
+primaquine phosphate,1.3,0.0,13,0.0
+primidone,1.2919254658385093,0.0,208,0.0
+probenecid,1.6666666666666667,0.0,20,0.0
+procainamide hydrochloride,3.4516129032258065,0.0,107,0.0
+prochlorperazine,1.3218390804597702,0.0,115,0.0
+prochlorperazine edisylate,1.34472049689441,0.0,433,0.0
+promethazine hydrochloride,1.2926829268292683,0.0,477,0.0
+propafenone hydrochloride,1.1764705882352942,0.0,20,0.0
+proparacaine hydrochloride,1.25,0.0,5,0.0
+propofol,2.102499474900231,0.0,10010,0.0
+propranolol hydrochloride,1.9189189189189189,0.0,142,0.0
+propylthiouracil,1.7692307692307692,0.0,23,0.0
+protamine sulfate,1.2034883720930232,0.0,414,0.0
+"prothrombin, coagulation factor vii human, coagulation factor ix human, coagulation factor x human, protein c, protein s human, and water",1.146341463414634,0.0,47,0.0
+pseudoephedrine hcl,1.1818181818181819,0.0,65,0.0
+psyllium husk,1.0740740740740742,0.0,319,0.0
+pyrazinamide,1.2307692307692308,0.0,16,0.0
+pyridostigmine bromide,2.1510791366906474,0.0,299,0.0
+pyridoxine hydrochloride,1.25,0.0,5,0.0
+quetiapine,2.069868995633188,0.0,1896,0.0
+quetiapine fumarate,2.6654275092936803,0.0,2151,0.0
+quinapril,1.7777777777777777,0.0,16,0.0
+quinapril hydrochloride,1.4275862068965517,0.0,207,0.0
+quinidine gluconate,1.434782608695652,0.0,66,0.0
+quinidine sulfate,1.0,0.0,2,0.0
+quinine sulfate,1.0,0.0,1,0.0
+racepinephrine hydrochloride,1.4551724137931035,0.0,211,0.0
+raltegravir,1.1478260869565218,0.0,132,0.0
+ramelteon,1.187408133268006,0.0,4847,0.0
+ramipril,1.3818181818181818,0.0,76,0.0
+ranitidine,1.28078250863061,0.0,1113,0.0
+ranolazine,1.1742857142857144,0.0,411,0.0
+rasagiline mesylate,1.380952380952381,0.0,29,0.0
+rasburicase,1.2592592592592593,0.0,102,0.0
+repaglinide,1.5,0.0,6,0.0
+ribavirin,1.0,0.0,1,0.0
+rifabutin,1.6,0.0,16,0.0
+rifampin,1.609375,0.0,103,0.0
+rifaximin,1.150990099009901,0.0,930,0.0
+rilpivirine hydrochloride,1.1153846153846154,0.0,29,0.0
+rimantadine hydrochloride,1.6666666666666667,0.0,5,0.0
+risperidone,1.6521739130434783,0.0,380,0.0
+ritonavir,1.143835616438356,0.0,167,0.0
+rituximab,2.0964912280701755,0.0,239,0.0
+rivaroxaban,1.397210430563978,0.0,2304,0.0
+rivastigmine,1.0,0.0,8,0.0
+rivastigmine tartrate,1.2857142857142858,0.0,18,0.0
+rivastigmine transdermal system,1.0,0.0,1,0.0
+rizatriptan benzoate,2.0,0.0,2,0.0
+robinul,1.1287128712871286,0.0,228,0.0
+rocuronium bromide,1.6206896551724137,0.0,376,0.0
+romiplostim,2.2916666666666665,0.0,55,0.0
+ropinirole hydrochloride,1.498069498069498,0.0,388,0.0
+ropivacaine hydrochloride,1.5,0.0,3,0.0
+rosuvastatin calcium,1.1957994579945799,0.0,3530,0.0
+rotigotine,1.3333333333333333,0.0,4,0.0
+rufinamide,1.0,0.0,1,0.0
+ruxolitinib,1.7307692307692308,0.0,45,0.0
+rydapt,4.0,0.0,4,0.0
+sacubitril and valsartan,1.8108108108108107,0.0,603,0.0
+"salicylic acid, sulfur",1.0,0.0,7,0.0
+scopalamine,1.1907114624505928,0.0,1205,0.0
+scopolamine,1.0256410256410255,0.0,40,0.0
+selenium sulfide,1.0,0.0,4,0.0
+sennosides,1.3129762179635187,0.0,11373,0.0
+sertraline,1.1551362683438156,0.0,551,0.0
+sertraline hydrochloride,1.1467116357504217,0.0,680,0.0
+sevelamer carbonate,1.435474537037037,0.0,4961,0.0
+sevelamer hydrochloride,1.2883895131086143,0.0,344,0.0
+sildenafil,2.075268817204301,0.0,386,0.0
+sildenafil citrate,1.7475728155339805,0.0,540,0.0
+silver nitrate applicators,1.0232558139534884,0.0,44,0.0
+silver sulfadiazine,1.0714285714285714,0.0,30,0.0
+simethicone,1.1165480427046264,0.0,2510,0.0
+simvastatin,1.0766355140186916,0.0,576,0.0
+sirolimus,2.170909090909091,0.0,597,0.0
+sitagliptin,1.36,0.0,34,0.0
+sodium acetate,12.0,0.0,12,0.0
+sodium bicarbonate,2.2298850574712645,0.0,6208,0.0
+sodium chloride,4.588419361984935,0.0,165697,0.0
+"sodium chloride, potassium chloride, sodium lactate and calcium chloride",2.2027213386043947,0.0,23959,0.0
+"sodium chloride, sodium gluconate, sodium acetate, potassium chloride and magnesium chloride",1.4615384615384615,0.0,19,0.0
+"sodium chloride, sodium lactate, potassium chloride, calcium chloride and dextrose monohydrate",1.4776422764227641,0.0,727,0.0
+sodium citrate and citric acid monohydrate,1.3333333333333333,0.0,48,0.0
+sodium ferric gluconate complex in sucrose,1.535491905354919,0.0,1233,0.0
+sodium fluoride,1.0666666666666667,0.0,16,0.0
+sodium glycolate,1.9245283018867925,0.0,204,0.0
+sodium nitroprusside,1.6097560975609757,0.0,66,0.0
+"sodium phosphate, dibasic and sodium phosphate, monobasic",1.1884920634920635,0.0,599,0.0
+"sodium phosphate, monobasic, monohydrate",1.55,0.0,620,0.0
+"sodium phosphate, monobasic, monohydrate and sodium phosphate, dibasic, anhydrous",1.7392497712717292,0.0,1901,0.0
+sodium polystyrene sulfonate,1.5038961038961038,0.0,2895,0.0
+sodium thiosulfate,4.611111111111111,0.0,249,0.0
+sofosbuvir,1.5,0.0,3,0.0
+solifenacin succinate,1.1,0.0,11,0.0
+sorafenib,1.0,0.0,2,0.0
+sotalol hydrochloride,1.6104129263913824,0.0,897,0.0
+spironolactone,1.497449599222735,0.0,6165,0.0
+streptomycin,3.6666666666666665,0.0,11,0.0
+succinylcholine chloride,1.062992125984252,0.0,270,0.0
+sucralfate,1.2085561497326203,0.0,452,0.0
+sugammadex,1.125,0.0,9,0.0
+sulfacetamide sodium,1.25,0.0,10,0.0
+sulfacetamide sodium and prednisolone acetate,1.0,0.0,10,0.0
+sulfadiazine,1.0,0.0,1,0.0
+sulfamethoxazole and trimethoprim,1.3325015595757954,0.0,4272,0.0
+sulfasalazine,1.2193548387096773,0.0,189,0.0
+sulindac,1.0,0.0,2,0.0
+sumatriptan,1.0,0.0,1,0.0
+sumatriptan succinate,1.2553191489361701,0.0,59,0.0
+sunitinib malate,1.3333333333333333,0.0,4,0.0
+tacrolimus,4.685567010309279,0.0,6363,0.0
+tamoxifen citrate,1.2272727272727273,0.0,27,0.0
+tamsulosin hydrochloride,1.1683997689196997,0.0,4045,0.0
+tazobactam sodium and piperacillin sodium,1.9666563754245137,0.0,6370,0.0
+tedizolid phosphate,1.0,0.0,2,0.0
+temozolomide,1.0,0.0,1,0.0
+tenofovir disoproxil fumarate,1.2660550458715596,0.0,138,0.0
+tenofovir disproxil fumarate,1.0,0.0,9,0.0
+terbinafine hydrochloride,1.1016949152542372,0.0,65,0.0
+terconazole,1.0,0.0,1,0.0
+teriparatide,2.0,0.0,4,0.0
+testosterone,1.0689655172413792,0.0,31,0.0
+testosterone cypionate,1.625,0.0,13,0.0
+"tetanus toxoid, reduced diphtheria toxoid and acellular pertussis vaccine, adsorbed",1.5,0.0,6,0.0
+tetracaine hydrochloride,1.0,0.0,3,0.0
+tetracycline hydrochloride,1.3125,0.0,21,0.0
+thalidomide,1.25,0.0,5,0.0
+theophylline,1.162162162162162,0.0,43,0.0
+thiamine hydrochloride,1.4279437609841827,0.0,1625,0.0
+thioridazine hydrochloride,1.6666666666666667,0.0,5,0.0
+thiothixene,2.0,0.0,14,0.0
+"thrombin, topical (bovine)",1.289855072463768,0.0,89,0.0
+"thyroid, porcine",1.3181818181818181,0.0,58,0.0
+ticagrelor,1.3810679611650485,0.0,569,0.0
+tigecycline,2.326923076923077,0.0,121,0.0
+timolol maleate,1.1656277827248442,0.0,1309,0.0
+tiotropium bromide,1.1138251099169516,0.0,4560,0.0
+tirofiban,1.356164383561644,0.0,99,0.0
+tizanidine,1.4891304347826086,0.0,411,0.0
+tobramycin,1.6666666666666667,0.0,95,0.0
+tobramycin and dexamethasone,1.29,0.0,129,0.0
+tobramycin sulfate,1.9141104294478528,0.0,312,0.0
+tolterodine tartrate,1.1376404494382022,0.0,405,0.0
+tolvaptan,2.2745098039215685,0.0,116,0.0
+topiramate,1.2014388489208634,0.0,167,0.0
+torsemide,2.2949004696935806,0.0,20521,0.0
+trace elements 5,1.3636363636363635,0.0,30,0.0
+tramadol hydrochloride,1.5108289768483942,0.0,6069,0.0
+trametinib,2.0,0.0,2,0.0
+tranexamic acid,1.6818181818181819,0.0,37,0.0
+tranylcypromine sulfate,1.3333333333333333,0.0,4,0.0
+trastuzumab,3.0,0.0,3,0.0
+trazodone hydrochloride,1.3437057991513437,0.0,2850,0.0
+treprostinil,9.357142857142858,0.0,131,0.0
+tretinoin,2.5,0.0,40,0.0
+triamcinolone acetonide,1.1347826086956523,0.0,783,0.0
+triamterene,1.0,0.0,1,0.0
+triamterene and hydrochlorothiazide,1.1666666666666667,0.0,7,0.0
+triazolam,1.8571428571428572,0.0,26,0.0
+trifluridine,1.0952380952380953,0.0,23,0.0
+trimethobenzamide hydrochloride,1.0,0.0,1,0.0
+tromethamine,1.5,0.0,6,0.0
+tropicamide,1.2222222222222223,0.0,22,0.0
+tuberculin purified protein derivative,1.1624472573839661,0.0,1102,0.0
+uridine triacetate,2.5,0.0,5,0.0
+ursodiol,1.3021001615508885,0.0,806,0.0
+valacyclovir hydrochloride,1.3582089552238805,0.0,364,0.0
+valganciclovir,2.4,0.0,552,0.0
+valganciclovir hydrochloride,2.3548387096774195,0.0,73,0.0
+valproate sodium,3.858974358974359,0.0,301,0.0
+valproic acid,2.1266666666666665,0.0,319,0.0
+valsartan,1.5661157024793388,0.0,4548,0.0
+vancomycin hydrochloride,3.104897114610875,0.0,54019,0.0
+varicella virus vaccine live,1.0,0.0,1,0.0
+vasopressin,1.4989733059548254,0.0,1460,0.0
+vecuronium bromide,1.4137931034482758,0.0,82,0.0
+vedolizumab,1.0,0.0,2,0.0
+venetoclax,5.923076923076923,0.0,77,0.0
+venlafaxine,1.3409090909090908,0.0,59,0.0
+venlafaxine hydrochloride,1.3088842975206612,0.0,1267,0.0
+verapamil hydrochloride,2.051150895140665,0.0,802,0.0
+vinblastine sulfate,1.0,0.0,1,0.0
+vincristine sulfate,1.3604651162790697,0.0,117,0.0
+vinorelbine,1.0,0.0,1,0.0
+voriconazole,2.614130434782609,0.0,481,0.0
+vortioxetine,1.0,0.0,2,0.0
+water,1.911764705882353,0.0,65,0.0
+zanamivir,3.0,0.0,3,0.0
+zidovudine,1.2142857142857142,0.0,17,0.0
+zinc oxide,1.0,0.0,6,0.0
+ziprasidone hydrochloride,1.5714285714285714,0.0,33,0.0
+ziprasidone mesylate,2.1666666666666665,0.0,13,0.0
+zoledronic acid,1.0,0.0,4,0.0
+zolpidem tartrate,1.2672811059907834,0.0,275,0.0
+zonisamide,1.0,0.0,3,0.0
+"zoster vaccine recombinant, adjuvanted",1.0,0.0,1,0.0
