@@ -12,7 +12,7 @@ For modeling, the pipeline includes several commonly used sequential models for 
 The evaluation module offers a series of standard methods for evaluating the performance of the created models. 
 This module also includes options for reporting individual and group fairness measures.
 
-##### Customization: 
+### Customization: 
 This customization leverages the pipeline to retrieve data from the first 15 days of each admissions.
 Pipeline Steps
 
