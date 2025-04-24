@@ -1,4 +1,6 @@
 # MIMIC-IV
+
+
 **MIMIC-IV data pipeline** is an end-to-end pipeline that offers a configurable framework to prepare MIMIC-IV data for the downstream tasks. 
 The pipeline cleans the raw data by removing outliers and allowing users to impute missing entries. 
 It also provides options for the clinical grouping of medical features using standard coding systems for dimensionality reduction.  
@@ -9,6 +11,30 @@ Besides the data processing modules, our pipeline also includes two additional m
 For modeling, the pipeline includes several commonly used sequential models for performing prediction tasks. 
 The evaluation module offers a series of standard methods for evaluating the performance of the created models. 
 This module also includes options for reporting individual and group fairness measures.
+
+##### Customization: 
+This customization leverages the pipeline to retrieve data from the first 15 days of each admissions.
+Pipeline Steps
+
+Data Retrieval: 
+- Extract data covering the initial 15 days of hospitalization for admissions related to mortality outcomes.
+
+Cohort Intersection:
+- Generate the original heart-failure cohort.
+- Identify and extract the intersection between mortality-related admissions and the heart failure cohort to ensure consistency and relevance for downstream tasks.
+
+Data 'Postprocessing':
+- Establish the intersected cohort while preseving the label of in-hospital-mortality, heart failure and length of stay > 15. Then, create a formal label that is true if any of the precious is true.
+- Concatenate static and dynamic CSV files corresponding to each selected admission.
+- Replace clinical codes with descriptive feature names for enhanced interpretability.
+- Define two formal final csvs that include all the data for finetuning or inference: one with the source values, and another which is numeric type only.
+
+Dataset Splitting:
+- Chronologically partition the processed data into training, validation, and test sets.
+- Ensuring no patient appears across multiple data splits.
+
+This structured approach supports robust model fine-tuning and inference workflows, maintaining data integrity and ensuring meaningful clinical insights.
+
 
 ##### Citing MIMIC-IV Data Pipeline:
 MIMIC-IV Data Pipeline is available on [ML4H](https://proceedings.mlr.press/v193/gupta22a/gupta22a.pdf).
