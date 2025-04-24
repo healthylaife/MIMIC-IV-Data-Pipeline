@@ -208,7 +208,10 @@ class Generator():
 
     def readmission_length(self,include_time):
         self.los=include_time
-        self.data=self.data[(self.data['los']>=include_time)]
+        if include_time >= (self.max_num_days * 24) - 1:
+            self.data=self.data[(self.data['los']>=include_time)]
+        else:
+            self.data=self.data[(self.data['los']>=include_time) & (self.data['los'] < include_time + self.include_interval)]
         self.hids=self.data['hadm_id'].unique()
         if(self.feat_cond):
             self.cond=self.cond[self.cond['hadm_id'].isin(self.data['hadm_id'])]
