@@ -59,8 +59,10 @@ Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-pa
 		consists of dictionary structured files for all features obtained after time-series representation
 	- **./output**
 		consists output files saved after training and testing of model. These files are used during evaluation.
-- **./mimic-iv-1.0**
-	consist of files downloaded from MIMIC-IV website.
+- **./mimiciv/1.0**
+	consist of files downloaded from MIMIC-IV website for v1.
+- **./mimiciv/2.0**
+  	consist of files downloaded from MIMIC-IV website for v2.
 - **./saved_models**
 	consists of models saved during training.
 - **./preprocessing**
