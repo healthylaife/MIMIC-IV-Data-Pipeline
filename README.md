@@ -34,64 +34,66 @@ If you use MIMIC-IV Data Pipeline, we would appreciate citations to the followin
 - [Repository Structure](#Repository-Structure)
 - [How to use the pipeline?](#How-to-use-the-pipeline)
 
-### Steps to download MIMIC-IV dataset for the pipeline
+### Steps to download the MIMIC-IV dataset for the pipeline
 
 Go to https://physionet.org/content/mimiciv/1.0/
 
-Follow instructions to get access to MIMIC-IV dataset.
+Follow the instructions to get access to the MIMIC-IV dataset.
 
 Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-password https://physionet.org/files/mimiciv/1.0/
 
 ### Repository Structure
 
 - **mainPipeline.ipynb**
-	is the main file to interact with the pipeline. It provides step-step by options to extract and pre-process cohorts.
+	is the main file to interact with the pipeline. It provides step-by-step instructions to extract and pre-process cohorts.
 - **./data**
 	consists of all data files stored during pre-processing
 	- **./cohort**
 		consists of files saved during cohort extraction
 	- **./features**
-		consist of files containing features data for all selected features.
+		consists of files containing feature data for all selected features.
 	- **./summary**
 		consists of summary files for all features.
-	 	It also consists of file with list of variables in all features and can be used for feature selection.
+	 	It also consists of a file with a list of variables in all features and can be used for feature selection.
 	- **./dict**
-		consists of dictionary structured files for all features obtained after time-series representation
+		consists of dictionary-structured files for all features obtained after time-series representation
 	- **./output**
-		consists output files saved after training and testing of model. These files are used during evaluation.
+		consists of output files saved after training and testing of the model. These files are used during evaluation.
 - **./mimiciv/1.0**
-	consist of files downloaded from MIMIC-IV website for v1.
+	consists of files downloaded from the MIMIC-IV website for v1.
 - **./mimiciv/2.0**
-  	consist of files downloaded from MIMIC-IV website for v2.
+  	consists of files downloaded from the MIMIC-IV website for v2.
+- **./mimiciv/3.0**
+  	consists of files downloaded from the MIMIC-IV website for v3.
 - **./saved_models**
 	consists of models saved during training.
 - **./preprocessing**
 	- **./day_intervals_preproc**
-		- **day_intervals_cohort.py** file is used to extract samples, labels and demographic data for cohorts.
-		- **disease_cohort.py** is used to filter samples based on diagnoses codes at time of admission
+		- **day_intervals_cohort.py** file is used to extract samples, labels, and demographic data for cohorts.
+		- **disease_cohort.py** is used to filter samples based on diagnosis codes at the  time of admission
 	- **./hosp_module_preproc**
-		- **feature_selection_hosp.py** is used to extract, clean and summarize selected features for non-ICU data.
-		- **feature_selection_icu.py** is used to extract, clean and summarize selected features for ICU data.
+		- **feature_selection_hosp.py** is used to extract, clean, and summarize selected features for non-ICU data.
+		- **feature_selection_icu.py** is used to extract, clean, and summarize selected features for ICU data.
 - **./model**
 	- **train.py**
-		consists of code to create batches of data according to batch_size and create, train and test different models.
+		consists of code to create batches of data according to batch_size and create, train, and test different models.
 	- **Mimic_model.py**
-		consist of different model architectures.
+		consists of different model architectures.
 	- **evaluation.py**
-		consists of class to perform evaluation of results obtained from models.
-		This class can be instantiated separated for use as standalone module.
+		consists of a class to perform an evaluation of the results obtained from models.
+		This class can be instantiated separately for use as a standalone module.
 	- **fairness.py**
 		consists of code to perform fairness evaluation.
-		It can also be used as standalone module.
+		It can also be used as a standalone module.
 	- **parameters.py**
-		consists of list of hyperparameters to be defined for model training.
+		consists of a list of hyperparameters to be defined for model training.
 	- **callibrate_output**
 		consists of code to calibrate model output.
-		It can also be used as standalone module.
+		It can also be used as a standalone module.
 
 ### How to use the pipeline?
 - After downloading the repo, open **mainPipeline.ipynb**.
-- **mainPipeline.ipynb**, contains sequential code blocks to extract, preprocess, model and train MIMIC-IV EHR data.
-- Follow each code block and read intructions given just before each code block to run code block.
-- Follow the exact file paths and filenames given in instructions for each code block to run the pipeline.
-- For evaluation module, clear instructions are provided on how to use it as a standalone module.
+- **mainPipeline.ipynb**, contains sequential code blocks to extract, preprocess, model, and train MIMIC-IV EHR data.
+- Follow each code block and read the instructions given just before each code block to run the  code block.
+- Follow the exact file paths and filenames given in the instructions for each code block to run the pipeline.
+- For the evaluation module, clear instructions are provided on how to use it as a standalone module.
