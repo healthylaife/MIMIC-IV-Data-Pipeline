@@ -1,5 +1,5 @@
 # MIMIC-IV Multimodal Pipeline
-![MIMIC overview](images_v2/mimic_temporal_new02.png)
+![MIMIC overview](images_v2/mimic_framework_features (1).png)
 
 **MIMIC-IV data pipeline** is an end-to-end pipeline that offers a configurable framework to prepare MIMIC-IV data for the downstream tasks. 
 The pipeline cleans the raw data by removing outliers and allowing users to impute missing entries. 
