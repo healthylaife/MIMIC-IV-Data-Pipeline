@@ -57,6 +57,7 @@ Our original MIMIC-IV Data Pipeline is available on [ML4H proceedings](https://p
 - [Dataset access](#Dataset-access)
 - [Steps to download MIMIC-IV dataset for the pipeline](#Steps-to-download-MIMIC-IV-dataset-for-the-pipeline)
 - [Repository Structure](#Repository-Structure)
+- [Temporal Alignment](#Temporal-Alignment)
 - [How to use the Sectionizer and Embedding packages?](#How-to-use-the-Sectionizer-and-Embedding-packages)
 - [How to use the pipeline?](#How-to-use-the-pipeline)
 
@@ -217,8 +218,10 @@ In your terminal, write the following command:
 		consists of code to calibrate model output.
 		It can also be used as a standalone module.
 
-# MIMIC-IV Multimodal Temporal Alignment
-![MIMIC temporal](images_v2/mimic_temporal.png)
+### Temporal-Alignment
+![MIMIC temporal alignemnt](images_v2/mimic-temporal.png)
+
+
 ### How to use the Sectionizer and Embedding packages?
 ## Install pip
 In your terminal, write the following command:
