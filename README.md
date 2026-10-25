@@ -251,3 +251,5 @@ In your terminal, write the following command:
 - Follow each code block and read the instructions given just before each code block to run the  code block.
 - Follow the exact file paths and filenames given in the instructions for each code block to run the pipeline.
 - For the evaluation module, clear instructions are provided on how to use it as a standalone module.
+
+- If this package helps, a star helps others find it <3
